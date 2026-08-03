@@ -3,14 +3,16 @@
 .yarn/install-state.gz
 
 # Testing
-/coverage
-/.jest-cache
-/test-results
+# Globbed, not root-anchored: this is an npm workspaces monorepo, so output
+# lands in apps/*/ and packages/*/ as well as the root.
+**/coverage
+**/.jest-cache
+**/test-results
 
 # Build directories
-/dist/
-/build/
-/out/
+**/dist/
+**/build/
+**/out/
 
 # Misc
 .DS_Store
