@@ -61,10 +61,21 @@ Target from `day-1-build-requirements.md:224` — `git clone → npm install →
 | ----------------------- | ----------------------------------------------------------------- |
 | `setup`                 | preflight `docker info` → `compose --env-file .env.local up -d` → `db:migrate` → `db:seed` |
 | `dev`                   | api + web concurrently                                            |
-| `db:migrate` / `:status` / `:undo` | Umzug, target DB parameterised                         |
-| `db:seed`               | CSV import, 50–100 leads with 2–5 interactions each                |
+| `db:migrate` / `:status` / `:undo` / `:test` | Umzug, target DB parameterised via `MIGRATE_TARGET` |
+| `db:up` / `db:down`     | Compose lifecycle with `--env-file .env.local --wait`              |
+| `db:reset`              | `down -v` → `up` → `migrate`. Required by `testing-standards.md:47` (setup/seed/reset) |
+| `db:psql`               | psql into the container without remembering the non-default port   |
+| `db:seed`               | CSV import, 50–100 leads with 2–5 interactions each *(Feature 1)*  |
 | `test`                  | unit only — **no Docker required**                                 |
 | `test:integration`      | migrates `crm_test`, then integration project                      |
+
+**Environment pins (discovered at preflight, 2026-08-03):**
+
+- **Node 22** (`.nvmrc`, `engines: >=22.22.3`). Node 18 was installed and is a hard blocker:
+  `@nestjs/core@11` requires `>= 20`, `@angular/core` requires `^22.22.3 || ^24.15.0 || >=26.0.0`.
+  Node 22 is the only line satisfying both. Node 18 also went EOL April 2025.
+- **Host port 5433, not 5432.** A Homebrew `postgresql@14` owns 5432 on this machine with unrelated
+  work databases. Compose maps `5433:5432`; `DB_PORT=5433`. Do not stop the Homebrew instance.
 
 ---
 
@@ -90,13 +101,24 @@ Target from `day-1-build-requirements.md:224` — `git clone → npm install →
    `UpdateLeadRequest` type, not by spreading the fetched entity (which carries `id`, `createdAt`, `updatedAt`).
 10. **Proxy `"ws": true`.** Set now. Without it Day 3's WebSocket upgrade fails through the proxy with an
     unhelpful error.
+11. **Umzug's bookkeeping table name is derived, not fixed.** *(Found in practice, Task 0.)* Passing
+    `define: { underscored: true }` to the Sequelize instance in `migrate.ts` silently renamed
+    `SequelizeMeta` → `sequelize_meta`. Removing `define` later would make Umzug find no history and
+    **re-run every migration**. Now pinned: `new SequelizeStorage({ sequelize, tableName: 'sequelize_meta' })`.
+    Note `define` was doing nothing useful there anyway — QueryInterface never applies it (see Trap #5).
+
+> **Trap #6 confirmed in practice.** The first `/api/health/db` implementation read `version` from
+> `SHOW server_version`, whose actual column is `server_version`. The field came back `undefined` and
+> `JSON.stringify` dropped it from the response — no error anywhere. Fixed with an explicit
+> `SELECT current_setting('server_version') AS version`. This is the exact failure mode the trap predicts,
+> and it cost a round trip to notice. Alias every raw-query column.
 
 ---
 
 ## Repo gaps to fix
 
-- [ ] **`.env.local.template` does not exist** — `README.md:141` tells you to copy it. Author it.
-      (`.gitignore:36-39` already handles it: `.env.*` ignored, `!.env*.template` un-ignored.)
+- [x] **`.env.local.template`** — authored in Task 0. (`.gitignore:36-39` already handles it:
+      `.env.*` ignored, `!.env*.template` un-ignored.)
 - [ ] **`seed-leads.csv` does not exist** — `day-1-build-requirements.md:142` links it "in the project root".
       Note `.gitignore` ignores `/data/*.csv`, so decide whether the seed file is committed or generated.
 - [ ] **`.gitignore:7-16` is root-anchored** (`/dist/`, `/build/`, `/out/`, `/coverage`, `/test-results`) and will

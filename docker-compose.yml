@@ -1,0 +1,35 @@
+# Postgres only. The apps run natively on the host (Decision 2) so that HMR,
+# debugger attach and stack traces stay fast.
+#
+# Always invoke with an explicit env file:  docker compose --env-file .env.local ...
+# Compose auto-loads `.env`, NOT `.env.local`, and silently substitutes empty
+# strings when the file is missing. `npm run db:up` handles this for you.
+
+services:
+    postgres:
+        image: postgres:16-alpine
+        container_name: ai-academy-postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_NAME}
+            # Consumed by docker/initdb/01-create-test-db.sh
+            DB_TEST_NAME: ${DB_TEST_NAME}
+        ports:
+            # Host 5433 -> container 5432. Host port is 5433 because a local
+            # Homebrew postgres@14 already listens on 5432.
+            - '${DB_PORT}:5432'
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+            # Init scripts run ONLY on first initialisation of an empty volume.
+            # To re-run them: npm run db:reset
+            - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
+            interval: 2s
+            timeout: 3s
+            retries: 30
+
+volumes:
+    pgdata:

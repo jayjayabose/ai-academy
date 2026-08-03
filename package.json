@@ -1,0 +1,25 @@
+{
+    "name": "ai-academy",
+    "version": "0.1.0",
+    "private": true,
+    "description": "AI Orchestration Mastery - CRM built across a 5-day course",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "engines": {
+        "node": ">=22.22.3"
+    },
+    "scripts": {
+        "setup": "bash scripts/preflight.sh && npm run db:up && npm run db:migrate",
+        "dev": "npm run --workspace apps/api start:dev",
+        "db:up": "docker compose --env-file .env.local up -d --wait",
+        "db:down": "docker compose --env-file .env.local down",
+        "db:reset": "docker compose --env-file .env.local down -v && npm run db:up && npm run db:migrate",
+        "db:psql": "bash scripts/psql.sh",
+        "db:migrate": "npm run --workspace apps/api db:migrate",
+        "db:migrate:status": "npm run --workspace apps/api db:migrate:status",
+        "db:migrate:undo": "npm run --workspace apps/api db:migrate:undo",
+        "test": "npm run --workspace apps/api test"
+    }
+}
