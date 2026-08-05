@@ -12,7 +12,10 @@
     },
     "scripts": {
         "setup": "bash scripts/preflight.sh && npm run db:up && npm run db:migrate",
-        "dev": "npm run --workspace apps/api start:dev",
+        "dev": "concurrently --names api,web --prefix-colors cyan,magenta \"npm run dev:api\" \"npm run dev:web\"",
+        "dev:api": "npm run --workspace apps/api start:dev",
+        "dev:web": "npm run --workspace apps/web start",
+        "build": "npm run --workspace apps/api build && npm run --workspace apps/web build",
         "db:up": "docker compose --env-file .env.local up -d --wait",
         "db:down": "docker compose --env-file .env.local down",
         "db:reset": "docker compose --env-file .env.local down -v && npm run db:up && npm run db:migrate",
@@ -21,5 +24,8 @@
         "db:migrate:status": "npm run --workspace apps/api db:migrate:status",
         "db:migrate:undo": "npm run --workspace apps/api db:migrate:undo",
         "test": "npm run --workspace apps/api test"
+    },
+    "devDependencies": {
+        "concurrently": "^10.0.4"
     }
 }

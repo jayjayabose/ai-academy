@@ -189,6 +189,25 @@ Deferred, with triggers:
 That last pair is the whole justification for the `Exclude` half of the bridge, and it's now
 demonstrated rather than argued.
 
+### Decision 6 fully proven at track-enablement
+
+With `apps/web` scaffolded, the central D6 claim was tested directly: adding `'archived'` to
+`LeadStatus` in `packages/shared` — one line — produced compile errors in **both** apps:
+
+```
+apps/api  src/leads/lead-status.ts(23,49)     TS2344: Type '"archived"' does not satisfy 'never'
+apps/web  src/app/core/lead-status.ts(25,49)  TS2344: Type '"archived"' does not satisfy 'never'
+apps/web  src/app/core/lead-status.ts(38,14)  TS2741: Property 'archived' is missing in type ...
+```
+
+`apps/web` caught it twice — the bridge, and the `Readonly<Record<LeadStatus, string>>` label map.
+**A `Record` keyed on a union gives exhaustiveness for free**, with no `Assert`/`Exclude` machinery.
+Where a label map exists it is the better check; the explicit bridge is still needed for the *ordered
+runtime array* that `@IsIn` and dropdowns consume.
+
+This is the payoff for choosing workspaces at Decision 1. Until now only `apps/api` imported the
+contract, so "a contract change breaks both apps" was theory.
+
 ## Next
 
 1. Migration `001-create-leads-and-interactions` — revert and delete `000-smoke` first
