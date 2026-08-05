@@ -1,0 +1,7 @@
+{
+    "name": "@ai-academy/shared",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Wire contract shared by apps/api and apps/web. Types only — no runtime code, no build step.",
+    "types": "./src/index.d.ts"
+}
