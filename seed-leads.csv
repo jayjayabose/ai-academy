@@ -1,0 +1,101 @@
+firstName,lastName,email,phone,status,budget,location,propertyType,bedrooms,source,inquiryDate,notes
+Wei,Rossi,wei.rossi@example.com,(303) 555-0193,lost,480000,Littleton,condo,1,website,2026-06-05,Selling a current home and buying in the same window.
+Rosa,Santos,rosa.santos@example.net,(214) 555-0152,contacted,715000,Englewood,townhouse,4,cold-call,2026-04-27,"Investor looking for rental yield, not owner-occupied. Wants to stay under a 30-minute commute downtown."
+Malik,Kowalski,malik.kowalski@example.com,(312) 555-0167,lost,525000,Wheat Ridge,condo,3,cold-call,2026-04-11,Selling a current home and buying in the same window.
+Grace,Halvorsen,grace.halvorsen@example.net,(617) 555-0160,qualified,850000,Superior,single-family,4,open-house,2026-04-09,"Investor looking for rental yield, not owner-occupied. Needs a garage and a yard for two dogs."
+Lucas,Barnes,lucas.barnes@example.org,(719) 555-0129,active,465000,Centennial,condo,3,website,2026-03-04,"First-time buyer, pre-approved with a local credit union. Hard ceiling on budget, will not stretch."
+Malik,Halvorsen,malik.halvorsen@example.net,(970) 555-0113,contacted,695000,Broomfield,townhouse,4,website,2026-07-23,Downsizing now that the kids have moved out. School district is the deciding factor.
+Naomi,Rossi,naomi.rossi@example.org,(312) 555-0141,lost,720000,Cherry Creek,townhouse,3,zillow,2026-03-26,Moving closer to aging parents. Needs a garage and a yard for two dogs.
+Lucas,Cortez,lucas.cortez@example.org,(602) 555-0181,active,530000,Englewood,condo,3,website,2026-06-12,"Investor looking for rental yield, not owner-occupied. Prefers new construction, dislikes fixer-uppers."
+Anya,Kaur,anya.kaur@example.org,(303) 555-0158,qualified,1160000,Westminster,multi-family,6,cold-call,2026-04-08,"Downsizing now that the kids have moved out. Prefers new construction, dislikes fixer-uppers."
+Bianca,Raman,bianca.raman@example.org,(720) 555-0182,closed,600000,Westminster,single-family,2,zillow,2026-07-07,"Second home, plans to use it seasonally."
+Elena,Petrova,elena.petrova@example.com,(206) 555-0177,contacted,940000,Superior,single-family,5,referral,2026-03-05,Upsizing after a second child. Open to a renovation if the price is right.
+Rosa,Lindqvist,rosa.lindqvist@example.net,(617) 555-0177,contacted,425000,Highlands,condo,1,zillow,2026-04-15,Moving closer to aging parents. Has already lost out on two bids.
+Grace,Tanaka,grace.tanaka@example.org,(720) 555-0133,active,460000,Superior,condo,1,referral,2026-07-16,"First-time buyer, pre-approved with a local credit union. Needs a dedicated home office."
+Yuki,Petrova,yuki.petrova@example.org,(773) 555-0132,qualified,480000,Westminster,condo,1,open-house,2026-05-07,Upsizing after a second child. Needs a garage and a yard for two dogs.
+Hana,Castellanos,hana.castellanos@example.org,(512) 555-0159,closed,560000,Cherry Creek,townhouse,3,open-house,2026-01-17,"Currently renting, lease ends soon."
+Isaac,Doyle,isaac.doyle@example.net,(970) 555-0196,active,660000,Broomfield,townhouse,2,website,2026-06-19,"First-time buyer, pre-approved with a local credit union. Hard ceiling on budget, will not stretch."
+Anya,Fitzgerald,anya.fitzgerald@example.org,(303) 555-0155,contacted,765000,Littleton,single-family,3,website,2026-04-04,"Investor looking for rental yield, not owner-occupied. Needs a garage and a yard for two dogs."
+Kwame,Halloran,kwame.halloran@example.com,(773) 555-0173,active,640000,Golden,townhouse,3,walk-in,2026-05-10,Moving closer to aging parents. Needs a dedicated home office.
+Anya,Brennan,anya.brennan@example.org,(303) 555-0157,active,1080000,Boulder,multi-family,6,cold-call,2026-05-08,"First-time buyer, pre-approved with a local credit union. Prefers new construction, dislikes fixer-uppers."
+Anya,Petrova,anya.petrova@example.com,(512) 555-0156,lost,720000,Littleton,single-family,2,website,2026-04-29,"Cash buyer, no financing contingency. Hard ceiling on budget, will not stretch."
+Jonah,Nguyen,jonah.nguyen@example.net,(617) 555-0185,qualified,505000,Louisville,condo,3,website,2026-07-03,"Currently renting, lease ends soon. Open to a renovation if the price is right."
+Wei,Kaur,wei.kaur@example.com,(773) 555-0159,contacted,220000,Boulder,land,,website,2026-06-19,"Relocating for work, starting in the spring. Only interested in single-story layouts."
+Ingrid,Mercer,ingrid.mercer@example.net,(970) 555-0117,qualified,475000,Sloan Lake,townhouse,2,website,2026-03-31,Upsizing after a second child. Open to a renovation if the price is right.
+Lucas,Sinclair,lucas.sinclair@example.org,(970) 555-0173,qualified,700000,Berkeley,single-family,2,zillow,2026-05-17,Upsizing after a second child. Needs a garage and a yard for two dogs.
+Isaac,Rossi,isaac.rossi@example.net,(773) 555-0182,active,220000,Arvada,land,,website,2026-03-20,"Relocating for work, starting in the spring."
+Grace,Rossi,grace.rossi@example.com,(303) 555-0100,qualified,240000,Aurora,land,,referral,2026-03-27,"Currently renting, lease ends soon. HOA fees are a sticking point."
+Malik,Halvorsen,malik.halvorsen26@example.org,(214) 555-0197,closed,850000,Wheat Ridge,single-family,5,zillow,2026-03-12,"Cash buyer, no financing contingency. School district is the deciding factor."
+Elena,Barnes,elena.barnes@example.com,(214) 555-0150,closed,890000,Aurora,single-family,5,open-house,2026-05-29,"Cash buyer, no financing contingency. HOA fees are a sticking point."
+Marcus,Osei,marcus.osei@example.net,(312) 555-0119,active,605000,Boulder,townhouse,2,open-house,2026-07-27,"Relocating for work, starting in the spring."
+Bianca,Moreau,bianca.moreau@example.net,(415) 555-0138,qualified,370000,Superior,land,,open-house,2026-07-14,Selling a current home and buying in the same window.
+Leila,Abara,leila.abara@example.com,(719) 555-0179,active,625000,Wheat Ridge,condo,3,open-house,2026-07-11,"Currently renting, lease ends soon."
+Freya,Reyes,freya.reyes@example.net,(773) 555-0184,qualified,700000,Broomfield,single-family,3,zillow,2026-05-12,"Relocating for work, starting in the spring."
+Desmond,Delgado,desmond.delgado@example.net,(512) 555-0159,active,760000,Boulder,single-family,5,open-house,2026-07-21,"Currently renting, lease ends soon. School district is the deciding factor."
+Rosa,Villareal,rosa.villareal@example.org,(602) 555-0145,qualified,825000,Golden,single-family,5,open-house,2026-04-30,"Downsizing now that the kids have moved out. Timeline is flexible, waiting for the right property."
+Naomi,Okafor,naomi.okafor@example.net,(617) 555-0128,active,985000,Golden,multi-family,3,website,2026-07-10,"Currently renting, lease ends soon."
+Aisha,Novak,aisha.novak@example.net,(512) 555-0189,qualified,620000,Superior,single-family,2,zillow,2026-04-21,Moving closer to aging parents.
+Rosa,Sinclair,rosa.sinclair@example.com,(512) 555-0156,qualified,640000,Superior,single-family,2,open-house,2026-07-22,Selling a current home and buying in the same window. School district is the deciding factor.
+Ingrid,Barnes,ingrid.barnes@example.org,(214) 555-0186,active,1045000,Arvada,multi-family,4,referral,2026-04-30,Selling a current home and buying in the same window. Only interested in single-story layouts.
+Simone,Chastain,simone.chastain@example.org,(512) 555-0182,contacted,930000,Berkeley,single-family,5,walk-in,2026-03-06,"Second home, plans to use it seasonally."
+Rosa,Lindgren,rosa.lindgren@example.org,(773) 555-0168,lost,625000,Superior,condo,3,website,2026-07-08,"Currently renting, lease ends soon. Wants to stay under a 30-minute commute downtown."
+Maya,Reyes,maya.reyes@example.org,(415) 555-0147,active,750000,Sloan Lake,single-family,4,referral,2026-05-29,"Cash buyer, no financing contingency. Wants to stay under a 30-minute commute downtown."
+Aisha,Sinclair,aisha.sinclair@example.org,(312) 555-0192,active,880000,Englewood,single-family,4,website,2026-07-02,"Selling a current home and buying in the same window. Timeline is flexible, waiting for the right property."
+Freya,Nguyen,freya.nguyen@example.com,(719) 555-0194,contacted,485000,Centennial,condo,2,referral,2026-07-14,"Currently renting, lease ends soon. Needs a dedicated home office."
+Desmond,Brennan,desmond.brennan@example.com,(602) 555-0160,lost,510000,Aurora,condo,2,social-media,2025-12-15,Upsizing after a second child.
+Elena,Fitzgerald,elena.fitzgerald@example.org,(602) 555-0174,contacted,640000,Golden,townhouse,2,referral,2026-07-05,Upsizing after a second child.
+Leila,Espinoza,leila.espinoza@example.com,(512) 555-0177,active,405000,Englewood,condo,1,website,2026-05-21,"Currently renting, lease ends soon."
+Grace,Abara,grace.abara@example.com,(602) 555-0171,contacted,615000,Wheat Ridge,condo,3,website,2026-06-08,"Currently renting, lease ends soon."
+Freya,Villareal,freya.villareal@example.org,(415) 555-0190,qualified,510000,Englewood,condo,1,walk-in,2026-04-10,Moving closer to aging parents. Needs a dedicated home office.
+Marcus,Vogel,marcus.vogel@example.net,(617) 555-0103,active,780000,Golden,single-family,4,referral,2026-06-01,"Investor looking for rental yield, not owner-occupied. Needs a garage and a yard for two dogs."
+Tobias,Raman,tobias.raman@example.com,(214) 555-0177,closed,290000,Englewood,land,,website,2025-11-25,"Currently renting, lease ends soon."
+Hana,Chastain,hana.chastain@example.com,(719) 555-0192,contacted,570000,Capitol Hill,condo,2,zillow,2026-07-18,"Second home, plans to use it seasonally."
+Desmond,Doyle,desmond.doyle@example.com,(214) 555-0152,contacted,655000,Capitol Hill,townhouse,4,referral,2026-05-21,"First-time buyer, pre-approved with a local credit union."
+Dmitri,Halvorsen,dmitri.halvorsen@example.org,(970) 555-0199,contacted,770000,Englewood,single-family,3,referral,2026-03-26,"Selling a current home and buying in the same window. Hard ceiling on budget, will not stretch."
+Julian,Castellanos,julian.castellanos@example.org,(415) 555-0167,active,295000,Louisville,land,,open-house,2026-06-26,"Investor looking for rental yield, not owner-occupied."
+Leila,Abara,leila.abara54@example.org,(214) 555-0139,active,915000,Boulder,single-family,5,referral,2026-07-02,Selling a current home and buying in the same window.
+Lucas,Mwangi,lucas.mwangi@example.org,(617) 555-0150,closed,430000,Cherry Creek,condo,1,website,2026-03-26,Selling a current home and buying in the same window. School district is the deciding factor.
+Noor,Lindqvist,noor.lindqvist@example.com,(512) 555-0139,active,530000,Centennial,townhouse,2,zillow,2026-03-11,"Second home, plans to use it seasonally."
+Ingrid,Brennan,ingrid.brennan@example.org,(415) 555-0154,contacted,355000,Capitol Hill,land,,website,2026-04-14,"Second home, plans to use it seasonally. Prefers new construction, dislikes fixer-uppers."
+Clara,Abara,clara.abara@example.org,(303) 555-0170,qualified,695000,Boulder,single-family,3,walk-in,2026-05-08,"First-time buyer, pre-approved with a local credit union. Has already lost out on two bids."
+Felix,Barnes,felix.barnes@example.net,(206) 555-0107,active,720000,Capitol Hill,townhouse,4,zillow,2026-05-18,Upsizing after a second child.
+Yuki,Bergman,yuki.bergman@example.org,(415) 555-0131,qualified,1130000,Washington Park,multi-family,4,website,2026-03-14,"Relocating for work, starting in the spring."
+Jonah,Kaur,jonah.kaur@example.com,(512) 555-0130,qualified,915000,Washington Park,multi-family,3,website,2026-05-02,Moving closer to aging parents.
+Desmond,Nakamura,desmond.nakamura@example.org,(720) 555-0177,contacted,580000,Broomfield,single-family,2,website,2026-06-29,"Investor looking for rental yield, not owner-occupied. Wants to stay under a 30-minute commute downtown."
+Theo,Haddad,theo.haddad@example.com,(312) 555-0141,qualified,535000,Littleton,townhouse,3,website,2026-05-07,"Relocating for work, starting in the spring. Needs a garage and a yard for two dogs."
+Sofia,Haddad,sofia.haddad@example.net,(303) 555-0117,active,1020000,Englewood,multi-family,4,website,2026-04-05,"Investor looking for rental yield, not owner-occupied."
+Lucas,Osei,lucas.osei@example.org,(415) 555-0167,qualified,405000,Highlands,condo,1,website,2026-03-25,"Second home, plans to use it seasonally."
+Aisha,Fitzgerald,aisha.fitzgerald@example.net,(970) 555-0196,contacted,700000,Berkeley,single-family,2,cold-call,2026-07-20,"Relocating for work, starting in the spring. Needs a dedicated home office."
+Maya,Barnes,maya.barnes@example.net,(206) 555-0100,qualified,590000,Littleton,townhouse,2,zillow,2026-03-04,"Currently renting, lease ends soon. Wants a walkable neighborhood."
+Rosa,Kaur,rosa.kaur@example.org,(970) 555-0188,contacted,595000,Sloan Lake,condo,3,zillow,2026-03-29,"Cash buyer, no financing contingency. Open to a renovation if the price is right."
+Rosa,Lindqvist,rosa.lindqvist69@example.org,(719) 555-0137,closed,470000,Broomfield,condo,3,social-media,2026-03-28,Selling a current home and buying in the same window.
+Anya,Haddad,anya.haddad@example.com,(206) 555-0101,contacted,760000,Berkeley,single-family,3,zillow,2026-07-29,"Investor looking for rental yield, not owner-occupied. Hard ceiling on budget, will not stretch."
+Daniel,Lindgren,daniel.lindgren@example.net,(617) 555-0188,closed,610000,Englewood,single-family,2,open-house,2025-12-07,"Upsizing after a second child. Timeline is flexible, waiting for the right property."
+Kwame,Tanaka,kwame.tanaka@example.org,(303) 555-0139,lost,790000,Englewood,single-family,5,walk-in,2026-05-11,"Investor looking for rental yield, not owner-occupied."
+Kwame,Vogel,kwame.vogel@example.org,(602) 555-0198,lost,470000,Golden,condo,3,open-house,2026-05-23,"Upsizing after a second child. Timeline is flexible, waiting for the right property."
+Theo,Rossi,theo.rossi@example.com,(303) 555-0140,closed,740000,Golden,single-family,4,website,2026-03-03,Upsizing after a second child.
+Leila,Cortez,leila.cortez@example.net,(720) 555-0125,contacted,860000,Highlands,single-family,4,open-house,2026-04-24,"Moving closer to aging parents. Hard ceiling on budget, will not stretch."
+Wei,Rossi,wei.rossi76@example.org,(720) 555-0153,lost,355000,Broomfield,condo,1,referral,2026-03-02,Upsizing after a second child. Has already lost out on two bids.
+Rafael,Bergman,rafael.bergman@example.com,(206) 555-0117,active,700000,Broomfield,single-family,3,referral,2026-07-11,Upsizing after a second child.
+Grace,Raman,grace.raman@example.com,(720) 555-0119,qualified,850000,Englewood,single-family,5,cold-call,2026-03-16,Selling a current home and buying in the same window. Open to a renovation if the price is right.
+Hana,Mwangi,hana.mwangi@example.com,(617) 555-0181,qualified,675000,Westminster,single-family,2,walk-in,2026-06-16,"Second home, plans to use it seasonally. Has already lost out on two bids."
+Bianca,Ferreira,bianca.ferreira@example.net,(720) 555-0168,active,715000,Centennial,single-family,2,zillow,2026-05-12,"Moving closer to aging parents. Prefers new construction, dislikes fixer-uppers."
+Anya,Boateng,anya.boateng@example.org,(617) 555-0199,closed,375000,Berkeley,condo,1,website,2026-03-15,"Investor looking for rental yield, not owner-occupied. Only interested in single-story layouts."
+Kwame,Haddad,kwame.haddad@example.org,(970) 555-0124,active,455000,Berkeley,condo,3,open-house,2026-04-07,Upsizing after a second child. School district is the deciding factor.
+Lucas,Lindqvist,lucas.lindqvist@example.com,(312) 555-0197,active,780000,Cherry Creek,single-family,4,website,2026-07-18,"Downsizing now that the kids have moved out. Hard ceiling on budget, will not stretch."
+Simone,Brennan,simone.brennan@example.net,(719) 555-0166,qualified,570000,Arvada,condo,3,cold-call,2026-07-22,"Currently renting, lease ends soon. Needs a garage and a yard for two dogs."
+Desmond,Chastain,desmond.chastain@example.com,(773) 555-0195,closed,445000,Boulder,condo,2,referral,2026-02-07,"Second home, plans to use it seasonally. Wants to stay under a 30-minute commute downtown."
+Wei,Whitfield,wei.whitfield@example.org,(214) 555-0122,contacted,805000,Boulder,single-family,3,website,2026-06-19,"Investor looking for rental yield, not owner-occupied. Has already lost out on two bids."
+Aisha,Ferreira,aisha.ferreira@example.com,(214) 555-0114,active,645000,Westminster,townhouse,2,referral,2026-05-19,Moving closer to aging parents.
+Marcus,Kowalski,marcus.kowalski@example.net,(617) 555-0191,contacted,305000,Louisville,land,,zillow,2026-04-18,"Currently renting, lease ends soon."
+Ethan,Ibrahim,ethan.ibrahim@example.net,(719) 555-0157,qualified,635000,Capitol Hill,townhouse,4,referral,2026-06-01,Selling a current home and buying in the same window. School district is the deciding factor.
+Freya,Rossi,freya.rossi@example.com,(303) 555-0194,qualified,820000,Westminster,single-family,3,referral,2026-06-12,"Second home, plans to use it seasonally. HOA fees are a sticking point."
+Ingrid,Bergman,ingrid.bergman@example.org,(617) 555-0175,contacted,880000,Englewood,single-family,5,zillow,2026-06-18,"Investor looking for rental yield, not owner-occupied. Needs a garage and a yard for two dogs."
+Theo,Delgado,theo.delgado@example.org,(415) 555-0160,qualified,765000,Washington Park,single-family,5,referral,2026-03-14,Moving closer to aging parents. Open to a renovation if the price is right.
+Camille,Nakamura,camille.nakamura@example.net,(312) 555-0129,contacted,525000,Superior,condo,2,referral,2026-05-31,"Moving closer to aging parents. Prefers new construction, dislikes fixer-uppers."
+Simone,Okafor,simone.okafor@example.net,(512) 555-0162,lost,470000,Louisville,condo,1,zillow,2026-05-31,Downsizing now that the kids have moved out. School district is the deciding factor.
+Grace,Barnes,grace.barnes@example.org,(719) 555-0103,lost,625000,Cherry Creek,condo,3,social-media,2026-02-17,"Currently renting, lease ends soon. Prefers new construction, dislikes fixer-uppers."
+Omar,Moreau,omar.moreau@example.net,(303) 555-0124,contacted,550000,Englewood,condo,2,referral,2026-07-22,"Cash buyer, no financing contingency. Wants a walkable neighborhood."
+Kwame,Halloran,kwame.halloran97@example.org,(214) 555-0180,contacted,815000,Littleton,single-family,4,website,2026-04-12,"Downsizing now that the kids have moved out. Hard ceiling on budget, will not stretch."
+Theo,Novak,theo.novak@example.com,(415) 555-0101,lost,610000,RiNo,townhouse,3,walk-in,2026-02-26,Moving closer to aging parents.
+Omar,Rossi,omar.rossi@example.org,(415) 555-0102,contacted,510000,Louisville,condo,3,referral,2026-04-25,"Investor looking for rental yield, not owner-occupied. Needs a dedicated home office."

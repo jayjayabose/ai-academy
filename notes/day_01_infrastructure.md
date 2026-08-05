@@ -23,6 +23,7 @@ Stack is mandated, not chosen: npm, NestJS, Sequelize, `@nestjs/platform-express
 | 9   | Jest layout                  | `apps/api/jest.config.ts` with `unit` + `integration` projects; unit is default               | The fast gate must not require Docker                                                                         |
 | 10  | Module structure             | Feature modules (`src/leads/`, `src/interactions/`) + `src/database/`, `src/config/`          | Non-overlapping file trees for parallel agents (Day 1 `:64`, Day 3 worktrees); layered folders collide         |
 | 11  | Wire contract                | Plain resources (no envelope); `ValidationPipe({ whitelist, transform, forbidNonWhitelisted })` | Least code, matches agent defaults; shared types make deferred pagination a compile error, not a silent break |
+| 12  | Closed value sets            | `VARCHAR` + **named** `CHECK` constraint. Never native Postgres enum.                          | `db:undo` reversibility — Postgres has no `ALTER TYPE ... DROP VALUE`; undoing an enum addition takes 4 statements and fights Umzug's per-migration transaction. CHECK reverses in 2. Name it explicitly so `down` has a stable identifier to drop |
 
 ### Deliberate deviations from course material
 
@@ -32,6 +33,45 @@ Stack is mandated, not chosen: npm, NestJS, Sequelize, `@nestjs/platform-express
   ("verify migrations applied to ALL databases"). Deviation is contained inside `setupTestDatabase()`.
 - **`chapters/02-two-tier-testing.md:618,622`** uses layered paths (`src/services/`, `src/models/`).
   Rejected in favour of feature modules — see Decision 10. Cosmetic; affects spec file location only.
+- **`.claude/orchestration/methodology/database-migration-strategy.md` mandates a two-track pattern**
+  (`:15`) — a destructive `src/db/schema.sql` with `DROP TABLE`, plus additive `scripts/migrations/*.sql`
+  applied by hand. **Declined; we stay single-track on Umzug.** Its root cause (`:11` — "no distinction
+  between initial schema setup vs incremental migrations") is the absence of a migration framework;
+  Umzug supplies exactly that, with an applied-migrations ledger in `sequelize_meta`. Adopting both
+  would require maintaining `schema.sql` *and* a migration for every change (`:137-138`) — two
+  representations of one schema, guaranteed to drift. **We already satisfy the document's stated goal:**
+  `:189` wants `db:migrate` safe by default and destruction behind `db:reset`, which is our contract
+  exactly. Adopted *from* it: the `XXX-description` migration naming (`:99`) and the header-comment
+  template (`:245`).
+
+### Value-set representation (Decision 12 detail)
+
+The runtime/compile-time seam, because D6 forbids runtime values in `packages/shared` while
+`class-validator`'s `@IsIn()` and the Angular dropdown both require a runtime array:
+
+```ts
+// apps/api/src/leads/lead-status.ts — and a second copy in apps/web
+import type { LeadStatus } from '@crm/shared';
+
+export const LEAD_STATUSES = ['active','contacted','qualified','closed','lost'] as const
+  satisfies readonly LeadStatus[];                 // no extras
+
+type Assert<T extends never> = T;
+type _Exhaustive = Assert<Exclude<LeadStatus, (typeof LEAD_STATUSES)[number]>>;   // no omissions
+```
+
+**`satisfies` alone is not enough** — a *subset* passes it silently. The `Exclude` assertion catches
+omissions in the other direction. Both halves are required. Two copies (api + web) because `apps/web`
+cannot import from `apps/api`; this is the concrete price of D6 staying types-only.
+
+Nothing links either array to the hand-written migration SQL — that seam is irreducible, and is closed
+by an integration test instead (see follow-ups).
+
+| Field | Values | Constrained? | Source |
+| --- | --- | --- | --- |
+| `Lead.status` | `active` `contacted` `qualified` `closed` `lost` | CHECK | `:147` "active, contacted, closed, etc." |
+| `Interaction.type` | `call` `email` `meeting` `note` | CHECK | `day-4-mobile-app.md:212` — "**Select** interaction type (call, email, meeting, note)" |
+| `Lead.source` | referral, website, zillow, open-house, social-media, cold-call, walk-in | **No** — plain `VARCHAR` | Day 2 field, no Day 1 consumer, likeliest to churn |
 
 ---
 
@@ -117,15 +157,26 @@ Target from `day-1-build-requirements.md:224` — `git clone → npm install →
 
 ## Repo gaps to fix
 
-- [x] **`.env.local.template`** — authored in Task 0. (`.gitignore:36-39` already handles it:
-      `.env.*` ignored, `!.env*.template` un-ignored.)
-- [ ] **`seed-leads.csv` does not exist** — `day-1-build-requirements.md:142` links it "in the project root".
-      Note `.gitignore` ignores `/data/*.csv`, so decide whether the seed file is committed or generated.
-- [ ] **`.gitignore:7-16` is root-anchored** (`/dist/`, `/build/`, `/out/`, `/coverage`, `/test-results`) and will
-      not ignore `apps/api/dist`. Change to `**/` globs to match `.dockerignore`, which already uses them.
+- [x] **`.env.local.template`** — authored in Task 0. (`.gitignore:29-32` already handles it:
+      `.env.*` ignored, `!.env*.template` un-ignored. Was miscited as `:36-39`.)
+- [x] **`seed-leads.csv`** — generated and committed at the **repo root**, not `data/`. `.gitignore:53` ignores
+      `/data/*.csv`, so a seed file under `data/` would not be committed and a fresh clone would seed nothing.
+      Root also matches `day-1-build-requirements.md:142` ("in the project root"). **This supersedes the
+      `data/seed-leads.csv` entry in the Target layout above.** Regenerate with
+      `node scripts/generate-seed-leads.mjs [count] [outfile]` — deterministic, so re-running never churns the diff.
+- [x] **`.gitignore` root-anchored globs** — fixed. `/dist/`, `/build/`, `/out/`, `/coverage`, `/.jest-cache`,
+      `/test-results` are now `**/`-prefixed, matching `.dockerignore`. Verified: `apps/api/dist/main.js`,
+      `apps/web/dist` and `packages/shared/dist` all match `.gitignore:13`.
 - [ ] **`.claude/orchestration/playbook/nestjs-patterns.md` is a stub** — every code block is a `[Content: ...]`
       placeholder. Fill it with the conventions above so agents read our structure instead of inferring one
-      from chapter 02's layered example paths.
+      from chapter 02's layered example paths. Specifically it must carry: the feature-module layout (D10),
+      the single-track Umzug convention (so agents don't generate `schema.sql` from the MANDATORY doc),
+      and the `satisfies` + `Exclude` exhaustiveness bridge under "DTO & Validation Patterns".
+- [ ] **Add the SQLSTATE `23514` integration test to the Day 1 test plan.** Runs against `crm_test`
+      (schema built by migrations, per D8): iterate `LEAD_STATUSES` — every value must insert; then one
+      bogus value must fail with `check_violation`. This is the only thing linking the TypeScript union
+      to the migration's SQL, and it fails loudly on a fresh clone if someone adds a union member without
+      a migration — the same failure mode that motivated rejecting `synchronize: true`.
 
 ## Deferred — with triggers
 
@@ -133,6 +184,9 @@ Target from `day-1-build-requirements.md:224` — `git clone → npm install →
 - **Response envelope / pagination** — revisit if the Day 2 score-sorted dashboard needs it. Shared types make
   this a compile error, not a silent break.
 - **Frontend Jest** — not required Day 1 (`:92-96` scopes Jest to backend services and utilities).
+- **Lookup table + FK for `status`** — instead of a CHECK constraint. Trigger: when statuses become
+  user-configurable, or need metadata (display label, sort order, badge colour). **Not yet fired** —
+  Day 2's colour-coded badges key on `activityScore`, not `status` (`day-1-build-requirements.md:47`).
 
 ## Conventions already settled by the playbook (adopted, not debated)
 
