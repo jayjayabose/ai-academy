@@ -125,6 +125,10 @@ Target from `day-1-build-requirements.md:224` — `git clone → npm install →
    otherwise it resolves locally and breaks in Docker.
 2. **TypeScript version tug-of-war.** Angular hard-errors outside its supported TS range; Nest is permissive.
    Pin `typescript` in both workspace manifests and treat the pin as load-bearing. Same for `rxjs`, `zone.js`.
+   **CONFIRMED at track-enablement:** Angular 22 requires `typescript ~6.0.2`; `apps/api` is on `^5.7.3`.
+   npm hoisted **5.9.3** to the root (satisfying the API) and **nested 6.0.3** under `apps/web`. Both apps
+   build. This only works because each manifest declares its own pin — a single root-level `typescript`
+   would have broken one of them. Do not "tidy up" the duplication.
 3. **Compose ignores `.env.local`.** It auto-loads `.env` only. `npm run setup` must pass `--env-file .env.local`
    or Postgres silently starts with empty credentials.
 4. **`envFilePath` and cwd.** `npm run -w apps/api` sets cwd to `apps/api`; resolve the env path from the
@@ -183,7 +187,10 @@ Target from `day-1-build-requirements.md:224` — `git clone → npm install →
 - **OpenAPI/Swagger type generation** — revisit Day 2+ once the contract stabilises. Composes fine with Decision 6.
 - **Response envelope / pagination** — revisit if the Day 2 score-sorted dashboard needs it. Shared types make
   this a compile error, not a silent break.
-- **Frontend Jest** — not required Day 1 (`:92-96` scopes Jest to backend services and utilities).
+- **Frontend testing** — not required Day 1 (`:92-96` scopes Jest to backend services and utilities).
+  Note when it lands: **Angular 22 ships Vitest, not Karma/Jasmine** (`@angular/build:unit-test`,
+  `vitest ^4`, `jsdom`). So the stack is Jest on the backend and Vitest on the frontend — deliberately
+  not unified, since forcing Jest onto Angular 22 means fighting its default builder.
 - **Lookup table + FK for `status`** — instead of a CHECK constraint. Trigger: when statuses become
   user-configurable, or need metadata (display label, sort order, badge colour). **Not yet fired** —
   Day 2's colour-coded badges key on `activityScore`, not `status` (`day-1-build-requirements.md:47`).

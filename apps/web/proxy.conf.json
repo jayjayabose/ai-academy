@@ -1,0 +1,10 @@
+{
+    "//": "Decision 7: same-origin in dev. The frontend uses relative /api URLs, so no CORS config exists anywhere and no API base URL needs to vary by environment.",
+    "/api": {
+        "target": "http://localhost:3000",
+        "secure": false,
+        "changeOrigin": false,
+        "//ws": "Set now, before it is needed. Day 3 adds WebSocket notifications; without this the upgrade fails through the proxy with an unhelpful error (Trap #10).",
+        "ws": true
+    }
+}
