@@ -24,3 +24,5 @@ I sort of cheated in a sense. I asked claude about how to approach the work: "wh
 Because I had setup my project with shared types, I took an approach of designing FE screens, figuring out what that means for data model, API end pointa and data types. Then tried to do front and back ends in parallel.  I skipped dual track database migrations because we had setup so as to avoid the problem that it solved.
 
 I am havign a lot of detailed discussions where my understanding is 75%.
+
+I have asked some questions that revised it's approach: e.g. "from a REST standpoint are interactions as trud subresource"; "is it conventional for db:seed to be destructive?"

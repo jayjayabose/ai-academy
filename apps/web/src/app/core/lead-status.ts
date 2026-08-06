@@ -1,4 +1,4 @@
-import type { LeadStatus, PropertyType } from '@ai-academy/shared';
+import type { InteractionType, LeadStatus, PropertyType } from '@ai-academy/shared';
 
 /**
  * Runtime mirrors of the shared union types — the frontend copy.
@@ -49,4 +49,21 @@ export const PROPERTY_TYPE_LABELS: Readonly<Record<PropertyType, string>> = {
     townhouse: 'Townhouse',
     'multi-family': 'Multi-family',
     land: 'Land',
+};
+
+/**
+ * `InteractionType` needs the same runtime mirror as the other two closed value
+ * sets — the "log interaction" dropdown consumes it. Added here rather than in a
+ * new file so there remains exactly one home for runtime value sets in apps/web.
+ * (The file name predates this; it is the value-set module, not a status module.)
+ */
+export const INTERACTION_TYPES = ['call', 'email', 'meeting', 'note'] as const satisfies readonly InteractionType[];
+
+export type _InteractionTypeExhaustive = AssertEmpty<Exclude<InteractionType, (typeof INTERACTION_TYPES)[number]>>;
+
+export const INTERACTION_TYPE_LABELS: Readonly<Record<InteractionType, string>> = {
+    call: 'Call',
+    email: 'Email',
+    meeting: 'Meeting',
+    note: 'Note',
 };

@@ -1,1 +1,243 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global tokens and element defaults. Plain SCSS — no UI framework. */
+
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --border: #dfe3e8;
+  --border-strong: #c4cad2;
+  --text: #16202b;
+  --text-muted: #5f6c7b;
+  --accent: #1f5fd8;
+  --accent-hover: #17499f;
+  --danger: #b4231f;
+  --danger-hover: #8e1b18;
+  --radius: 6px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--accent);
+}
+
+/* --- Shared building blocks ---------------------------------------------- */
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: #eef1f5;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.button--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.button--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.button--danger:hover:not(:disabled) {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+.button--link {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+  padding-inline: 0.25rem;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.status {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status--active {
+  background: #e8f1ff;
+  border-color: #b4cffb;
+  color: #17499f;
+}
+.status--contacted {
+  background: #fff5e0;
+  border-color: #f2d79a;
+  color: #7a5300;
+}
+.status--qualified {
+  background: #e6f6ec;
+  border-color: #a9dcbc;
+  color: #1c6b3a;
+}
+.status--closed {
+  background: #ecebff;
+  border-color: #c3c0f0;
+  color: #443a9e;
+}
+.status--lost {
+  background: #fdeceb;
+  border-color: #f2bdba;
+  color: #8e1b18;
+}
+
+/* Error surface. `ApiError.message` may be an array (one line per field), so
+   this is always rendered as a list. */
+.errors {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem 0.75rem 2rem;
+  border: 1px solid #f2bdba;
+  border-radius: var(--radius);
+  background: #fdeceb;
+  color: #7d1a17;
+}
+
+.errors li + li {
+  margin-top: 0.25rem;
+}
+
+.loading {
+  padding: 2rem 0;
+  color: var(--text-muted);
+}
+
+/* --- Forms ---------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.field label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field input,
+.field select,
+.field textarea {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: inherit;
+  color: var(--text);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.field textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.field input:disabled {
+  background: #f1f3f6;
+  color: var(--text-muted);
+}
+
+.field .hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.field .error {
+  font-size: 0.75rem;
+  color: var(--danger);
+}
+
+.field--invalid input,
+.field--invalid select,
+.field--invalid textarea {
+  border-color: var(--danger);
+}
+
+.required-marker {
+  color: var(--danger);
+}

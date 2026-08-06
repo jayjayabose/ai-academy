@@ -105,6 +105,20 @@ strings · dates are `YYYY-MM-DD` strings · **never `Date`** · camelCase throu
 Types: `LeadStatus` `PropertyType` `InteractionType` · `Lead` `Interaction` `LeadDetail` ·
 `CreateLeadRequest` `UpdateLeadRequest` `CreateInteractionRequest` · `ApiError`.
 
+**There are three closed value sets, each mirrored twice** — the shared package is types-only, so every
+union needs a runtime array per app:
+
+| Union | `apps/api` | `apps/web` |
+| --- | --- | --- |
+| `LeadStatus` | `src/leads/lead-status.ts` | `src/app/core/lead-status.ts` |
+| `PropertyType` | `src/leads/lead-status.ts` | `src/app/core/lead-status.ts` |
+| `InteractionType` | `src/interactions/interaction-type.ts` | `src/app/core/lead-status.ts` |
+
+Six declarations for three unions. Every one carries the `satisfies` + `Exclude` bridge, so adding a
+member to any union breaks the build in both apps until all copies are updated — which is the point.
+Where a `Readonly<Record<Union, string>>` label map exists, it gives exhaustiveness for free and is the
+better check; the explicit array is still needed for ordering and for `@IsIn`.
+
 ### Required on create
 
 Only **`firstName`, `lastName`, `email`** — identity plus one reliable contact key. Everything else is
@@ -124,8 +138,21 @@ covers the **CSV importer**, which bypasses DTOs entirely — a DTO default woul
 ### PATCH semantics
 
 `UpdateLeadRequest = Partial<CreateLeadRequest>`, so `{ budget: null }` clears and `{}` leaves alone.
-**That distinction survives only if every optional DTO property carries `@IsOptional()`**, which permits
-`null` and `undefined`. Omit it and clearing a field silently becomes impossible.
+
+**The optional-property rule has two cases, not one.** An earlier draft said "every optional DTO
+property carries `@IsOptional()`". That is wrong and opens a hole: `@IsOptional()` ignores all other
+validators when the value is `null` **or** `undefined`, but `status` and `inquiryDate` are typed
+`?: T` with no `| null` and back `NOT NULL` columns. So `PATCH {"status": null}` would pass validation,
+reach the database, and produce a 500 or a raw `23502` instead of a clean 400. TypeScript stops the
+Angular client; nothing stops curl.
+
+| Field kind | Decorator | Meaning |
+| --- | --- | --- |
+| Optional **and nullable** — `phone`, `budget`, `location`, `propertyType`, `bedrooms`, `source`, `notes` | `@IsOptional()` | absent = unchanged; `null` = clear it |
+| Optional but **NOT NULL** — `status`, `inquiryDate` | `@ValidateIf((_, v) => v !== undefined)` | absent = use the default; explicit `null` = **400** |
+
+Same split applies to `CreateInteractionRequest.occurredAt` (NOT NULL, defaulted) versus
+`notes` (nullable).
 
 ### Validation rules
 
@@ -141,11 +168,28 @@ Trap #9 400s.
 | `budget` | integer, 0 – 100,000,000 (ceiling catches typos well below `INTEGER`'s 2.1B limit) |
 | `location` | ≤100, nullable |
 | `propertyType` | `@IsIn(PROPERTY_TYPES)`, nullable |
-| `bedrooms` | integer, 0–20, nullable |
+| `bedrooms` | integer, 0–20, nullable. **No `land` cross-check** — see below |
 | `source` | ≤30, nullable |
-| `inquiryDate` | `YYYY-MM-DD` |
-| `notes` | ≤2000 |
-| `occurredAt` | ISO 8601 datetime |
+| `inquiryDate` | `YYYY-MM-DD`. Optional on create; **the client sends the user's local today** |
+| `Lead.notes` | ≤2000 |
+| `Interaction.occurredAt` | ISO 8601 datetime. Optional — `now()` default |
+| `Interaction.notes` | ≤2000, nullable — same ceiling as `Lead.notes` |
+
+**`land` + `bedrooms` is not enforced anywhere.** The data-model table says bedrooms is NULL for land,
+and the seed data honours it, but that is a data-quality convention, not an invariant — nothing
+downstream computes on bedrooms for land. Neither the API nor the form rejects
+`{ propertyType: 'land', bedrooms: 3 }`. A first pass had the form clear and disable the control, which
+made the **frontend stricter than the API** — the worse of the two asymmetry directions, since it
+rejects input the server accepts. If it ever needs enforcing, it goes in *both* places at once: a
+cross-field DTO validator for a clean 400, plus
+`CHECK (property_type IS DISTINCT FROM 'land' OR bedrooms IS NULL)`.
+
+**`inquiry_date DEFAULT CURRENT_DATE` is the *database's* today, and the container runs UTC.** A user
+at UTC−8 creating a lead at 17:00 local is already tomorrow in UTC, so falling through to the default
+stamps the record a day ahead — the same off-by-one the `DATE`-vs-`TIMESTAMPTZ` choice was made to
+avoid, relocated into the default. The create form therefore sends `inquiryDate` explicitly from the
+browser's local today (`todayAsDateOnly()`); the DB default remains only as a backstop for non-HTTP
+writers, and the CSV importer supplies its own dates.
 
 **Deliberately no compile-enforced bridge for these**, unlike the union types. The asymmetry is
 principled: union drift is *silent and semantic* (a status the DB rejects, a dropdown missing an

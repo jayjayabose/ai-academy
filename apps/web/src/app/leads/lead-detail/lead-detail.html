@@ -1,0 +1,153 @@
+@if (loading()) {
+  <p class="loading">Loading lead…</p>
+} @else if (missing()) {
+  <div class="card">
+    <h1>Lead not found</h1>
+    <p class="muted">It may have been deleted.</p>
+    <a class="button" routerLink="/leads">Back to leads</a>
+  </div>
+} @else if (lead(); as lead) {
+  <div class="page-head">
+    <div>
+      <a class="back" routerLink="/leads">← All leads</a>
+      <h1>{{ lead.firstName }} {{ lead.lastName }}</h1>
+    </div>
+    <div class="actions">
+      <a class="button" [routerLink]="['/leads', lead.id, 'edit']">Edit</a>
+      <button type="button" class="button button--danger" (click)="askToDelete()">Delete</button>
+    </div>
+  </div>
+
+  @if (errors().length > 0) {
+    <ul class="errors">
+      @for (message of errors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  @if (confirmingDelete()) {
+    <div class="card confirm" role="alertdialog" aria-label="Confirm delete">
+      <p>
+        <strong>Delete {{ lead.firstName }} {{ lead.lastName }}?</strong>
+      </p>
+      <p class="muted">
+        This also deletes {{ lead.interactions.length }} logged
+        {{ lead.interactions.length === 1 ? 'interaction' : 'interactions' }}. It cannot be
+        undone.
+      </p>
+      <div class="actions">
+        <button type="button" class="button" (click)="cancelDelete()" [disabled]="deleting()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="button button--danger"
+          (click)="confirmDelete()"
+          [disabled]="deleting()"
+        >
+          {{ deleting() ? 'Deleting…' : 'Yes, delete' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <section class="card">
+    <h2>Details</h2>
+    <dl class="details">
+      <div><dt>Status</dt><dd><span class="status status--{{ lead.status }}">{{ statusLabel(lead.status) }}</span></dd></div>
+      <div><dt>Email</dt><dd><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></dd></div>
+      <div><dt>Phone</dt><dd>{{ lead.phone | orDash }}</dd></div>
+      <div><dt>Budget</dt><dd>{{ lead.budget | budget }}</dd></div>
+      <div><dt>Location</dt><dd>{{ lead.location | orDash }}</dd></div>
+      <div><dt>Property type</dt><dd>{{ propertyTypeLabel(lead.propertyType) | orDash }}</dd></div>
+      <div>
+        <dt>Bedrooms</dt>
+        <dd>
+          {{ lead.bedrooms | count }}
+          @if (lead.propertyType === 'land' && lead.bedrooms === null) {
+            <span class="muted note">not applicable to land</span>
+          }
+        </dd>
+      </div>
+      <div><dt>Source</dt><dd>{{ lead.source | orDash }}</dd></div>
+      <div><dt>Inquiry date</dt><dd>{{ lead.inquiryDate | dateOnly }}</dd></div>
+      <div><dt>Created</dt><dd>{{ lead.createdAt | timestamp }}</dd></div>
+      <div><dt>Updated</dt><dd>{{ lead.updatedAt | timestamp }}</dd></div>
+      <div class="details__wide"><dt>ID</dt><dd class="mono">{{ lead.id }}</dd></div>
+      <div class="details__wide"><dt>Notes</dt><dd class="prewrap">{{ lead.notes | orDash }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>Log an interaction</h2>
+
+    @if (interactionErrors().length > 0) {
+      <ul class="errors">
+        @for (message of interactionErrors(); track message) {
+          <li>{{ message }}</li>
+        }
+      </ul>
+    }
+
+    <form [formGroup]="interactionForm" (ngSubmit)="logInteraction()" class="interaction-form">
+      <div class="field" [class.field--invalid]="interactionError('type', 'Type')">
+        <label for="interaction-type">Type</label>
+        <select id="interaction-type" formControlName="type">
+          @for (type of interactionTypes; track type) {
+            <option [value]="type">{{ interactionTypeLabel(type) }}</option>
+          }
+        </select>
+        @if (interactionError('type', 'Type'); as error) {
+          <span class="error">{{ error }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="interaction-occurred-at">Occurred at</label>
+        <input id="interaction-occurred-at" type="datetime-local" formControlName="occurredAt" />
+        <span class="hint">Leave blank to record it as now.</span>
+      </div>
+
+      <div class="field field--wide" [class.field--invalid]="interactionError('notes', 'Notes')">
+        <label for="interaction-notes">Notes</label>
+        <textarea id="interaction-notes" formControlName="notes" maxlength="2000"></textarea>
+        @if (interactionError('notes', 'Notes'); as error) {
+          <span class="error">{{ error }}</span>
+        }
+      </div>
+
+      <div class="field--wide">
+        <button type="submit" class="button button--primary" [disabled]="loggingInteraction()">
+          {{ loggingInteraction() ? 'Saving…' : 'Log interaction' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>History <span class="muted">({{ history().length }})</span></h2>
+    @if (history().length === 0) {
+      <p class="muted">No interactions logged yet.</p>
+    } @else {
+      <ol class="history">
+        @for (interaction of history(); track interaction.id) {
+          <li class="history__item">
+            <div class="history__head">
+              <span class="history__type">{{ interactionTypeLabel(interaction.type) }}</span>
+              <time class="muted">{{ interaction.occurredAt | timestamp }}</time>
+            </div>
+            <p class="prewrap">{{ interaction.notes | orDash }}</p>
+          </li>
+        }
+      </ol>
+    }
+  </section>
+} @else {
+  <ul class="errors">
+    @for (message of errors(); track message) {
+      <li>{{ message }}</li>
+    }
+  </ul>
+  <a class="button" routerLink="/leads">Back to leads</a>
+}
