@@ -1,0 +1,64 @@
+<div class="page-head">
+  <h1>Leads</h1>
+  <a class="button button--primary" routerLink="/leads/new">New lead</a>
+</div>
+
+@if (errors().length > 0) {
+  <ul class="errors">
+    @for (message of errors(); track message) {
+      <li>{{ message }}</li>
+    }
+  </ul>
+}
+
+@if (loading()) {
+  <p class="loading">Loading leads…</p>
+} @else if (leads().length === 0 && errors().length === 0) {
+  <div class="card">
+    <p class="muted">No leads yet.</p>
+    <a class="button button--primary" routerLink="/leads/new">Add the first one</a>
+  </div>
+} @else if (leads().length > 0) {
+  <p class="muted count">{{ leads().length }} leads</p>
+
+  <div class="table-wrap">
+    <table class="lead-table">
+      <thead>
+        <tr>
+          @for (column of columns; track column.key) {
+            <th scope="col" [attr.aria-sort]="ariaSort(column.key)">
+              <button type="button" class="sort-button" (click)="sortBy(column.key)">
+                {{ column.label }}
+                @if (sortKey() === column.key) {
+                  <span aria-hidden="true">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+                }
+              </button>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (lead of sortedLeads(); track lead.id) {
+          <tr
+            class="lead-row"
+            tabindex="0"
+            role="link"
+            [attr.aria-label]="'Open ' + lead.firstName + ' ' + lead.lastName"
+            (click)="open(lead)"
+            (keydown.enter)="open(lead)"
+            (keydown.space)="open(lead)"
+          >
+            <td class="cell-name">{{ lead.firstName }} {{ lead.lastName }}</td>
+            <td>
+              <span class="status status--{{ lead.status }}">{{ statusLabel(lead.status) }}</span>
+            </td>
+            <td class="cell-number">{{ lead.budget | budget }}</td>
+            <td>{{ lead.location | orDash }}</td>
+            <td>{{ propertyTypeLabel(lead.propertyType) | orDash }}</td>
+            <td>{{ lead.inquiryDate | dateOnly }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

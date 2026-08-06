@@ -1,0 +1,138 @@
+<div class="page-head">
+  <h1>{{ editing ? 'Edit lead' : 'New lead' }}</h1>
+</div>
+
+@if (loading()) {
+  <p class="loading">Loading lead…</p>
+} @else if (missing()) {
+  <div class="card">
+    <p>That lead no longer exists.</p>
+    <a class="button" routerLink="/leads">Back to leads</a>
+  </div>
+} @else {
+  @if (errors().length > 0) {
+    <ul class="errors">
+      @for (message of errors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <div class="field" [class.field--invalid]="error('firstName', 'First name')">
+        <label for="firstName">First name <span class="required-marker">*</span></label>
+        <input id="firstName" type="text" formControlName="firstName" maxlength="100" autocomplete="given-name" />
+        @if (error('firstName', 'First name'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field" [class.field--invalid]="error('lastName', 'Last name')">
+        <label for="lastName">Last name <span class="required-marker">*</span></label>
+        <input id="lastName" type="text" formControlName="lastName" maxlength="100" autocomplete="family-name" />
+        @if (error('lastName', 'Last name'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field" [class.field--invalid]="error('email', 'Email')">
+        <label for="email">Email <span class="required-marker">*</span></label>
+        <input id="email" type="email" formControlName="email" maxlength="255" autocomplete="email" />
+        <span class="hint">Stored lowercase.</span>
+        @if (error('email', 'Email'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field" [class.field--invalid]="error('phone', 'Phone')">
+        <label for="phone">Phone</label>
+        <input id="phone" type="tel" formControlName="phone" maxlength="30" autocomplete="tel" />
+        @if (error('phone', 'Phone'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="status">Status</label>
+        <select id="status" formControlName="status">
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ statusLabel(status) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field" [class.field--invalid]="error('budget', 'Budget')">
+        <label for="budget">Budget (whole dollars)</label>
+        <input id="budget" type="number" formControlName="budget" step="1" min="0" [max]="budgetMax" />
+        <span class="hint">Leave blank if not stated.</span>
+        @if (error('budget', 'Budget'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field" [class.field--invalid]="error('location', 'Location')">
+        <label for="location">Location</label>
+        <input id="location" type="text" formControlName="location" maxlength="100" />
+        @if (error('location', 'Location'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="propertyType">Property type</label>
+        <select id="propertyType" formControlName="propertyType">
+          <option value="">Not known yet</option>
+          @for (propertyType of propertyTypes; track propertyType) {
+            <option [value]="propertyType">{{ propertyTypeLabel(propertyType) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field" [class.field--invalid]="error('bedrooms', 'Bedrooms')">
+        <label for="bedrooms">Bedrooms</label>
+        <input id="bedrooms" type="number" formControlName="bedrooms" step="1" min="0" [max]="bedroomsMax" />
+        @if (form.controls.bedrooms.disabled) {
+          <span class="hint">Not applicable to land.</span>
+        }
+        @if (error('bedrooms', 'Bedrooms'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field" [class.field--invalid]="error('source', 'Source')">
+        <label for="source">Source</label>
+        <input id="source" type="text" formControlName="source" maxlength="30" />
+        @if (error('source', 'Source'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field" [class.field--invalid]="error('inquiryDate', 'Inquiry date')">
+        <label for="inquiryDate">Inquiry date</label>
+        <input id="inquiryDate" type="date" formControlName="inquiryDate" />
+        @if (!editing) {
+          <span class="hint">Defaults to today.</span>
+        }
+        @if (error('inquiryDate', 'Inquiry date'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+
+      <div class="field field--wide" [class.field--invalid]="error('notes', 'Notes')">
+        <label for="notes">Notes</label>
+        <textarea id="notes" formControlName="notes" maxlength="2000"></textarea>
+        @if (error('notes', 'Notes'); as message) {
+          <span class="error">{{ message }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a class="button" [routerLink]="cancelLink">Cancel</a>
+      <button type="submit" class="button button--primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : editing ? 'Save changes' : 'Create lead' }}
+      </button>
+    </div>
+  </form>
+}
