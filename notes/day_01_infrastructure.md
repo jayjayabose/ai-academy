@@ -103,11 +103,36 @@ Target from `day-1-build-requirements.md:224` — `git clone → npm install →
 | `dev`                   | api + web concurrently                                            |
 | `db:migrate` / `:status` / `:undo` / `:test` | Umzug, target DB parameterised via `MIGRATE_TARGET` |
 | `db:up` / `db:down`     | Compose lifecycle with `--env-file .env.local --wait`              |
-| `db:reset`              | `down -v` → `up` → `migrate`. Required by `testing-standards.md:47` (setup/seed/reset) |
+| `db:reset`              | `down -v` → `up` → `migrate` → `seed`. Required by `testing-standards.md:47` (setup/seed/reset) |
 | `db:psql`               | psql into the container without remembering the non-default port   |
-| `db:seed`               | CSV import, 50–100 leads with 2–5 interactions each *(Feature 1)*  |
+| `db:seed`               | CSV import. **Additive.** If `leads` is non-empty: message naming `db:seed:fresh`, exit 0, change nothing |
+| `db:seed:fresh`         | `TRUNCATE leads CASCADE` then seed. Destructive, and named so      |
 | `test`                  | unit only — **no Docker required**                                 |
 | `test:integration`      | migrates `crm_test`, then integration project                      |
+
+**Why `db:seed` does not truncate.** An earlier draft had it truncate-then-insert. Corrected: no
+ecosystem does this — Rails has a *separate* `db:seed:replant`, Laravel `migrate:fresh --seed`, Prisma
+`migrate reset`; `seed` itself is additive everywhere. More importantly, `setup` calls `db:seed`, so a
+truncating seed would make the safe-sounding run-me-first command silently destroy data — exactly the
+failure at `database-migration-strategy.md:5-9`, and a violation of the principle we endorsed at `:189`
+when declining that document's mechanism.
+
+The emptiness check stands in for an idempotency key: `email` is deliberately non-unique, so a second
+`db:seed` would insert 100 duplicates rather than upserting. Skipping with exit 0 (rather than failing)
+keeps `npm run setup` idempotent, which serves the clone-and-run criterion at `:224`.
+
+**Decision 13 — the seeder boots via a NestJS standalone application context** with a slim `SeedModule`
+(`ConfigModule` + `SequelizeModule.forFeature([Lead, Interaction])`), not the full `AppModule` and not a
+bare ts-node script. Rationale: seeding needs *models*, so a bare script would have to re-register them
+and rebuild the connection config that `database.module.ts` already assembles — the duplication D3
+rejected `sequelize-cli` to avoid. (`migrate.ts` gets away with being a bare script only because
+`QueryInterface` needs no models.)
+
+It writes via `bulkCreate` on the models inside one transaction — **not** through `LeadsService`. An
+earlier draft argued for routing the import through the service so business rules could not diverge;
+revised, because there are no business rules there to protect: validation lives in DTOs (which a file
+importer bypasses by design) and the real guard is the DB constraints. 450 individual service calls
+would buy nothing and cost a lot. Interaction generation uses a seeded PRNG so re-seeding is stable.
 
 **Environment pins (discovered at preflight, 2026-08-03):**
 
