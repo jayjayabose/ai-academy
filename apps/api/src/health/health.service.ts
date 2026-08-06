@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/sequelize';
 import { QueryTypes } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { Smoke } from '../database/smoke.model';
+import { Interaction } from '../interactions/interaction.model';
+import { Lead } from '../leads/lead.model';
 
 export interface HealthReport {
     status: 'ok';
@@ -14,12 +15,9 @@ export interface HealthReport {
         port: number;
         serverVersion: string;
     };
-    /** Throwaway — removed with the smoke migration once migration 001 lands. */
-    smoke: {
-        insertedId: number;
-        rowCount: number;
-        /** camelCase attribute read back from a snake_case column (Decision 4). */
-        createdAt: Date;
+    counts: {
+        leads: number;
+        interactions: number;
     };
     latencyMs: number;
 }
@@ -29,7 +27,8 @@ export class HealthService {
     constructor(
         private readonly sequelize: Sequelize,
         private readonly config: ConfigService,
-        @InjectModel(Smoke) private readonly smoke: typeof Smoke,
+        @InjectModel(Lead) private readonly leads: typeof Lead,
+        @InjectModel(Interaction) private readonly interactions: typeof Interaction,
     ) {}
 
     async check(): Promise<HealthReport> {
@@ -46,10 +45,7 @@ export class HealthService {
             { type: QueryTypes.SELECT },
         );
 
-        // A real write + read round-trip through a migration-created table.
-        // `label` and `createdAt` are camelCase attributes over snake_case columns.
-        const inserted = await this.smoke.create({ label: 'health-check' } as Smoke);
-        const rowCount = await this.smoke.count();
+        const [leads, interactions] = await Promise.all([this.leads.count(), this.interactions.count()]);
 
         return {
             status: 'ok',
@@ -60,11 +56,7 @@ export class HealthService {
                 port: Number(this.config.getOrThrow<number>('DB_PORT')),
                 serverVersion: version,
             },
-            smoke: {
-                insertedId: inserted.id,
-                rowCount,
-                createdAt: inserted.createdAt,
-            },
+            counts: { leads, interactions },
             latencyMs: Date.now() - started,
         };
     }
