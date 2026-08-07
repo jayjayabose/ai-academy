@@ -1,10 +1,18 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
-import { fixtureInterceptor, resetFixtureState } from '../../fixtures/fixture.interceptor';
+import { SAMPLE_LEADS, toListRow } from '../../testing/lead-samples';
 import { LeadList } from './lead-list';
 
+/**
+ * Backed by HttpTestingController rather than the fixtureInterceptor these specs
+ * used to run against. The interceptor was a hand-written reimplementation of the
+ * API, so a passing test only ever proved the component agreed with a guess about
+ * NestJS. Here the response is stated in the test, and the request the component
+ * makes is asserted rather than assumed.
+ */
 function rowCells(fixture: ComponentFixture<LeadList>, column: number): string[] {
   const rows = fixture.nativeElement.querySelectorAll('tbody tr') as NodeListOf<HTMLElement>;
   return Array.from(rows).map((row) => {
@@ -15,19 +23,28 @@ function rowCells(fixture: ComponentFixture<LeadList>, column: number): string[]
 
 describe('LeadList', () => {
   let fixture: ComponentFixture<LeadList>;
+  let http: HttpTestingController;
 
   beforeEach(async () => {
-    resetFixtureState();
     TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        provideHttpClient(withInterceptors([fixtureInterceptor])),
-      ],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     });
+    http = TestBed.inject(HttpTestingController);
+
     fixture = TestBed.createComponent(LeadList);
     fixture.detectChanges();
+
+    // The list endpoint returns `Lead[]`, not `LeadDetail[]` — interactions are
+    // the detail route's job, so the rows are stripped the way the API strips
+    // them.
+    http.expectOne('/api/leads').flush(SAMPLE_LEADS.map(toListRow));
+
     await fixture.whenStable();
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    http.verify();
   });
 
   it('renders one row per lead, sorted by inquiryDate descending by default', () => {
@@ -63,5 +80,15 @@ describe('LeadList', () => {
     expect(descending[0]).toBe('$100,000,000');
     // Nulls stay last: reversing must not bury the rows that carry data.
     expect(descending[descending.length - 1]).toBe('—');
+  });
+
+  it('sorts without going back to the server', () => {
+    // Contract §1: sorting is client-side because the list already carries every
+    // field. A re-fetch per click would be an unnoticed regression — the rows
+    // would still look right.
+    (fixture.nativeElement.querySelectorAll('thead .sort-button')[2] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    http.expectNone('/api/leads');
   });
 });

@@ -1,8 +1,14 @@
 import type { Lead, LeadDetail } from '@ai-academy/shared';
 
 /**
- * Hand-written seed data for `fixtureInterceptor`, typed against the real wire
- * contract so a contract change breaks these rows at compile time.
+ * Hand-written sample rows for the component specs, typed against the real wire
+ * contract so a contract change breaks them at compile time.
+ *
+ * These were originally the data half of a fixture layer that also reimplemented
+ * the API in an HttpInterceptor. The API exists now, so the reimplementation is
+ * gone — it could only ever confirm that the components agreed with a guess about
+ * NestJS. The data survives because it is genuinely useful: chosen for the shapes
+ * that break UIs, not for realism.
  *
  * The set is chosen for the shapes that break UIs, not for realism:
  *
@@ -18,7 +24,7 @@ import type { Lead, LeadDetail } from '@ai-academy/shared';
  * Row order is deliberately NOT inquiryDate-descending, so the list's default
  * sort is actually doing something.
  */
-export const FIXTURE_LEADS: LeadDetail[] = [
+export const SAMPLE_LEADS: LeadDetail[] = [
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e001',
     firstName: 'Dana',
