@@ -22,10 +22,97 @@ import { LEAD_STATUSES, PROPERTY_TYPES } from '../leads/lead-status';
  * It runs against crm_test, whose schema is built by the migrations themselves
  * (D8) — so a missing migration fails here rather than on a fresh clone.
  *
- * Every insert is RAW SQL on purpose. Lead.create() would be stopped by the
+ * Every statement is RAW SQL on purpose. Lead.create() would be stopped by the
  * model's own `validate.isIn` before Postgres ever saw the row, which would
  * make this a test of sequelize-typescript instead of a test of the schema.
+ *
+ * The helpers live below the tests; they are plumbing, not specification.
  */
+describe('migration 001 value-set constraints', () => {
+  beforeAll(async () => {
+    await setupTestDatabase();
+  });
+
+  afterAll(async () => {
+    await teardownTestDatabase();
+  });
+
+  beforeEach(async () => {
+    await truncateAll();
+  });
+
+  describe('leads_status_check', () => {
+    it.each([...LEAD_STATUSES])(
+      'accepts the LeadStatus member %s',
+      async (status) => {
+        const id = await insertLead(status);
+
+        expect(await storedLeadColumn(id, 'status')).toBe(status);
+      },
+    );
+
+    it('rejects a value outside the union with check_violation', async () => {
+      await expect(insertLead('not-a-status')).rejects.toMatchObject({
+        parent: { code: CHECK_VIOLATION, constraint: 'leads_status_check' },
+      });
+    });
+  });
+
+  describe('leads_property_type_check', () => {
+    it.each([...PROPERTY_TYPES])(
+      'accepts the PropertyType member %s',
+      async (propertyType) => {
+        const id = await insertLead('active', propertyType);
+
+        expect(await storedLeadColumn(id, 'property_type')).toBe(propertyType);
+      },
+    );
+
+    it('stores NULL rather than rejecting it, because property_type is optional', async () => {
+      // A CHECK passes unless its expression is FALSE, and `NULL IN (...)` is
+      // NULL, not FALSE. Migration 001 relies on that instead of a separate
+      // `OR property_type IS NULL` clause — worth pinning down, since it is what
+      // makes the nullable column workable at all.
+      const id = await insertLead('active', null);
+
+      expect(await storedLeadColumn(id, 'property_type')).toBeNull();
+    });
+
+    it('rejects a value outside the union with check_violation', async () => {
+      await expect(insertLead('active', 'houseboat')).rejects.toMatchObject({
+        parent: {
+          code: CHECK_VIOLATION,
+          constraint: 'leads_property_type_check',
+        },
+      });
+    });
+  });
+
+  describe('interactions_type_check', () => {
+    it.each([...INTERACTION_TYPES])(
+      'accepts the InteractionType member %s',
+      async (type) => {
+        const leadId = await insertLead('active');
+        const id = await insertInteraction(leadId, type);
+
+        expect(await storedInteractionType(id)).toBe(type);
+      },
+    );
+
+    it('rejects a value outside the union with check_violation', async () => {
+      const leadId = await insertLead('active');
+
+      await expect(
+        insertInteraction(leadId, 'carrier-pigeon'),
+      ).rejects.toMatchObject({
+        parent: {
+          code: CHECK_VIOLATION,
+          constraint: 'interactions_type_check',
+        },
+      });
+    });
+  });
+});
 
 const CHECK_VIOLATION = '23514';
 
@@ -57,103 +144,25 @@ async function insertInteraction(
   return rows[0].id;
 }
 
-describe('migration 001 value-set constraints (integration)', () => {
-  beforeAll(async () => {
-    await setupTestDatabase();
-  });
+async function storedLeadColumn(
+  id: string,
+  column: 'status' | 'property_type',
+): Promise<string | null> {
+  // Interpolated, not a replacement: Postgres does not accept a bind parameter
+  // in place of an identifier. The union type is what keeps it safe.
+  const rows = await testConnection().query<Record<string, string | null>>(
+    `SELECT ${column} FROM leads WHERE id = :id`,
+    { replacements: { id }, type: QueryTypes.SELECT },
+  );
 
-  afterAll(async () => {
-    await teardownTestDatabase();
-  });
+  return rows[0][column];
+}
 
-  beforeEach(async () => {
-    await truncateAll();
-  });
+async function storedInteractionType(id: string): Promise<string | null> {
+  const rows = await testConnection().query<{ type: string | null }>(
+    `SELECT type FROM interactions WHERE id = :id`,
+    { replacements: { id }, type: QueryTypes.SELECT },
+  );
 
-  describe('leads_status_check', () => {
-    it.each([...LEAD_STATUSES])(
-      'accepts the LeadStatus member %s',
-      async (status) => {
-        const id = await insertLead(status);
-
-        const [row] = await testConnection().query<{ status: string }>(
-          `SELECT status FROM leads WHERE id = :id`,
-          { replacements: { id }, type: QueryTypes.SELECT },
-        );
-
-        expect(row.status).toBe(status);
-      },
-    );
-
-    it('rejects a value outside the union with check_violation', async () => {
-      await expect(insertLead('not-a-status')).rejects.toMatchObject({
-        parent: { code: CHECK_VIOLATION, constraint: 'leads_status_check' },
-      });
-    });
-  });
-
-  describe('leads_property_type_check', () => {
-    it.each([...PROPERTY_TYPES])(
-      'accepts the PropertyType member %s',
-      async (propertyType) => {
-        const id = await insertLead('active', propertyType);
-
-        const [row] = await testConnection().query<{ property_type: string }>(
-          `SELECT property_type FROM leads WHERE id = :id`,
-          { replacements: { id }, type: QueryTypes.SELECT },
-        );
-
-        expect(row.property_type).toBe(propertyType);
-      },
-    );
-
-    it('accepts NULL, because property_type is optional', async () => {
-      // A CHECK passes unless its expression is FALSE, and `NULL IN (...)`
-      // is NULL, not FALSE. Migration 001 relies on this rather than on a
-      // separate `OR property_type IS NULL` clause — worth pinning down, since
-      // it is the behaviour that makes the nullable column workable at all.
-      await expect(insertLead('active', null)).resolves.toEqual(
-        expect.any(String),
-      );
-    });
-
-    it('rejects a value outside the union with check_violation', async () => {
-      await expect(insertLead('active', 'houseboat')).rejects.toMatchObject({
-        parent: {
-          code: CHECK_VIOLATION,
-          constraint: 'leads_property_type_check',
-        },
-      });
-    });
-  });
-
-  describe('interactions_type_check', () => {
-    it.each([...INTERACTION_TYPES])(
-      'accepts the InteractionType member %s',
-      async (type) => {
-        const leadId = await insertLead('active');
-        const id = await insertInteraction(leadId, type);
-
-        const [row] = await testConnection().query<{ type: string }>(
-          `SELECT type FROM interactions WHERE id = :id`,
-          { replacements: { id }, type: QueryTypes.SELECT },
-        );
-
-        expect(row.type).toBe(type);
-      },
-    );
-
-    it('rejects a value outside the union with check_violation', async () => {
-      const leadId = await insertLead('active');
-
-      await expect(
-        insertInteraction(leadId, 'carrier-pigeon'),
-      ).rejects.toMatchObject({
-        parent: {
-          code: CHECK_VIOLATION,
-          constraint: 'interactions_type_check',
-        },
-      });
-    });
-  });
-});
+  return rows[0].type;
+}

@@ -188,6 +188,10 @@ would buy nothing and cost a lot. Interaction generation uses a seeded PRNG so r
 14. **`SequelizeConnectionRefusedError` has an empty `message`** — and an empty `original.message`. A
     naive `` `Cause: ${error.message}` `` prints "Cause: " and tells you nothing, which is precisely when
     you most need the diagnostic. Fall back to `error.name`; see `test/helpers/describe-error.ts`.
+    That fallback works only because Sequelize *assigns* `name`. `class Foo extends Error {}` leaves
+    `name` resolving to `Error.prototype.name` — the literal string `'Error'` — so a test double must
+    assign it too or it does not reproduce the case. Found by writing the double the obvious way and
+    watching it fail.
 
 > **Trap #6 confirmed in practice.** The first `/api/health/db` implementation read `version` from
 > `SHOW server_version`, whose actual column is `server_version`. The field came back `undefined` and

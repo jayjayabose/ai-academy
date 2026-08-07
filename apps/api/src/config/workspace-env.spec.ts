@@ -35,21 +35,25 @@ describe('workspaceRoot', () => {
     rmSync(root, { recursive: true, force: true });
   });
 
-  it('finds the marker in the starting directory itself', () => {
+  it('returns the starting directory when it holds the marker', () => {
     writeFileSync(join(root, '.env.local.template'), '');
 
     expect(workspaceRoot(root)).toBe(root);
   });
 
-  it('walks up from any depth to the directory holding the marker', () => {
-    writeFileSync(join(root, '.env.local.template'), '');
+  // The two depths are the ones Trap #4 is about: apps/api under ts-node, and
+  // apps/api/dist/config once compiled. One test each, because as a single body
+  // a regression in only the deep case would be masked by the shallow one.
+  it.each([join('apps', 'api'), join('apps', 'api', 'dist', 'config')])(
+    'walks up from %s to the directory holding the marker',
+    (descendant) => {
+      writeFileSync(join(root, '.env.local.template'), '');
+      const start = join(root, descendant);
+      mkdirSync(start, { recursive: true });
 
-    const nested = join(root, 'apps', 'api', 'dist', 'config');
-    mkdirSync(nested, { recursive: true });
-
-    expect(workspaceRoot(join(root, 'apps', 'api'))).toBe(root);
-    expect(workspaceRoot(nested)).toBe(root);
-  });
+      expect(workspaceRoot(start)).toBe(root);
+    },
+  );
 
   it('stops at the nearest marker rather than the outermost one', () => {
     // Guards against a walk that keeps going after a hit — which would resolve
