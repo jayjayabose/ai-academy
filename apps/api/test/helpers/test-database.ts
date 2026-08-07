@@ -1,3 +1,4 @@
+import type { SequelizeOptions } from 'sequelize-typescript';
 import { Sequelize } from 'sequelize-typescript';
 import { loadEnv } from '../../src/config/workspace-env';
 import { Interaction } from '../../src/interactions/interaction.model';
@@ -46,9 +47,18 @@ export function testConnection(): Sequelize {
   return connection;
 }
 
-/** Empties every table. CASCADE so a future table with an FK to leads does not need this helper edited before it works. */
-export async function truncateAll(): Promise<void> {
-  await testConnection().query('TRUNCATE TABLE leads, interactions CASCADE');
+/**
+ * Empties every table. CASCADE so a future table with an FK to leads does not
+ * need this helper edited before it works.
+ *
+ * Takes a connection because the controller tests let Nest own theirs — they
+ * build the app with `SequelizeModule.forRoot(testDatabaseOptions())` and pull
+ * the instance back out, rather than opening a second one alongside it.
+ */
+export async function truncateAll(
+  sequelize: Sequelize = testConnection(),
+): Promise<void> {
+  await sequelize.query('TRUNCATE TABLE leads, interactions CASCADE');
 }
 
 export async function teardownTestDatabase(): Promise<void> {
@@ -58,7 +68,13 @@ export async function teardownTestDatabase(): Promise<void> {
   connection = undefined;
 }
 
-async function connect(): Promise<Sequelize> {
+/**
+ * How to connect to crm_test, in one place. Exported because the controller tests
+ * hand it straight to `SequelizeModule.forRoot()` — duplicating it there would
+ * duplicate the guard below, which is the one thing here that must never be
+ * skipped.
+ */
+export function testDatabaseOptions(): SequelizeOptions {
   loadEnv();
 
   const database = process.env.DB_TEST_NAME;
@@ -77,7 +93,7 @@ async function connect(): Promise<Sequelize> {
     );
   }
 
-  const sequelize = new Sequelize({
+  return {
     dialect: 'postgres',
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),
@@ -94,16 +110,21 @@ async function connect(): Promise<Sequelize> {
 
     logging: false,
 
-    // No sync() call anywhere in this file, deliberately. sequelize-typescript
-    // never touches the schema unless asked; the migrations own it.
-  });
+    // No sync() call anywhere, deliberately. sequelize-typescript never touches
+    // the schema unless asked; the migrations own it.
+  };
+}
+
+async function connect(): Promise<Sequelize> {
+  const options = testDatabaseOptions();
+  const sequelize = new Sequelize(options);
 
   try {
     await sequelize.authenticate();
   } catch (error) {
     await sequelize.close();
     throw new Error(
-      `Could not connect to ${database} on ${process.env.DB_HOST}:${process.env.DB_PORT}. ` +
+      `Could not connect to ${options.database} on ${options.host}:${options.port}. ` +
         `Is Postgres running? Start it with: npm run db:up\n` +
         `Cause: ${describeError(error)}`,
       { cause: error },
