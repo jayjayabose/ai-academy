@@ -15,25 +15,25 @@ import { describeError } from './helpers/describe-error';
  * this file existed the test database was kept current by hand.
  */
 export default async function globalSetup(): Promise<void> {
-    const { umzug, sequelize, database } = createMigrator('test');
+  const { umzug, sequelize, database } = createMigrator('test');
 
-    try {
-        const applied = await umzug.up();
+  try {
+    const applied = await umzug.up();
 
-        console.log(
-            applied.length
-                ? `\n  migrated ${database}: applied ${applied.map((m) => m.name).join(', ')}`
-                : `\n  migrated ${database}: already up to date`,
-        );
-    } catch (error) {
-        // The overwhelmingly likely cause is a stopped container, and Sequelize's
-        // own ECONNREFUSED does not mention Docker. Name the fix in the message.
-        throw new Error(
-            `Could not migrate ${database}. Is Postgres running? Start it with: npm run db:up\n` +
-                `Cause: ${describeError(error)}`,
-            { cause: error },
-        );
-    } finally {
-        await sequelize.close();
-    }
+    console.log(
+      applied.length
+        ? `\n  migrated ${database}: applied ${applied.map((m) => m.name).join(', ')}`
+        : `\n  migrated ${database}: already up to date`,
+    );
+  } catch (error) {
+    // The overwhelmingly likely cause is a stopped container, and Sequelize's
+    // own ECONNREFUSED does not mention Docker. Name the fix in the message.
+    throw new Error(
+      `Could not migrate ${database}. Is Postgres running? Start it with: npm run db:up\n` +
+        `Cause: ${describeError(error)}`,
+      { cause: error },
+    );
+  } finally {
+    await sequelize.close();
+  }
 }

@@ -1,4 +1,10 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { workspaceRoot } from './workspace-env';
@@ -16,54 +22,54 @@ import { workspaceRoot } from './workspace-env';
  */
 
 describe('workspaceRoot', () => {
-    let root: string;
+  let root: string;
 
-    beforeEach(() => {
-        // realpath because macOS hands back /var/folders/... for a directory that
-        // actually lives at /private/var/folders/..., and dirname() walking
-        // preserves whichever spelling it was given.
-        root = realpathSync(mkdtempSync(join(tmpdir(), 'workspace-root-')));
-    });
+  beforeEach(() => {
+    // realpath because macOS hands back /var/folders/... for a directory that
+    // actually lives at /private/var/folders/..., and dirname() walking
+    // preserves whichever spelling it was given.
+    root = realpathSync(mkdtempSync(join(tmpdir(), 'workspace-root-')));
+  });
 
-    afterEach(() => {
-        rmSync(root, { recursive: true, force: true });
-    });
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
 
-    it('finds the marker in the starting directory itself', () => {
-        writeFileSync(join(root, '.env.local.template'), '');
+  it('finds the marker in the starting directory itself', () => {
+    writeFileSync(join(root, '.env.local.template'), '');
 
-        expect(workspaceRoot(root)).toBe(root);
-    });
+    expect(workspaceRoot(root)).toBe(root);
+  });
 
-    it('walks up from any depth to the directory holding the marker', () => {
-        writeFileSync(join(root, '.env.local.template'), '');
+  it('walks up from any depth to the directory holding the marker', () => {
+    writeFileSync(join(root, '.env.local.template'), '');
 
-        const nested = join(root, 'apps', 'api', 'dist', 'config');
-        mkdirSync(nested, { recursive: true });
+    const nested = join(root, 'apps', 'api', 'dist', 'config');
+    mkdirSync(nested, { recursive: true });
 
-        expect(workspaceRoot(join(root, 'apps', 'api'))).toBe(root);
-        expect(workspaceRoot(nested)).toBe(root);
-    });
+    expect(workspaceRoot(join(root, 'apps', 'api'))).toBe(root);
+    expect(workspaceRoot(nested)).toBe(root);
+  });
 
-    it('stops at the nearest marker rather than the outermost one', () => {
-        // Guards against a walk that keeps going after a hit — which would resolve
-        // a nested workspace to its parent and load the wrong .env.local.
-        writeFileSync(join(root, '.env.local.template'), '');
+  it('stops at the nearest marker rather than the outermost one', () => {
+    // Guards against a walk that keeps going after a hit — which would resolve
+    // a nested workspace to its parent and load the wrong .env.local.
+    writeFileSync(join(root, '.env.local.template'), '');
 
-        const inner = join(root, 'inner');
-        mkdirSync(inner);
-        writeFileSync(join(inner, '.env.local.template'), '');
+    const inner = join(root, 'inner');
+    mkdirSync(inner);
+    writeFileSync(join(inner, '.env.local.template'), '');
 
-        expect(workspaceRoot(inner)).toBe(inner);
-    });
+    expect(workspaceRoot(inner)).toBe(inner);
+  });
 
-    it('throws a message naming the starting directory when no marker exists', () => {
-        const orphan = join(root, 'orphan');
-        mkdirSync(orphan);
-        // No marker written anywhere: the walk runs to the filesystem root. It must
-        // fail loudly rather than return '/' and let a later step report a
-        // confusing missing-file error against a path nobody recognises.
+  it('throws a message naming the starting directory when no marker exists', () => {
+    const orphan = join(root, 'orphan');
+    mkdirSync(orphan);
+    // No marker written anywhere: the walk runs to the filesystem root. It must
+    // fail loudly rather than return '/' and let a later step report a
+    // confusing missing-file error against a path nobody recognises.
 
-        expect(() => workspaceRoot(orphan)).toThrow(orphan);
-    });
+    expect(() => workspaceRoot(orphan)).toThrow(orphan);
+  });
 });
