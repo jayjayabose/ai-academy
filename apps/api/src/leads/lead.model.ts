@@ -1,4 +1,10 @@
 import type { LeadStatus, PropertyType } from '@ai-academy/shared';
+import type {
+  CreationOptional,
+  InferAttributes,
+  InferCreationAttributes,
+  NonAttribute,
+} from 'sequelize';
 import {
   Column,
   CreatedAt,
@@ -20,12 +26,22 @@ import { LEAD_STATUSES, PROPERTY_TYPES } from './lead-status';
  * The `validate` blocks are a second line of defence behind the DB CHECK
  * constraints. They reuse the same arrays the DTOs use, so the model cannot
  * drift from the request validation.
+ *
+ * The attribute generics are not decoration. A bare `extends Model` leaves
+ * `_creationAttributes` as `any`, and `bulkCreate` then demands
+ * `Optional<any, string>` — a type nothing satisfies without a numeric index
+ * signature. `CreationOptional` marks the five fields a caller may omit because
+ * something else supplies them: a client-side UUID default, a model default, or
+ * a column DEFAULT in migration 001.
  */
 @Table({ tableName: 'leads' })
-export class Lead extends Model {
+export class Lead extends Model<
+  InferAttributes<Lead>,
+  InferCreationAttributes<Lead>
+> {
   @Default(DataType.UUIDV4)
   @Column({ type: DataType.UUID, primaryKey: true, allowNull: false })
-  declare id: string;
+  declare id: CreationOptional<string>;
 
   @Column({ type: DataType.STRING(100), allowNull: false })
   declare firstName: string;
@@ -46,7 +62,7 @@ export class Lead extends Model {
     allowNull: false,
     validate: { isIn: [[...LEAD_STATUSES]] },
   })
-  declare status: LeadStatus;
+  declare status: CreationOptional<LeadStatus>;
 
   /** Whole dollars. INTEGER so the pg driver returns a number, not a string. */
   @Column({ type: DataType.INTEGER, allowNull: true })
@@ -76,18 +92,21 @@ export class Lead extends Model {
    * off-by-one-day bug a TIMESTAMPTZ would introduce.
    */
   @Column({ type: DataType.DATEONLY, allowNull: false })
-  declare inquiryDate: string;
+  declare inquiryDate: CreationOptional<string>;
 
   @Column({ type: DataType.TEXT, allowNull: true })
   declare notes: string | null;
 
   @CreatedAt
-  declare createdAt: Date;
+  declare createdAt: CreationOptional<Date>;
 
   @UpdatedAt
-  declare updatedAt: Date;
+  declare updatedAt: CreationOptional<Date>;
 
-  /** Populated only by the detail query's `include`; absent on list rows. */
+  /**
+   * Populated only by the detail query's `include`; absent on list rows.
+   * NonAttribute keeps InferAttributes from treating an association as a column.
+   */
   @HasMany(() => Interaction, { onDelete: 'CASCADE' })
-  declare interactions?: Interaction[];
+  declare interactions?: NonAttribute<Interaction[]>;
 }

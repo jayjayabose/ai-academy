@@ -1,0 +1,4 @@
+firstName,lastName,email,phone,status,budget,location,propertyType,bedrooms,source,inquiryDate,notes
+Ada,Lovelace,ada.lovelace@example.com,(303) 555-0193,qualified,480000,Littleton,condo,2,website,2026-06-05,Wants a south-facing balcony.
+Wei,Kaur,wei.kaur@example.com,,active,,,land,,,2026-04-15,
+Rosa,Santos,rosa.santos@example.net,(214) 555-0152,contacted,715000,Englewood,townhouse,4,cold-call,2026-04-27,"Investor looking for rental yield, not owner-occupied."

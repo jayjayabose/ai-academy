@@ -11,19 +11,21 @@
         "node": ">=22.22.3"
     },
     "scripts": {
-        "setup": "bash scripts/preflight.sh && npm run db:up && npm run db:migrate",
+        "setup": "bash scripts/preflight.sh && npm run db:up && npm run db:migrate && npm run db:seed",
         "dev": "concurrently --names api,web --prefix-colors cyan,magenta \"npm run dev:api\" \"npm run dev:web\"",
         "dev:api": "npm run --workspace apps/api start:dev",
         "dev:web": "npm run --workspace apps/web start",
         "build": "npm run --workspace apps/api build && npm run --workspace apps/web build",
         "db:up": "docker compose --env-file .env.local up -d --wait",
         "db:down": "docker compose --env-file .env.local down",
-        "db:reset": "docker compose --env-file .env.local down -v && npm run db:up && npm run db:migrate",
+        "db:reset": "docker compose --env-file .env.local down -v && npm run db:up && npm run db:migrate && npm run db:seed",
         "db:psql": "bash scripts/psql.sh",
         "db:migrate": "npm run --workspace apps/api db:migrate",
         "db:migrate:status": "npm run --workspace apps/api db:migrate:status",
         "db:migrate:undo": "npm run --workspace apps/api db:migrate:undo",
         "db:migrate:test": "npm run --workspace apps/api db:migrate:test",
+        "db:seed": "npm run --workspace apps/api db:seed",
+        "db:seed:fresh": "npm run --workspace apps/api db:seed:fresh",
         "test": "npm run --workspace apps/api test",
         "test:integration": "npm run --workspace apps/api test:integration",
         "test:all": "npm run --workspace apps/api test:all"
