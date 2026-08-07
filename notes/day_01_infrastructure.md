@@ -166,6 +166,8 @@ would buy nothing and cost a lot. Interaction generation uses a seeded PRNG so r
    ordering. Status values are union types: `'active' | 'contacted' | 'closed'`.
 8. **Jest `projects` config.** `moduleNameMapper` and `transform` go *per project*, not top-level, or the
    `@test/helpers` alias (`chapters/02-two-tier-testing.md:623`) silently fails to resolve.
+   The alias also needs a *second* declaration — `paths` in `tsconfig.json` — or ts-jest fails type
+   checking with TS2307 on a module Jest itself resolves fine. Both halves are required.
 9. **`forbidNonWhitelisted: true` will 400 the edit form.** Angular must build PATCH payloads from the shared
    `UpdateLeadRequest` type, not by spreading the fetched entity (which carries `id`, `createdAt`, `updatedAt`).
 10. **Proxy `"ws": true`.** Set now. Without it Day 3's WebSocket upgrade fails through the proxy with an
@@ -175,6 +177,17 @@ would buy nothing and cost a lot. Interaction generation uses a seeded PRNG so r
     `SequelizeMeta` → `sequelize_meta`. Removing `define` later would make Umzug find no history and
     **re-run every migration**. Now pinned: `new SequelizeStorage({ sequelize, tableName: 'sequelize_meta' })`.
     Note `define` was doing nothing useful there anyway — QueryInterface never applies it (see Trap #5).
+12. **`jest.config.ts` at the app root reshapes `dist/`.** *(Found in practice, D9 implementation.)* It is
+    the only `.ts` file outside `src/`, so TypeScript infers a common root of `apps/api` instead of
+    `apps/api/src`. `dist/main.js` silently becomes `dist/src/main.js` and `start:prod` (`node dist/main`)
+    stops resolving — with no error at build time. Fixed by adding `jest.config.ts` to
+    `tsconfig.build.json`'s `exclude`. The build succeeds either way; only the layout differs.
+13. **Jest 30 loads a TypeScript config as an ES module**, so `__dirname` is not defined in
+    `jest.config.ts`. Omit `rootDir` — the default (the config file's own directory) is what you want, and
+    inline `projects` entries inherit it.
+14. **`SequelizeConnectionRefusedError` has an empty `message`** — and an empty `original.message`. A
+    naive `` `Cause: ${error.message}` `` prints "Cause: " and tells you nothing, which is precisely when
+    you most need the diagnostic. Fall back to `error.name`; see `test/helpers/describe-error.ts`.
 
 > **Trap #6 confirmed in practice.** The first `/api/health/db` implementation read `version` from
 > `SHOW server_version`, whose actual column is `server_version`. The field came back `undefined` and
@@ -201,11 +214,16 @@ would buy nothing and cost a lot. Interaction generation uses a seeded PRNG so r
       from chapter 02's layered example paths. Specifically it must carry: the feature-module layout (D10),
       the single-track Umzug convention (so agents don't generate `schema.sql` from the MANDATORY doc),
       and the `satisfies` + `Exclude` exhaustiveness bridge under "DTO & Validation Patterns".
-- [ ] **Add the SQLSTATE `23514` integration test to the Day 1 test plan.** Runs against `crm_test`
+- [x] **Add the SQLSTATE `23514` integration test to the Day 1 test plan.** Runs against `crm_test`
       (schema built by migrations, per D8): iterate `LEAD_STATUSES` — every value must insert; then one
       bogus value must fail with `check_violation`. This is the only thing linking the TypeScript union
       to the migration's SQL, and it fails loudly on a fresh clone if someone adds a union member without
       a migration — the same failure mode that motivated rejecting `synchronize: true`.
+      **Landed** as `apps/api/src/database/value-set-constraints.integration.spec.ts`, covering all three
+      CHECK constraints rather than only `status`. Inserts are raw SQL on purpose: `Lead.create()` is
+      stopped by the model's own `validate.isIn` before Postgres sees the row, which would test
+      sequelize-typescript instead of the schema. **Negative test run:** adding `'archived'` to
+      `LeadStatus` + `LEAD_STATUSES` without a migration failed the suite on `23514`; reverted.
 
 ## Deferred — with triggers
 

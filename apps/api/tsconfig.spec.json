@@ -1,0 +1,19 @@
+{
+  // ts-jest compiles into a CommonJS sandbox, so the Nest build's `nodenext`
+  // module settings do not apply. These are the only differences; everything
+  // else — paths (including @test/*), decorators, strictness — is inherited, so
+  // the tests type-check under the same rules as the code they exercise.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    // Requires moduleResolution node16/nodenext/bundler, so it cannot survive
+    // the switch above.
+    "resolvePackageJsonExports": false,
+    // Nothing is emitted to disk here; ts-jest holds the output in memory.
+    "declaration": false,
+    "incremental": false,
+    "sourceMap": false,
+    "types": ["jest", "node"]
+  }
+}

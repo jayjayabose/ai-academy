@@ -23,7 +23,10 @@
         "db:migrate": "npm run --workspace apps/api db:migrate",
         "db:migrate:status": "npm run --workspace apps/api db:migrate:status",
         "db:migrate:undo": "npm run --workspace apps/api db:migrate:undo",
-        "test": "npm run --workspace apps/api test"
+        "db:migrate:test": "npm run --workspace apps/api db:migrate:test",
+        "test": "npm run --workspace apps/api test",
+        "test:integration": "npm run --workspace apps/api test:integration",
+        "test:all": "npm run --workspace apps/api test:all"
     },
     "devDependencies": {
         "concurrently": "^10.0.4"
