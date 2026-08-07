@@ -107,8 +107,10 @@ Target from `day-1-build-requirements.md:224` — `git clone → npm install →
 | `db:psql`               | psql into the container without remembering the non-default port   |
 | `db:seed`               | CSV import. **Additive.** If `leads` is non-empty: message naming `db:seed:fresh`, exit 0, change nothing |
 | `db:seed:fresh`         | `TRUNCATE leads CASCADE` then seed. Destructive, and named so      |
-| `test`                  | unit only — **no Docker required**                                 |
-| `test:integration`      | migrates `crm_test`, then integration project                      |
+| `typecheck`             | `tsc --noEmit` over src + test. The only thing that type-checks — see Trap #15 |
+| `test`                  | `typecheck`, then unit only — **no Docker required**               |
+| `test:integration`      | `typecheck`, then integration project (its `globalSetup` migrates `crm_test`) |
+| `test:all`              | `typecheck`, then both projects                                     |
 
 **Why `db:seed` does not truncate.** An earlier draft had it truncate-then-insert. Corrected: no
 ecosystem does this — Rails has a *separate* `db:seed:replant`, Laravel `migrate:fresh --seed`, Prisma
@@ -192,6 +194,21 @@ would buy nothing and cost a lot. Interaction generation uses a seeded PRNG so r
     `name` resolving to `Error.prototype.name` — the literal string `'Error'` — so a test double must
     assign it too or it does not reproduce the case. Found by writing the double the obvious way and
     watching it fail.
+15. **ts-jest type-checks nothing under this tsconfig, and says nothing about it.** *(Found in
+    practice, D13.)* ts-jest 29 reads tsconfig's `isolatedModules` as its own transpile-only switch
+    (`config-set.js:228` → `ts-compiler.js:78`, which then never builds a LanguageService), and
+    `nest new` ships `isolatedModules: true`. Verified: a deliberate `const x: number = 'nope'` in a
+    file under test passed the whole suite. Setting it false is not the fix — ts-jest then warns
+    TS151002 because it cannot type-check a hybrid `nodenext` module kind at all. **Type checking is
+    tsc's job:** `npm run typecheck` (`tsc -p tsconfig.spec.json --noEmit`) and the `test*` scripts
+    depend on it. This was caught only because `ts-node` refused to run `db:seed` — a green `npm test`
+    was not evidence the code compiled.
+16. **A bare `extends Model` makes `bulkCreate` uncallable.** `_creationAttributes` falls back to
+    `any`, so the parameter resolves to `Optional<any, string>`, whose `Omit<any, string>` half demands
+    a numeric index signature no object literal has. Both models now declare
+    `Model<InferAttributes<M>, InferCreationAttributes<M>>` with `CreationOptional` on the
+    default-supplied fields and `NonAttribute` on the associations — without `NonAttribute`,
+    `InferAttributes` treats `interactions` as a column.
 
 > **Trap #6 confirmed in practice.** The first `/api/health/db` implementation read `version` from
 > `SHOW server_version`, whose actual column is `server_version`. The field came back `undefined` and

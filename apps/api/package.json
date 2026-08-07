@@ -16,11 +16,14 @@
     "db:migrate:status": "ts-node src/database/migrate.ts status",
     "db:migrate:undo": "ts-node src/database/migrate.ts down",
     "db:migrate:test": "MIGRATE_TARGET=test ts-node src/database/migrate.ts up",
-    "test": "jest --selectProjects unit",
+    "db:seed": "ts-node src/database/seed/seed.ts",
+    "db:seed:fresh": "ts-node src/database/seed/seed.ts --fresh",
+    "typecheck": "tsc -p tsconfig.spec.json --noEmit",
+    "test": "npm run typecheck && jest --selectProjects unit",
     "test:watch": "jest --selectProjects unit --watch",
     "test:cov": "jest --selectProjects unit --coverage",
-    "test:integration": "jest --selectProjects integration --runInBand",
-    "test:all": "jest --runInBand"
+    "test:integration": "npm run typecheck && jest --selectProjects integration --runInBand",
+    "test:all": "npm run typecheck && jest --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

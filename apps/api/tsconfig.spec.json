@@ -1,16 +1,31 @@
 {
-  // ts-jest compiles into a CommonJS sandbox, so the Nest build's `nodenext`
-  // module settings do not apply. These are the only differences; everything
-  // else — paths (including @test/*), decorators, strictness — is inherited, so
-  // the tests type-check under the same rules as the code they exercise.
+  // Inherits the Nest build's `nodenext` module settings ON PURPOSE.
+  //
+  // The obvious move is to force `module: commonjs` for ts-jest's CommonJS
+  // sandbox, but it is both unnecessary and harmful. Unnecessary: apps/api has
+  // no `"type": "module"`, so under nodenext TypeScript already classifies every
+  // .ts file here as CommonJS and emits require() — the same output nest build
+  // produces. Harmful: `moduleResolution: node` cannot see package `exports`,
+  // and `csv-parse/sync` exists ONLY as an export map entry, with no sync/
+  // directory on disk. Jest's own resolver handles exports fine, so forcing it
+  // would give an import that works at runtime and fails type checking.
+  //
+  // NOTE ON TYPE CHECKING — ts-jest does none of it, here or anywhere.
+  // ts-jest 29 reads tsconfig's `isolatedModules` as its own transpile-only
+  // switch (config-set.js:228 feeds ts-compiler.js:78, which then never builds a
+  // LanguageService), and `nest new` ships `isolatedModules: true`. Setting it
+  // false is not an escape: ts-jest then warns TS151002, because it cannot
+  // type-check a hybrid `nodenext` module kind at all.
+  //
+  // So type checking is tsc's job, not the runner's: `npm run typecheck` runs
+  // this config with --noEmit, and the test scripts depend on it. That is
+  // strictly better than the runner doing it — one pass over the whole project
+  // instead of per-file, and it covers files no test imports.
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
-    // Requires moduleResolution node16/nodenext/bundler, so it cannot survive
-    // the switch above.
-    "resolvePackageJsonExports": false,
-    // Nothing is emitted to disk here; ts-jest holds the output in memory.
+    // Nothing is emitted; this config exists to be type-checked and to feed
+    // ts-jest's transpiler.
+    "noEmit": true,
     "declaration": false,
     "incremental": false,
     "sourceMap": false,
