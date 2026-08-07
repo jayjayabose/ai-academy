@@ -16,8 +16,9 @@ import type {
  * Decision 7 puts the dev server and the API on the same origin via
  * `proxy.conf.json`, so every path here is relative and CORS does not exist.
  *
- * Until apps/api lands, `fixtureInterceptor` answers these exact requests.
- * Nothing in this file knows or cares.
+ * Every path is answered by apps/api. Until it existed a fixtureInterceptor
+ * answered these exact requests in-process; removing it changed nothing here,
+ * which was the point of writing the real client first.
  */
 @Injectable({ providedIn: 'root' })
 export class LeadService {
