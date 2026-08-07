@@ -16,9 +16,11 @@
     "db:migrate:status": "ts-node src/database/migrate.ts status",
     "db:migrate:undo": "ts-node src/database/migrate.ts down",
     "db:migrate:test": "MIGRATE_TARGET=test ts-node src/database/migrate.ts up",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "test": "jest --selectProjects unit",
+    "test:watch": "jest --selectProjects unit --watch",
+    "test:cov": "jest --selectProjects unit --coverage",
+    "test:integration": "jest --selectProjects integration --runInBand",
+    "test:all": "jest --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -64,22 +66,5 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }

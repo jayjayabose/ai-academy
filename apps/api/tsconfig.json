@@ -15,7 +15,12 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@ai-academy/shared": ["../../packages/shared/src/index.d.ts"]
+      "@ai-academy/shared": ["../../packages/shared/src/index.d.ts"],
+      // Test-only. tsconfig.build.json excludes `test`, so this never reaches dist.
+      // Jest resolves the same alias at runtime via a PER-PROJECT moduleNameMapper
+      // (Trap #8) — both halves are required: this one satisfies the type checker,
+      // that one satisfies the module loader.
+      "@test/*": ["test/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
