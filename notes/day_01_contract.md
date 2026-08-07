@@ -254,9 +254,29 @@ contract, so "a contract change breaks both apps" was theory.
 
 ## Next
 
-1. Migration `001-create-leads-and-interactions` — revert and delete `000-smoke` first
-   (`npm run db:migrate:undo`), plus `database/smoke.model.ts` and the `smoke` block in `health.service.ts`.
-2. CSV import (Feature 1). **Question 12 is still open:** does the seed script boot via a NestJS
-   standalone application context (reusing ConfigModule + models + services) or a bare ts-node script?
-   Recommendation on record: standalone context with a slim `SeedModule`.
-3. Frontend track can start now against `packages/shared` — typed fixtures, not a stub server.
+1. ~~Migration `001-create-leads-and-interactions`~~ — done (`6127ed5`).
+2. ~~CSV import (Feature 1)~~ — done (`c2c753a`). **Question 12 is closed:** standalone application
+   context with a slim `SeedModule`, as recommended.
+3. ~~Frontend track against `packages/shared`~~ — done (`b08e355`), fixture-backed.
+4. ~~Controllers + DTOs~~ — done. Every endpoint in §4 exists, with the two-case optional rule applied
+   by column nullability in both directions. `UpdateLeadDto` is **written out, not
+   `PartialType(CreateLeadDto)`** — PartialType applies `@IsOptional()` to every property, which
+   reopens the explicit-null hole above, and layering `@ValidateIf` back on does not undo it because
+   class-validator ANDs conditional validations.
+5. **Remove the fixture layer from `apps/web`** — two lines in `app.config.ts` plus deleting
+   `apps/web/src/app/fixtures/`. The API now answers every request the fixtures were standing in for,
+   and the proxy is verified (see below), so nothing else blocks it. **Not yet done** — the fixture's
+   validation-error wording was a reconstruction of `ValidationPipe`, and the real messages are now
+   known, so the frontend's expectations should be re-checked against them as part of the same change.
+
+### Verified once controllers landed
+
+| Check | Result |
+| --- | --- |
+| `proxy.conf.json` carries a real request | ✅ **first time ever.** `GET localhost:4300/api/leads` → 200, 45 KB, 100 rows |
+| A 400 body survives the proxy intact | ✅ `{"message":[...],"error":"Bad Request","statusCode":400}` |
+| List payload size against the §1 estimate | 45 KB for 100 rows, vs ~25 KB estimated — notes are longer than assumed. Still nowhere near a projection being worth it |
+| `PATCH {"status": null}` | ✅ 400 `status must be one of the following values: ...` — the hole is closed |
+| Spreading a fetched entity into PATCH | ✅ 400 `property id should not exist` (Trap #9, reproduced deliberately) |
+| Malformed id | ✅ 400 `Validation failed (uuid is expected)`, not a 500 from `22P02` |
+| `DELETE` cascade | ✅ 204, and the interactions go with it |

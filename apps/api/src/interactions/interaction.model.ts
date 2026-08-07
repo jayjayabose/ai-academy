@@ -51,7 +51,16 @@ export class Interaction extends Model<
   })
   declare type: InteractionType;
 
-  /** TIMESTAMPTZ — a genuine instant, unlike Lead.inquiryDate. */
+  /**
+   * TIMESTAMPTZ — a genuine instant, unlike Lead.inquiryDate.
+   *
+   * @Default duplicates migration 001's `DEFAULT now()` for the same reason
+   * Lead.inquiryDate does: Sequelize's notNull validation runs before the INSERT
+   * and treats an omitted attribute as null, so without a model default
+   * `POST /api/leads/:id/interactions` with no occurredAt is a 500 instead of
+   * the "absent = use the default" the contract promises.
+   */
+  @Default(DataType.NOW)
   @Column({ type: DataType.DATE, allowNull: false })
   declare occurredAt: CreationOptional<Date>;
 

@@ -90,7 +90,16 @@ export class Lead extends Model<
    * DATEONLY, so Sequelize hands back a 'YYYY-MM-DD' string rather than a Date.
    * That matches the wire contract exactly and sidesteps the midnight-UTC
    * off-by-one-day bug a TIMESTAMPTZ would introduce.
+   *
+   * @Default duplicates migration 001's `DEFAULT CURRENT_DATE`, and it has to.
+   * Sequelize runs its own notNull validation BEFORE the INSERT and treats an
+   * omitted attribute as null, so `allowNull: false` with no model default makes
+   * the column default unreachable through the model: POST /api/leads without an
+   * inquiryDate fails with `notNull Violation` rather than falling back. The two
+   * defaults also differ usefully — CURRENT_DATE is the database's today and the
+   * container runs UTC, whereas DataType.NOW is the API process's today.
    */
+  @Default(DataType.NOW)
   @Column({ type: DataType.DATEONLY, allowNull: false })
   declare inquiryDate: CreationOptional<string>;
 

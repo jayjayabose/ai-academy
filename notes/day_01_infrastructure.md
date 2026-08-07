@@ -209,6 +209,22 @@ would buy nothing and cost a lot. Interaction generation uses a seeded PRNG so r
     `Model<InferAttributes<M>, InferCreationAttributes<M>>` with `CreationOptional` on the
     default-supplied fields and `NonAttribute` on the associations — without `NonAttribute`,
     `InferAttributes` treats `interactions` as a column.
+17. **A column `DEFAULT` is unreachable through the model.** *(Found in practice, controllers.)*
+    Sequelize runs its own notNull validation *before* the INSERT and treats an **omitted** attribute as
+    null, so `allowNull: false` with no model-level default means `POST /api/leads` without an
+    `inquiryDate` fails `notNull Violation: Lead.inquiryDate cannot be null` — migration 001's
+    `DEFAULT CURRENT_DATE` never gets a chance. The contract promises "absent = use the default", so
+    `inquiryDate` and `Interaction.occurredAt` now carry `@Default(DataType.NOW)` too. The duplication
+    is real, but the two defaults differ usefully: `CURRENT_DATE` is the *database's* today in a UTC
+    container, `DataType.NOW` is the API process's. The seeder never caught this because it always
+    supplies its own dates.
+18. **`PartialType` reopens the explicit-null hole.** It applies `@IsOptional()` to every property
+    (`@nestjs/mapped-types` `partial-type.helper.js:17`), and `@IsOptional()` permits null — so
+    `PartialType(CreateLeadDto)` would make `PATCH {"status": null}` valid against a NOT NULL column.
+    Re-applying `@ValidateIf` on top does **not** rescue it: class-validator ANDs every conditional
+    validation (`ValidationExecutor.js:175`), so `@IsOptional()` returning false for null still wins and
+    the property is skipped. `UpdateLeadDto` is therefore written out, with a unit spec asserting it
+    agrees with `CreateLeadDto` on every shared format rule.
 
 > **Trap #6 confirmed in practice.** The first `/api/health/db` implementation read `version` from
 > `SHOW server_version`, whose actual column is `server_version`. The field came back `undefined` and
