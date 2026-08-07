@@ -26,3 +26,5 @@ Because I had setup my project with shared types, I took an approach of designin
 I am havign a lot of detailed discussions where my understanding is 75%.
 
 I have asked some questions that revised it's approach: e.g. "from a REST standpoint are interactions as trud subresource"; "is it conventional for db:seed to be destructive?"
+
+I had a subagent work on the front end. Importantly it was instructed to report errors and DO NOT fix them. This avoided changes that would have broken the backend.

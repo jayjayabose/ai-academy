@@ -1,5 +1,14 @@
 import type { LeadStatus, PropertyType } from '@ai-academy/shared';
-import { Column, CreatedAt, DataType, Default, HasMany, Model, Table, UpdatedAt } from 'sequelize-typescript';
+import {
+  Column,
+  CreatedAt,
+  DataType,
+  Default,
+  HasMany,
+  Model,
+  Table,
+  UpdatedAt,
+} from 'sequelize-typescript';
 import { Interaction } from '../interactions/interaction.model';
 import { LEAD_STATUSES, PROPERTY_TYPES } from './lead-status';
 
@@ -14,71 +23,71 @@ import { LEAD_STATUSES, PROPERTY_TYPES } from './lead-status';
  */
 @Table({ tableName: 'leads' })
 export class Lead extends Model {
-    @Default(DataType.UUIDV4)
-    @Column({ type: DataType.UUID, primaryKey: true, allowNull: false })
-    declare id: string;
+  @Default(DataType.UUIDV4)
+  @Column({ type: DataType.UUID, primaryKey: true, allowNull: false })
+  declare id: string;
 
-    @Column({ type: DataType.STRING(100), allowNull: false })
-    declare firstName: string;
+  @Column({ type: DataType.STRING(100), allowNull: false })
+  declare firstName: string;
 
-    @Column({ type: DataType.STRING(100), allowNull: false })
-    declare lastName: string;
+  @Column({ type: DataType.STRING(100), allowNull: false })
+  declare lastName: string;
 
-    /** Indexed but deliberately NOT unique — couples share an address. */
-    @Column({ type: DataType.STRING(255), allowNull: false })
-    declare email: string;
+  /** Indexed but deliberately NOT unique — couples share an address. */
+  @Column({ type: DataType.STRING(255), allowNull: false })
+  declare email: string;
 
-    @Column({ type: DataType.STRING(30), allowNull: true })
-    declare phone: string | null;
+  @Column({ type: DataType.STRING(30), allowNull: true })
+  declare phone: string | null;
 
-    @Default('active')
-    @Column({
-        type: DataType.STRING(20),
-        allowNull: false,
-        validate: { isIn: [[...LEAD_STATUSES]] },
-    })
-    declare status: LeadStatus;
+  @Default('active')
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: false,
+    validate: { isIn: [[...LEAD_STATUSES]] },
+  })
+  declare status: LeadStatus;
 
-    /** Whole dollars. INTEGER so the pg driver returns a number, not a string. */
-    @Column({ type: DataType.INTEGER, allowNull: true })
-    declare budget: number | null;
+  /** Whole dollars. INTEGER so the pg driver returns a number, not a string. */
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  declare budget: number | null;
 
-    /** Nullable: rarely known at first contact. */
-    @Column({ type: DataType.STRING(100), allowNull: true })
-    declare location: string | null;
+  /** Nullable: rarely known at first contact. */
+  @Column({ type: DataType.STRING(100), allowNull: true })
+  declare location: string | null;
 
-    @Column({
-        type: DataType.STRING(20),
-        allowNull: true,
-        validate: { isIn: [[...PROPERTY_TYPES]] },
-    })
-    declare propertyType: PropertyType | null;
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: true,
+    validate: { isIn: [[...PROPERTY_TYPES]] },
+  })
+  declare propertyType: PropertyType | null;
 
-    /** NULL for `land` — not applicable, as distinct from zero. */
-    @Column({ type: DataType.INTEGER, allowNull: true })
-    declare bedrooms: number | null;
+  /** NULL for `land` — not applicable, as distinct from zero. */
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  declare bedrooms: number | null;
 
-    @Column({ type: DataType.STRING(30), allowNull: true })
-    declare source: string | null;
+  @Column({ type: DataType.STRING(30), allowNull: true })
+  declare source: string | null;
 
-    /**
-     * DATEONLY, so Sequelize hands back a 'YYYY-MM-DD' string rather than a Date.
-     * That matches the wire contract exactly and sidesteps the midnight-UTC
-     * off-by-one-day bug a TIMESTAMPTZ would introduce.
-     */
-    @Column({ type: DataType.DATEONLY, allowNull: false })
-    declare inquiryDate: string;
+  /**
+   * DATEONLY, so Sequelize hands back a 'YYYY-MM-DD' string rather than a Date.
+   * That matches the wire contract exactly and sidesteps the midnight-UTC
+   * off-by-one-day bug a TIMESTAMPTZ would introduce.
+   */
+  @Column({ type: DataType.DATEONLY, allowNull: false })
+  declare inquiryDate: string;
 
-    @Column({ type: DataType.TEXT, allowNull: true })
-    declare notes: string | null;
+  @Column({ type: DataType.TEXT, allowNull: true })
+  declare notes: string | null;
 
-    @CreatedAt
-    declare createdAt: Date;
+  @CreatedAt
+  declare createdAt: Date;
 
-    @UpdatedAt
-    declare updatedAt: Date;
+  @UpdatedAt
+  declare updatedAt: Date;
 
-    /** Populated only by the detail query's `include`; absent on list rows. */
-    @HasMany(() => Interaction, { onDelete: 'CASCADE' })
-    declare interactions?: Interaction[];
+  /** Populated only by the detail query's `include`; absent on list rows. */
+  @HasMany(() => Interaction, { onDelete: 'CASCADE' })
+  declare interactions?: Interaction[];
 }

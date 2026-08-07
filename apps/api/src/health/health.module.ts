@@ -6,8 +6,8 @@ import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 
 @Module({
-    imports: [SequelizeModule.forFeature([Lead, Interaction])],
-    controllers: [HealthController],
-    providers: [HealthService],
+  imports: [SequelizeModule.forFeature([Lead, Interaction])],
+  controllers: [HealthController],
+  providers: [HealthService],
 })
 export class HealthModule {}

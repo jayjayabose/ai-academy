@@ -11,6 +11,13 @@ import type { InteractionType } from '@ai-academy/shared';
 
 type AssertEmpty<T extends never> = T;
 
-export const INTERACTION_TYPES = ['call', 'email', 'meeting', 'note'] as const satisfies readonly InteractionType[];
+export const INTERACTION_TYPES = [
+  'call',
+  'email',
+  'meeting',
+  'note',
+] as const satisfies readonly InteractionType[];
 
-export type _InteractionTypeExhaustive = AssertEmpty<Exclude<InteractionType, (typeof INTERACTION_TYPES)[number]>>;
+export type _InteractionTypeExhaustive = AssertEmpty<
+  Exclude<InteractionType, (typeof INTERACTION_TYPES)[number]>
+>;

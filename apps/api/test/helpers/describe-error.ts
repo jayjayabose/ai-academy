@@ -8,7 +8,7 @@
  * it carries, so fall back to it.
  */
 export function describeError(error: unknown): string {
-    if (!(error instanceof Error)) return String(error);
+  if (!(error instanceof Error)) return String(error);
 
-    return error.message || error.name;
+  return error.message || error.name;
 }

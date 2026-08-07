@@ -23,85 +23,89 @@ let connection: Sequelize | undefined;
  * suite always starts from a known-empty database.
  */
 export async function setupTestDatabase(): Promise<Sequelize> {
-    if (!connection) {
-        connection = await connect();
-    }
+  if (!connection) {
+    connection = await connect();
+  }
 
-    await truncateAll();
+  await truncateAll();
 
-    return connection;
+  return connection;
 }
 
 /** The live connection. Throws rather than returning undefined, so a test that forgets `setupTestDatabase()` fails with a sentence instead of a TypeError. */
 export function testConnection(): Sequelize {
-    if (!connection) {
-        throw new Error('No test database connection. Call setupTestDatabase() in beforeAll first.');
-    }
+  if (!connection) {
+    throw new Error(
+      'No test database connection. Call setupTestDatabase() in beforeAll first.',
+    );
+  }
 
-    return connection;
+  return connection;
 }
 
 /** Empties every table. CASCADE so a future table with an FK to leads does not need this helper edited before it works. */
 export async function truncateAll(): Promise<void> {
-    await testConnection().query('TRUNCATE TABLE leads, interactions CASCADE');
+  await testConnection().query('TRUNCATE TABLE leads, interactions CASCADE');
 }
 
 export async function teardownTestDatabase(): Promise<void> {
-    if (!connection) return;
+  if (!connection) return;
 
-    await connection.close();
-    connection = undefined;
+  await connection.close();
+  connection = undefined;
 }
 
 async function connect(): Promise<Sequelize> {
-    loadEnv();
+  loadEnv();
 
-    const database = process.env.DB_TEST_NAME;
+  const database = process.env.DB_TEST_NAME;
 
-    if (!database) {
-        throw new Error('DB_TEST_NAME is not set in .env.local; refusing to guess which database to truncate.');
-    }
+  if (!database) {
+    throw new Error(
+      'DB_TEST_NAME is not set in .env.local; refusing to guess which database to truncate.',
+    );
+  }
 
-    // These helpers TRUNCATE. The one mistake that must never be survivable is
-    // pointing them at the development database.
-    if (database === process.env.DB_NAME) {
-        throw new Error(
-            `DB_TEST_NAME and DB_NAME are both "${database}". Refusing to run: the test helpers truncate every table.`,
-        );
-    }
+  // These helpers TRUNCATE. The one mistake that must never be survivable is
+  // pointing them at the development database.
+  if (database === process.env.DB_NAME) {
+    throw new Error(
+      `DB_TEST_NAME and DB_NAME are both "${database}". Refusing to run: the test helpers truncate every table.`,
+    );
+  }
 
-    const sequelize = new Sequelize({
-        dialect: 'postgres',
-        host: process.env.DB_HOST,
-        port: Number(process.env.DB_PORT),
-        username: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database,
+  const sequelize = new Sequelize({
+    dialect: 'postgres',
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database,
 
-        models: [Lead, Interaction],
+    models: [Lead, Interaction],
 
-        // Decision 4: set globally so no individual model can forget it. Must match
-        // database.module.ts, or the models look for camelCase columns that the
-        // migration never created.
-        define: { underscored: true },
+    // Decision 4: set globally so no individual model can forget it. Must match
+    // database.module.ts, or the models look for camelCase columns that the
+    // migration never created.
+    define: { underscored: true },
 
-        logging: false,
+    logging: false,
 
-        // No sync() call anywhere in this file, deliberately. sequelize-typescript
-        // never touches the schema unless asked; the migrations own it.
-    });
+    // No sync() call anywhere in this file, deliberately. sequelize-typescript
+    // never touches the schema unless asked; the migrations own it.
+  });
 
-    try {
-        await sequelize.authenticate();
-    } catch (error) {
-        await sequelize.close();
-        throw new Error(
-            `Could not connect to ${database} on ${process.env.DB_HOST}:${process.env.DB_PORT}. ` +
-                `Is Postgres running? Start it with: npm run db:up\n` +
-                `Cause: ${describeError(error)}`,
-            { cause: error },
-        );
-    }
+  try {
+    await sequelize.authenticate();
+  } catch (error) {
+    await sequelize.close();
+    throw new Error(
+      `Could not connect to ${database} on ${process.env.DB_HOST}:${process.env.DB_PORT}. ` +
+        `Is Postgres running? Start it with: npm run db:up\n` +
+        `Cause: ${describeError(error)}`,
+      { cause: error },
+    );
+  }
 
-    return sequelize;
+  return sequelize;
 }
