@@ -42,7 +42,12 @@ const config: Config = {
       // Everything except *.integration.spec.ts. The ignore pattern is what
       // keeps Docker off the critical path; testMatch alone would also match
       // the integration specs, since they end in .spec.ts too.
-      testMatch: ['<rootDir>/src/**/*.spec.ts'],
+      //
+      // test/ is listed as well as src/. Without it a spec for anything under
+      // test/helpers/ would be collected by NEITHER project — unit's glob would
+      // miss it and integration's demands `.integration.`— so it would sit in
+      // the repo looking like coverage while never running.
+      testMatch: ['<rootDir>/src/**/*.spec.ts', '<rootDir>/test/**/*.spec.ts'],
       testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.spec\\.ts$'],
     },
     {

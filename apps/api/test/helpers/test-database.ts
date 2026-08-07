@@ -18,16 +18,19 @@ import { describeError } from './describe-error';
 let connection: Sequelize | undefined;
 
 /**
- * Connects to crm_test and empties it. Safe to call from several `beforeAll`
- * hooks — the connection is reused, but the tables are cleared each time, so a
- * suite always starts from a known-empty database.
+ * Connects to crm_test. Safe to call from several `beforeAll` hooks — the
+ * connection is created once and reused.
+ *
+ * Deliberately does NOT truncate. Emptying the tables is `truncateAll()`'s job
+ * and belongs in a `beforeEach`, where it runs between tests rather than only
+ * at the top of a file. Doing both meant every suite truncated twice and the
+ * two conventions competed; this one wins because per-test isolation is the
+ * behaviour a suite actually needs.
  */
 export async function setupTestDatabase(): Promise<Sequelize> {
   if (!connection) {
     connection = await connect();
   }
-
-  await truncateAll();
 
   return connection;
 }
