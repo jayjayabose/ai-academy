@@ -30,7 +30,21 @@ export function apiErrorMessages(error: unknown): string[] {
       const nonEmpty = lines.filter((line) => typeof line === 'string' && line.length > 0);
       if (nonEmpty.length > 0) return nonEmpty;
     }
-    if (error.status === 0) {
+    // Status 0 is the browser refusing to connect. 502/503/504 with no ApiError
+    // body means something in front of the API answered instead of the API — the
+    // dev proxy while nothing is listening on 3000, or a load balancer in front
+    // of a dead instance. Either way `error.message` here is HttpClient's
+    // developer-facing string ("Http failure response for http://…: 502 Bad
+    // Gateway"), which is not something to put in front of a salesperson.
+    //
+    // A real 503 from the API — Anthropic unavailable, say — carries an ApiError
+    // body and is handled above, so its wording still reaches the user verbatim.
+    if (
+      error.status === 0 ||
+      error.status === 502 ||
+      error.status === 503 ||
+      error.status === 504
+    ) {
       return ['Could not reach the server. Check that the API is running.'];
     }
     return [error.message];
