@@ -2,20 +2,54 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import type { Interaction } from '@ai-academy/shared';
-import { of } from 'rxjs';
+import type { ParamMap } from '@angular/router';
+import type { ApiError, Interaction, LeadDetail, SummaryUrgency } from '@ai-academy/shared';
+import { BehaviorSubject, of } from 'rxjs';
 
-import { SAMPLE_LEADS } from '../../testing/lead-samples';
+import { SUMMARY_URGENCIES } from '../../core/summary-urgency';
+import { SAMPLE_LEADS, sampleSummary } from '../../testing/lead-samples';
 import { LeadDetailPage } from './lead-detail';
 
-/** The five-interaction lead. */
+/**
+ * The badge copy, spelled out rather than imported from SUMMARY_URGENCY_LABELS.
+ *
+ * Importing the map would make these assertions circular — a typo in the map
+ * would change both the render and the expectation, and the test would still
+ * pass. (It did: caught by mutating 'Low urgency' to 'Medium urgency' and
+ * watching the suite stay green.) Typing it as a full Record keeps the
+ * exhaustiveness the map has, so a new urgency is a compile error here too.
+ */
+const EXPECTED_URGENCY_LABELS: Readonly<Record<SummaryUrgency, string>> = {
+  low: 'Low urgency',
+  medium: 'Medium urgency',
+  high: 'High urgency',
+};
+
+/** The five-interaction lead. Already summarised. */
 const LEAD = SAMPLE_LEADS.find((lead) => lead.interactions.length === 5)!;
+
+/** Never summarised, and no interactions — the brand new lead. */
+const UNSUMMARISED = SAMPLE_LEADS.find(
+  (lead) => lead.summary === null && lead.interactions.length === 0,
+)!;
+
+/** Never summarised, but with history — so a failed summary has something to not break. */
+const UNSUMMARISED_WITH_HISTORY = SAMPLE_LEADS.find(
+  (lead) => lead.summary === null && lead.interactions.length > 0,
+)!;
 
 describe('LeadDetailPage', () => {
   let fixture: ComponentFixture<LeadDetailPage>;
   let http: HttpTestingController;
 
-  beforeEach(async () => {
+  /**
+   * Renders the page for one lead and answers its GET.
+   *
+   * Per-test rather than in a `beforeEach` because which lead is opened is now
+   * the variable under test: whether a summary already exists decides whether
+   * the component is allowed to spend a model call.
+   */
+  async function open(lead: LeadDetail): Promise<void> {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -23,7 +57,7 @@ describe('LeadDetailPage', () => {
         provideHttpClientTesting(),
         {
           provide: ActivatedRoute,
-          useValue: { paramMap: of(convertToParamMap({ id: LEAD.id })) },
+          useValue: { paramMap: of(convertToParamMap({ id: lead.id })) },
         },
       ],
     });
@@ -32,11 +66,11 @@ describe('LeadDetailPage', () => {
     fixture = TestBed.createComponent(LeadDetailPage);
     fixture.detectChanges();
 
-    http.expectOne(`/api/leads/${LEAD.id}`).flush(LEAD);
+    http.expectOne(`/api/leads/${lead.id}`).flush(lead);
 
     await fixture.whenStable();
     fixture.detectChanges();
-  });
+  }
 
   afterEach(() => {
     http.verify();
@@ -47,7 +81,22 @@ describe('LeadDetailPage', () => {
     return Array.from(nodes).map((node) => (node.textContent ?? '').trim());
   }
 
-  it('fetches the history in the same request as the lead', () => {
+  function first(selector: string): string {
+    return texts(selector)[0] ?? '';
+  }
+
+  function summaryUrl(lead: LeadDetail): string {
+    return `/api/leads/${lead.id}/summary`;
+  }
+
+  /** Lets the summary request settle and repaints. */
+  async function settle(): Promise<void> {
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('fetches the history in the same request as the lead', async () => {
+    await open(LEAD);
     // Contract §1: interactions are embedded in LeadDetail, so opening the page
     // is one round trip. A second request here would mean the component had
     // started fetching history separately.
@@ -55,13 +104,15 @@ describe('LeadDetailPage', () => {
     http.verify();
   });
 
-  it('shows the embedded interaction history newest first', () => {
+  it('shows the embedded interaction history newest first', async () => {
+    await open(LEAD);
     const items = texts('.history__item');
     expect(items[0]).toContain('Moving to qualified');
     expect(items[items.length - 1]).toContain('Ridgeland open house');
   });
 
-  it('requires confirmation before it will delete anything', () => {
+  it('requires confirmation before it will delete anything', async () => {
+    await open(LEAD);
     expect(fixture.nativeElement.querySelector('.confirm')).toBeNull();
 
     (fixture.nativeElement.querySelector('.button--danger') as HTMLButtonElement).click();
@@ -75,16 +126,15 @@ describe('LeadDetailPage', () => {
   });
 
   it('logs an interaction and folds the created row into the history', async () => {
-    const notes = fixture.nativeElement.querySelector(
-      '#interaction-notes',
-    ) as HTMLTextAreaElement;
+    await open(LEAD);
+    const notes = fixture.nativeElement.querySelector('#interaction-notes') as HTMLTextAreaElement;
     notes.value = 'Sent the disclosure packet.';
     notes.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    (
-      fixture.nativeElement.querySelector('.interaction-form') as HTMLFormElement
-    ).dispatchEvent(new Event('submit'));
+    (fixture.nativeElement.querySelector('.interaction-form') as HTMLFormElement).dispatchEvent(
+      new Event('submit'),
+    );
 
     const posted = http.expectOne({
       method: 'POST',
@@ -118,8 +168,7 @@ describe('LeadDetailPage', () => {
     };
     posted.flush(created, { status: 201, statusText: 'Created' });
 
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await settle();
 
     // Folded in locally rather than re-fetched — that is the point of returning
     // the created resource from a POST.
@@ -127,5 +176,173 @@ describe('LeadDetailPage', () => {
     expect(items.length).toBe(6);
     expect(items[0]).toContain('Sent the disclosure packet.');
     http.expectNone(`/api/leads/${LEAD.id}`);
+  });
+
+  // --- AI summary -----------------------------------------------------------
+
+  describe('the AI summary card', () => {
+    it('generates one summary, once, when the server has none', async () => {
+      await open(UNSUMMARISED);
+
+      const posted = http.match({ method: 'POST', url: summaryUrl(UNSUMMARISED) });
+      expect(posted.length).toBe(1);
+      // The lead id in the path is the whole request; the server takes no input.
+      expect(posted[0]!.request.body).toEqual({});
+
+      // The lead is on screen already, and only the card is pending.
+      expect(first('.details')).toContain(UNSUMMARISED.email);
+      expect(first('.loading')).toContain('Generating summary');
+
+      const summary = sampleSummary({ urgency: 'high' });
+      posted[0]!.flush(summary);
+      await settle();
+
+      expect(first('.summary__narrative')).toBe(summary.narrative);
+      expect(first('.summary__next')).toBe(summary.nextAction);
+      expect(first('.summary__urgency--high')).toBe(EXPECTED_URGENCY_LABELS.high);
+      // Provenance: a bad summary has to be traceable to a model.
+      expect(first('.summary__meta')).toContain(summary.model);
+      expect(fixture.nativeElement.querySelector('.loading')).toBeNull();
+
+      // Change detection must not be able to trigger a second one. If the
+      // generate ever moves into the template or a computed, this is where it
+      // surfaces — and every repaint would be billable.
+      fixture.detectChanges();
+      fixture.detectChanges();
+      http.expectNone({ method: 'POST', url: summaryUrl(UNSUMMARISED) });
+    });
+
+    it('spends nothing on a lead the server has already summarised', async () => {
+      // This is the test that protects the entire cost model. If it regresses,
+      // every page view pays for a model call again.
+      await open(LEAD);
+
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      http.expectNone({ method: 'POST', url: summaryUrl(LEAD) });
+      expect(first('.summary__narrative')).toBe(LEAD.summary!.narrative);
+    });
+
+    it('keeps the old summary on screen while a regenerate is in flight', async () => {
+      await open(LEAD);
+      const before = LEAD.summary!;
+
+      (fixture.nativeElement.querySelector('.summary__foot .button') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      const button = fixture.nativeElement.querySelector(
+        '.summary__foot .button',
+      ) as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+      expect(button.textContent!.trim()).toBe('Regenerating…');
+      // Not blanked: the previous summary is still the best information available.
+      expect(first('.summary__narrative')).toBe(before.narrative);
+
+      const next = sampleSummary({
+        narrative: 'A second read of the same record, differently phrased.',
+        nextAction: 'Call Amara about the Kenilworth foursquare before Saturday.',
+        urgency: 'low',
+        generatedAt: '2026-09-15T16:05:00.000Z',
+      });
+      http.expectOne({ method: 'POST', url: summaryUrl(LEAD) }).flush(next);
+      await settle();
+
+      expect(first('.summary__narrative')).toBe(next.narrative);
+      expect(first('.summary__next')).toBe(next.nextAction);
+      // The timestamp has to move, or a regenerate is indistinguishable from a
+      // no-op. Asserting the rendered date rather than the ISO string, because
+      // the muted line is what the salesperson actually reads.
+      expect(first('.summary__meta')).toContain('Sep 15, 2026');
+      expect(first('.summary__meta')).not.toContain('Aug 2, 2026');
+      expect(first('.summary__urgency--low')).toBe(EXPECTED_URGENCY_LABELS.low);
+
+      const restored = fixture.nativeElement.querySelector(
+        '.summary__foot .button',
+      ) as HTMLButtonElement;
+      expect(restored.disabled).toBe(false);
+      expect(restored.textContent!.trim()).toBe('Regenerate');
+    });
+
+    it('reports a failed summary without taking the rest of the page down', async () => {
+      await open(UNSUMMARISED_WITH_HISTORY);
+
+      // 429/502/503 are one family per the API contract: show the server's
+      // message verbatim. This is the 503 the API sends when Anthropic is down.
+      const body: ApiError = {
+        statusCode: 503,
+        message: 'The summarisation service is unavailable. Try again shortly.',
+        error: 'Service Unavailable',
+      };
+      http
+        .expectOne({ method: 'POST', url: summaryUrl(UNSUMMARISED_WITH_HISTORY) })
+        .flush(body, { status: 503, statusText: 'Service Unavailable' });
+      await settle();
+
+      expect(texts('.errors li')).toContain(
+        'The summarisation service is unavailable. Try again shortly.',
+      );
+
+      // The whole point of keeping the summary's state separate from the page's:
+      // everything that does not depend on the model is still there and usable.
+      expect(first('.details')).toContain(UNSUMMARISED_WITH_HISTORY.email);
+      expect(fixture.nativeElement.querySelector('.interaction-form')).toBeTruthy();
+      expect(texts('.history__item').length).toBe(UNSUMMARISED_WITH_HISTORY.interactions.length);
+      // No spinner left running, and a way to try again.
+      expect(fixture.nativeElement.querySelector('.loading')).toBeNull();
+      expect(texts('.card .button')).toContain('Generate summary');
+    });
+
+    it('does not land a slow summary on whichever lead is open by the time it returns', async () => {
+      // The request can be in flight for minutes, which is long enough for the
+      // user to open something else. Without the id check in the success handler
+      // this is a silent data-corruption bug: the wrong lead shows the summary,
+      // and it looks entirely plausible.
+      const params = new BehaviorSubject<ParamMap>(convertToParamMap({ id: UNSUMMARISED.id }));
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          { provide: ActivatedRoute, useValue: { paramMap: params } },
+        ],
+      });
+      http = TestBed.inject(HttpTestingController);
+      fixture = TestBed.createComponent(LeadDetailPage);
+      fixture.detectChanges();
+
+      http.expectOne(`/api/leads/${UNSUMMARISED.id}`).flush(UNSUMMARISED);
+      await settle();
+      const pending = http.expectOne({ method: 'POST', url: summaryUrl(UNSUMMARISED) });
+
+      // Navigate to an already-summarised lead while that POST is outstanding.
+      params.next(convertToParamMap({ id: LEAD.id }));
+      http.expectOne(`/api/leads/${LEAD.id}`).flush(LEAD);
+      await settle();
+
+      // Now the first lead's summary arrives.
+      pending.flush(sampleSummary({ narrative: 'Belongs to the lead we navigated away from.' }));
+      await settle();
+
+      expect(first('.summary__narrative')).toBe(LEAD.summary!.narrative);
+      expect(first('.summary__narrative')).not.toContain('navigated away');
+    });
+
+    // Iterating the value set rather than three hand-written cases: a fourth
+    // urgency added to the union arrives here automatically.
+    for (const urgency of SUMMARY_URGENCIES) {
+      it(`renders the ${urgency} urgency badge with its label and modifier`, async () => {
+        await open({ ...LEAD, summary: sampleSummary({ urgency }) });
+
+        const badge = fixture.nativeElement.querySelector(
+          `.summary__urgency--${urgency}`,
+        ) as HTMLElement;
+        expect(badge).toBeTruthy();
+        // Accessibility: the colour is reinforcement, the text is the meaning.
+        expect(badge.textContent!.trim()).toBe(EXPECTED_URGENCY_LABELS[urgency]);
+        // Same pill geometry as the status chip it sits next to.
+        expect(badge.classList.contains('status')).toBe(true);
+      });
+    }
   });
 });
