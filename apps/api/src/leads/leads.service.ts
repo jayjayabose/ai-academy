@@ -1,8 +1,10 @@
+import type { Lead as LeadResource, LeadDetail } from '@ai-academy/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Interaction } from '../interactions/interaction.model';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
+import { toLead, toLeadDetail } from './lead-wire';
 import { Lead } from './lead.model';
 
 @Injectable()
@@ -17,44 +19,38 @@ export class LeadsService {
    * Ordered even though the client sorts client-side — an unordered SELECT has no
    * guaranteed order in Postgres, so without this the list quietly reshuffles
    * between requests.
+   *
+   * `toLead` is what keeps the summary columns off these rows. The model selects
+   * them; the wire `Lead` type has no room for them. See lead-wire.ts.
    */
-  findAll(): Promise<Lead[]> {
-    return this.leads.findAll({
+  async findAll(): Promise<LeadResource[]> {
+    const leads = await this.leads.findAll({
       order: [
         ['inquiryDate', 'DESC'],
         ['createdAt', 'DESC'],
       ],
     });
+
+    return leads.map(toLead);
   }
 
   /** `LeadDetail`: interactions embedded, so the detail page is never a second round trip. */
-  async findOne(id: string): Promise<Lead> {
-    const lead = await this.leads.findByPk(id, {
-      include: [{ model: Interaction }],
-      order: [
-        [{ model: Interaction, as: 'interactions' }, 'occurredAt', 'DESC'],
-      ],
-    });
-
-    if (!lead) {
-      throw new NotFoundException(`Lead ${id} not found`);
-    }
-
-    return lead;
+  async findOne(id: string): Promise<LeadDetail> {
+    return toLeadDetail(await this.findOneWithInteractions(id));
   }
 
-  create(dto: CreateLeadDto): Promise<Lead> {
+  async create(dto: CreateLeadDto): Promise<LeadResource> {
     // The DTO has already dropped unknown properties (whitelist) and normalised
     // email, so it is safe to hand over whole. Omitted optional fields stay
     // omitted, which is what lets the column DEFAULTs apply.
-    return this.leads.create({ ...dto });
+    return toLead(await this.leads.create({ ...dto }));
   }
 
-  async update(id: string, dto: UpdateLeadDto): Promise<Lead> {
+  async update(id: string, dto: UpdateLeadDto): Promise<LeadResource> {
     const lead = await this.findOneOrFail(id);
 
     // `{}` is a legitimate no-op PATCH; `update` with no keys is a no-op too.
-    return lead.update({ ...dto });
+    return toLead(await lead.update({ ...dto }));
   }
 
   async remove(id: string): Promise<void> {
@@ -67,6 +63,22 @@ export class LeadsService {
   /** Existence check without the interactions include — used by mutations and by InteractionsService. */
   async findOneOrFail(id: string): Promise<Lead> {
     const lead = await this.leads.findByPk(id);
+
+    if (!lead) {
+      throw new NotFoundException(`Lead ${id} not found`);
+    }
+
+    return lead;
+  }
+
+  /** The detail read: the row plus its history, ordered newest first. */
+  private async findOneWithInteractions(id: string): Promise<Lead> {
+    const lead = await this.leads.findByPk(id, {
+      include: [{ model: Interaction }],
+      order: [
+        [{ model: Interaction, as: 'interactions' }, 'occurredAt', 'DESC'],
+      ],
+    });
 
     if (!lead) {
       throw new NotFoundException(`Lead ${id} not found`);

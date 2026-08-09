@@ -7,11 +7,12 @@ import {
 import { QueryTypes } from 'sequelize';
 import { INTERACTION_TYPES } from '../interactions/interaction-type';
 import { LEAD_STATUSES, PROPERTY_TYPES } from '../leads/lead-status';
+import { SUMMARY_URGENCIES } from '../leads/summary-urgency';
 
 /**
- * The only thing linking the TypeScript unions to migration 001's SQL.
+ * The only thing linking the TypeScript unions to the migrations' SQL.
  *
- * Migration 001 hardcodes its value sets instead of importing LEAD_STATUSES and
+ * The migrations hardcode their value sets instead of importing LEAD_STATUSES and
  * friends, and that is correct: a migration is a historical record, so importing
  * a mutable constant would let a later edit retroactively change what the
  * migration meant. The cost is a seam — add a member to a union, forget the
@@ -28,7 +29,7 @@ import { LEAD_STATUSES, PROPERTY_TYPES } from '../leads/lead-status';
  *
  * The helpers live below the tests; they are plumbing, not specification.
  */
-describe('migration 001 value-set constraints', () => {
+describe('the migrations value-set constraints', () => {
   beforeAll(async () => {
     await setupTestDatabase();
   });
@@ -88,6 +89,67 @@ describe('migration 001 value-set constraints', () => {
     });
   });
 
+  describe('leads_summary_urgency_check', () => {
+    it.each([...SUMMARY_URGENCIES])(
+      'accepts the SummaryUrgency member %s',
+      async (urgency) => {
+        const id = await insertSummarisedLead(urgency);
+
+        expect(await storedLeadColumn(id, 'summary_urgency')).toBe(urgency);
+      },
+    );
+
+    it('stores NULL, because a lead that has never been summarised is normal', async () => {
+      const id = await insertLead('active');
+
+      expect(await storedLeadColumn(id, 'summary_urgency')).toBeNull();
+    });
+
+    it('rejects a value outside the union with check_violation', async () => {
+      // 'urgent', not something like 'catastrophic': the column is VARCHAR(10),
+      // so anything longer is refused with 22001 (string_data_right_truncation)
+      // before the CHECK is ever evaluated. Both reject the row, but only this
+      // one proves the CHECK is doing it.
+      await expect(insertSummarisedLead('urgent')).rejects.toMatchObject({
+        parent: {
+          code: CHECK_VIOLATION,
+          constraint: 'leads_summary_urgency_check',
+        },
+      });
+    });
+  });
+
+  /**
+   * Not a value set — a shape. `LeadSummary` has no optional fields, so a row
+   * with three of the five columns populated is a row the wire contract cannot
+   * express. The constraint is what lets lead-wire.ts read one column and infer
+   * the other four instead of carrying five separate maybes.
+   */
+  describe('leads_summary_complete_check', () => {
+    it('rejects a half-written summary', async () => {
+      const id = await insertLead('active');
+
+      await expect(setSummaryNarrativeOnly(id)).rejects.toMatchObject({
+        parent: {
+          code: CHECK_VIOLATION,
+          constraint: 'leads_summary_complete_check',
+        },
+      });
+    });
+
+    it('accepts all five together', async () => {
+      const id = await insertSummarisedLead('medium');
+
+      expect(await storedLeadColumn(id, 'summary_urgency')).toBe('medium');
+    });
+
+    it('accepts none of the five, which is every lead before its first summary', async () => {
+      const id = await insertLead('active');
+
+      expect(await storedLeadColumn(id, 'summary_narrative')).toBeNull();
+    });
+  });
+
   describe('interactions_type_check', () => {
     it.each([...INTERACTION_TYPES])(
       'accepts the InteractionType member %s',
@@ -130,6 +192,31 @@ async function insertLead(
   return rows[0].id;
 }
 
+/** A lead inserted with all five summary columns populated in the same statement. */
+async function insertSummarisedLead(urgency: string): Promise<string> {
+  const rows = await testConnection().query<{ id: string }>(
+    `INSERT INTO leads (first_name, last_name, email, status,
+                        summary_narrative, summary_next_action, summary_urgency,
+                        summary_generated_at, summary_model)
+         VALUES ('Constraint', 'Probe', 'probe@example.com', 'active',
+                 'A narrative.', 'A next action.', :urgency,
+                 now(), 'claude-opus-5')
+         RETURNING id`,
+    { replacements: { urgency }, type: QueryTypes.SELECT },
+  );
+
+  return rows[0].id;
+}
+
+/** One of the five, on its own — the partial write leads_summary_complete_check exists to refuse. */
+function setSummaryNarrativeOnly(id: string): Promise<unknown> {
+  return testConnection().query(
+    `UPDATE leads SET summary_narrative = 'A narrative with nothing to go with it.'
+         WHERE id = :id`,
+    { replacements: { id }, type: QueryTypes.UPDATE },
+  );
+}
+
 async function insertInteraction(
   leadId: string,
   type: string,
@@ -146,7 +233,7 @@ async function insertInteraction(
 
 async function storedLeadColumn(
   id: string,
-  column: 'status' | 'property_type',
+  column: 'status' | 'property_type' | 'summary_urgency' | 'summary_narrative',
 ): Promise<string | null> {
   // Interpolated, not a replacement: Postgres does not accept a bind parameter
   // in place of an identifier. The union type is what keeps it safe.

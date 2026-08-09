@@ -1,3 +1,4 @@
+import type { Lead as LeadResource, LeadDetail } from '@ai-academy/shared';
 import {
   Body,
   Controller,
@@ -12,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
-import { Lead } from './lead.model';
 import { LeadsService } from './leads.service';
 
 /**
@@ -27,24 +27,28 @@ import { LeadsService } from './leads.service';
  * it, a clean 400. The frontend distinguishes 404 from everything else
  * (core/api-error.ts:44), so a 500 there would read as "the server is broken"
  * rather than "that is not an id".
+ *
+ * The return types are the wire types from @ai-academy/shared, not the Sequelize
+ * models. Until Day 2 they were the models and the comments claimed otherwise;
+ * the summary columns made that inaccuracy load-bearing (see lead-wire.ts).
  */
 @Controller('leads')
 export class LeadsController {
   constructor(private readonly leads: LeadsService) {}
 
   @Get()
-  findAll(): Promise<Lead[]> {
+  findAll(): Promise<LeadResource[]> {
     return this.leads.findAll();
   }
 
-  /** Returns `LeadDetail` — the same row plus its interactions. */
+  /** The same row plus its interactions. */
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Lead> {
+  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<LeadDetail> {
     return this.leads.findOne(id);
   }
 
   @Post()
-  create(@Body() dto: CreateLeadDto): Promise<Lead> {
+  create(@Body() dto: CreateLeadDto): Promise<LeadResource> {
     return this.leads.create(dto);
   }
 
@@ -52,7 +56,7 @@ export class LeadsController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateLeadDto,
-  ): Promise<Lead> {
+  ): Promise<LeadResource> {
     return this.leads.update(id, dto);
   }
 

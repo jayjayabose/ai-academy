@@ -31,6 +31,9 @@ export type PropertyType = 'single-family' | 'condo' | 'townhouse' | 'multi-fami
 
 export type InteractionType = 'call' | 'email' | 'meeting' | 'note';
 
+/** How soon the salesperson should act, as judged by the model. See LeadSummary. */
+export type SummaryUrgency = 'low' | 'medium' | 'high';
+
 // ---------------------------------------------------------------------------
 // Resources
 // ---------------------------------------------------------------------------
@@ -73,12 +76,35 @@ export interface Interaction {
 }
 
 /**
+ * An AI-authored read of one lead, generated on demand and then persisted.
+ *
+ * The first three fields are the model's; the last two are provenance the server
+ * stamps, so a stale summary can be recognised as stale.
+ */
+export interface LeadSummary {
+    /** 2–3 sentences: who this lead is and where things stand. */
+    narrative: string;
+    /** One concrete next step for the salesperson. */
+    nextAction: string;
+    urgency: SummaryUrgency;
+    /** ISO 8601. When the model produced this. */
+    generatedAt: string;
+    /** The model that produced it, e.g. 'claude-opus-5'. */
+    model: string;
+}
+
+/**
  * Returned by GET /api/leads/:id only. The list endpoint returns `Lead[]` with no
  * interactions — the two types exist so the compiler stops anyone assuming a list
  * row carries history.
  */
 export interface LeadDetail extends Lead {
     interactions: Interaction[];
+    /**
+     * Null until first generated. POST /api/leads/:id/summary fills it.
+     * Deliberately on LeadDetail only — list rows never carry a summary.
+     */
+    summary: LeadSummary | null;
 }
 
 // ---------------------------------------------------------------------------

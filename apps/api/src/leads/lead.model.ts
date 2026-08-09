@@ -1,4 +1,8 @@
-import type { LeadStatus, PropertyType } from '@ai-academy/shared';
+import type {
+  LeadStatus,
+  PropertyType,
+  SummaryUrgency,
+} from '@ai-academy/shared';
 import type {
   CreationOptional,
   InferAttributes,
@@ -17,6 +21,7 @@ import {
 } from 'sequelize-typescript';
 import { Interaction } from '../interactions/interaction.model';
 import { LEAD_STATUSES, PROPERTY_TYPES } from './lead-status';
+import { SUMMARY_URGENCIES } from './summary-urgency';
 
 /**
  * Attributes are camelCase; columns are snake_case. Nothing here declares that
@@ -105,6 +110,38 @@ export class Lead extends Model<
 
   @Column({ type: DataType.TEXT, allowNull: true })
   declare notes: string | null;
+
+  /**
+   * The AI summary, flattened into five nullable columns (migration 002).
+   *
+   * All five are populated together or not at all —
+   * `leads_summary_complete_check` makes a half-written summary unrepresentable,
+   * which is what lets lead-wire.ts treat one populated field as proof of the
+   * rest. Nothing here enforces that; the constraint does.
+   *
+   * These are on the model, so Sequelize selects them on every query, INCLUDING
+   * the list query — but they are NOT on the wire `Lead` type. The mappers in
+   * lead-wire.ts are what keep list rows clean; see the comment there.
+   */
+  @Column({ type: DataType.TEXT, allowNull: true })
+  declare summaryNarrative: string | null;
+
+  @Column({ type: DataType.TEXT, allowNull: true })
+  declare summaryNextAction: string | null;
+
+  @Column({
+    type: DataType.STRING(10),
+    allowNull: true,
+    validate: { isIn: [[...SUMMARY_URGENCIES]] },
+  })
+  declare summaryUrgency: SummaryUrgency | null;
+
+  /** A Date here, an ISO string on the wire — the same split Interaction.occurredAt has. */
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare summaryGeneratedAt: Date | null;
+
+  @Column({ type: DataType.STRING(50), allowNull: true })
+  declare summaryModel: string | null;
 
   @CreatedAt
   declare createdAt: CreationOptional<Date>;
