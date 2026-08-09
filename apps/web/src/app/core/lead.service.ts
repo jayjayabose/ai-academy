@@ -8,6 +8,7 @@ import type {
   Interaction,
   Lead,
   LeadDetail,
+  LeadSummary,
   UpdateLeadRequest,
 } from '@ai-academy/shared';
 
@@ -62,5 +63,20 @@ export class LeadService {
       `/api/leads/${encodeURIComponent(leadId)}/interactions`,
       body,
     );
+  }
+
+  /**
+   * POST /api/leads/:id/summary -> 200 LeadSummary. Generates and persists;
+   * overwrites any existing summary.
+   *
+   * The empty body is deliberate, not an oversight: the server needs no input,
+   * so the lead id in the path is the whole request. 200 rather than the 201 the
+   * other POSTs answer with, because regenerating replaces a summary in place.
+   *
+   * One model call, so this is slow by the standards of everything else here —
+   * seconds, and the client tolerates minutes. Callers need a pending state.
+   */
+  summarize(id: string): Observable<LeadSummary> {
+    return this.http.post<LeadSummary>(`/api/leads/${encodeURIComponent(id)}/summary`, {});
   }
 }

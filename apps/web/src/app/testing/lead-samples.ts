@@ -1,4 +1,4 @@
-import type { Lead, LeadDetail } from '@ai-academy/shared';
+import type { Lead, LeadDetail, LeadSummary } from '@ai-academy/shared';
 
 /**
  * Hand-written sample rows for the component specs, typed against the real wire
@@ -20,6 +20,16 @@ import type { Lead, LeadDetail } from '@ai-academy/shared';
  *   - `bedrooms: 0` (a studio, a real value — must NOT render as an em-dash)
  *                                           — Elena Petrova
  *   - every nullable column null at once    — Robert Njoroge
+ *   - `summary: null` (never generated)     — Dana Whitfield, Tomás Herrera,
+ *                                             Robert Njoroge
+ *   - all three `SummaryUrgency` values     — high: Amara Okafor;
+ *                                             medium: Ben Castellano, Elena
+ *                                             Petrova, Sofia Marchetti;
+ *                                             low: Marcus Bell, Yuki Tanaka
+ *
+ * The narratives are the length the real model actually returns — 300–400
+ * characters, measured off Task A's live calls — because a fixture that is one
+ * short sentence proves nothing about whether the card holds its layout.
  *
  * Row order is deliberately NOT inquiryDate-descending, so the list's default
  * sort is actually doing something.
@@ -43,6 +53,9 @@ export const SAMPLE_LEADS: LeadDetail[] = [
     updatedAt: '2026-07-29T14:02:11.000Z',
     // Edge case: a brand new lead nobody has contacted yet.
     interactions: [],
+    // Edge case: never summarised. Opening this lead is what triggers the
+    // component's one-shot generate-on-first-view.
+    summary: null,
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e002',
@@ -108,6 +121,17 @@ export const SAMPLE_LEADS: LeadDetail[] = [
         updatedAt: '2026-08-01T16:41:09.000Z',
       },
     ],
+    // Already summarised, which is what makes this the lead the detail spec
+    // opens: a lead arriving with a summary must cost zero model calls.
+    summary: {
+      narrative:
+        'Amara Okafor is a referral, pre-approved, and now qualified — the lender letter landed August 1. She has toured Kenilworth and liked the 1920s foursquare, and she will not compromise on District 97 schools. She is selling her current home in the spring, so timing is flexible rather than urgent.',
+      nextAction:
+        'Send Amara the three District 97 listings that came on this week and ask which she wants to see Saturday, while the lender letter is fresh and before the spring inventory turns over.',
+      urgency: 'high',
+      generatedAt: '2026-08-02T09:14:22.000Z',
+      model: 'claude-opus-5',
+    },
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e003',
@@ -146,6 +170,15 @@ export const SAMPLE_LEADS: LeadDetail[] = [
         updatedAt: '2026-08-03T10:05:00.000Z',
       },
     ],
+    summary: {
+      narrative:
+        'Ben Castellano is a website lead hunting 5+ acres in Hill County with well access, intending to build. His $220K is land-only — construction is financed separately, which he confirmed by phone on August 3. He has the parcel map and the septic FAQ, so he has what he needs to shortlist.',
+      nextAction:
+        'Pull the three Hill County parcels over 5 acres with confirmed well permits and email them to Ben, flagging which have already passed a percolation test.',
+      urgency: 'medium',
+      generatedAt: '2026-08-03T11:20:00.000Z',
+      model: 'claude-opus-5',
+    },
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e004',
@@ -184,6 +217,15 @@ export const SAMPLE_LEADS: LeadDetail[] = [
         updatedAt: '2026-07-24T19:12:00.000Z',
       },
     ],
+    summary: {
+      narrative:
+        'Priya Raghunathan is relocating from London in Q4 and is looking at 2-bed downtown condos. She has seen a shortlist of six buildings and video-toured two, but she has stated no budget — it depends on a relocation package that has not been finalised, which is the single fact blocking a real shortlist.',
+      nextAction:
+        'Email Priya to ask when the relocation package is confirmed and what housing allowance it includes, and offer an evening video call — the timezone difference rules out daytime.',
+      urgency: 'medium',
+      generatedAt: '2026-07-25T08:02:00.000Z',
+      model: 'claude-opus-5',
+    },
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e005',
@@ -214,6 +256,9 @@ export const SAMPLE_LEADS: LeadDetail[] = [
         updatedAt: '2026-08-04T17:30:00.000Z',
       },
     ],
+    // Never summarised: a walk-in with one note and no preferences recorded is
+    // the thin record Task A verified the summariser handles honestly.
+    summary: null,
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e006',
@@ -243,6 +288,15 @@ export const SAMPLE_LEADS: LeadDetail[] = [
         updatedAt: '2026-07-28T09:33:00.000Z',
       },
     ],
+    summary: {
+      narrative:
+        'Elena Petrova is an all-cash investor after a Riverside studio or convertible, capped at $289K. She asked for rental comps before she will view anything, and that was July 28 — the comps are the one thing standing between her and a showing, and nothing has been logged since.',
+      nextAction:
+        'Send Elena the Riverside studio rental comps she asked for on July 28, with gross yield at her $289K cap, then propose two viewing slots this week.',
+      urgency: 'medium',
+      generatedAt: '2026-07-29T10:45:00.000Z',
+      model: 'claude-opus-5',
+    },
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e007',
@@ -280,6 +334,15 @@ export const SAMPLE_LEADS: LeadDetail[] = [
         updatedAt: '2026-07-06T11:20:00.000Z',
       },
     ],
+    summary: {
+      narrative:
+        'Marcus Bell is lost — he told us on July 6 that he signed with a competing brokerage. He was a $1.25M multi-family buyer sourced cold; the two eight-unit buildings we walked on June 5 did not clear his cap rate. The record notes he is worth re-approaching in 2027.',
+      nextAction:
+        'Nothing this quarter. Set a reminder for early 2027 to re-approach Marcus, and note the cap rate he needed so the next conversation opens with inventory that clears it.',
+      urgency: 'low',
+      generatedAt: '2026-07-07T09:00:00.000Z',
+      model: 'claude-opus-5',
+    },
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e008',
@@ -326,6 +389,15 @@ export const SAMPLE_LEADS: LeadDetail[] = [
         updatedAt: '2026-07-30T22:00:00.000Z',
       },
     ],
+    summary: {
+      narrative:
+        'Yuki Tanaka is closed — keys were handed over July 30 on a $890K Ballard single-family, from an Okafor referral that moved fast: offer accepted on the second showing. Nothing is outstanding on the transaction itself.',
+      nextAction:
+        'Ask Yuki for a testimonial in September, as the record already flags, and note that this came from the Okafors so the referral is credited.',
+      urgency: 'low',
+      generatedAt: '2026-07-31T08:30:00.000Z',
+      model: 'claude-opus-5',
+    },
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e009',
@@ -345,6 +417,9 @@ export const SAMPLE_LEADS: LeadDetail[] = [
     createdAt: '2026-08-05T07:12:00.000Z',
     updatedAt: '2026-08-05T07:12:00.000Z',
     interactions: [],
+    // Never summarised, and the emptiest record in the set: nothing but a name,
+    // an email and a status for the card to fall back on.
+    summary: null,
   },
   {
     id: '3f2b1c48-9d1e-4a7f-8c30-1b6a51d0e010',
@@ -374,11 +449,47 @@ export const SAMPLE_LEADS: LeadDetail[] = [
         updatedAt: '2026-07-04T20:45:00.000Z',
       },
     ],
+    summary: {
+      narrative:
+        'Sofia Marchetti is a portfolio buyer introduced by the Milan office, working at the top of the range: $100M against 20-bedroom multi-family in Lakeshore East. The record has one note from July 4 and nothing since, so an introduction was made and no relationship has been built on it.',
+      nextAction:
+        'Get the Milan office to make a warm handoff call with Sofia this week and establish her acquisition criteria — unit count, target yield, and whether she is buying stabilised or value-add.',
+      urgency: 'medium',
+      generatedAt: '2026-07-06T12:00:00.000Z',
+      model: 'claude-opus-5',
+    },
   },
 ];
 
-/** The list endpoint's projection: `Lead[]`, with interactions dropped. */
+/**
+ * The list endpoint's projection: `Lead[]`, with interactions AND the summary
+ * dropped.
+ *
+ * `summary` has to go for the same reason `interactions` does, and it matters
+ * more: Task A proved by curl that list rows carry no key matching /summary/i at
+ * all. A fixture that left it on would let a component read `lead.summary` on the
+ * list page and pass its spec against data the real API never sends.
+ */
 export function toListRow(detail: LeadDetail): Lead {
-  const { interactions: _interactions, ...lead } = detail;
+  const { interactions: _interactions, summary: _summary, ...lead } = detail;
   return lead;
+}
+
+/**
+ * A summary for the cases a fixture cannot cover — chiefly the three urgency
+ * badges, which the spec iterates rather than pinning to three specific leads.
+ *
+ * Overrides rather than ad-hoc literals so every summary in the suite is a real
+ * `LeadSummary` and stays one when the contract changes.
+ */
+export function sampleSummary(overrides: Partial<LeadSummary> = {}): LeadSummary {
+  return {
+    narrative:
+      'Rosa Sinclair has been in the pipeline three weeks with steady contact and no objection raised yet. The last call established that financing is in place and the search area is settled, so the only open question is inventory.',
+    nextAction: 'Send the two new Riverside listings and ask which she wants to see this weekend.',
+    urgency: 'medium',
+    generatedAt: '2026-08-06T15:30:00.000Z',
+    model: 'claude-opus-5',
+    ...overrides,
+  };
 }
