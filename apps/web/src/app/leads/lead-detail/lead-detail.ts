@@ -10,6 +10,7 @@ import type {
   LeadDetail as LeadDetailResponse,
   LeadStatus,
   PropertyType,
+  SummaryUrgency,
 } from '@ai-academy/shared';
 
 import { apiErrorMessages, isNotFound } from '../../core/api-error';
@@ -29,6 +30,7 @@ import {
   PROPERTY_TYPE_LABELS,
 } from '../../core/lead-status';
 import { LeadService } from '../../core/lead.service';
+import { SUMMARY_URGENCY_LABELS } from '../../core/summary-urgency';
 
 /**
  * Named `LeadDetailPage` rather than `LeadDetail` because the wire type it
@@ -65,6 +67,14 @@ export class LeadDetailPage {
   protected readonly loggingInteraction = signal(false);
   protected readonly interactionErrors = signal<string[]>([]);
 
+  /**
+   * Deliberately separate from `loading`/`errors`: the summary is one slow call
+   * (seconds, and the API tolerates minutes) hanging off a page that has already
+   * rendered. Sharing the page's state would let a failed summary blank a lead.
+   */
+  protected readonly summarizing = signal(false);
+  protected readonly summaryErrors = signal<string[]>([]);
+
   protected readonly interactionTypes = INTERACTION_TYPES;
 
   /**
@@ -75,9 +85,7 @@ export class LeadDetailPage {
     const interactions = this.lead()?.interactions ?? [];
     // Newest first. `occurredAt` is an ISO string; it is parsed here, at the
     // comparison edge, and the Date never escapes this callback.
-    return [...interactions].sort(
-      (a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt),
-    );
+    return [...interactions].sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt));
   });
 
   protected readonly interactionForm = new FormGroup({
@@ -104,10 +112,19 @@ export class LeadDetailPage {
     this.loading.set(true);
     this.missing.set(false);
     this.errors.set([]);
+    // A summary error belongs to the lead that produced it, so it does not
+    // survive into the next one. `summarizing` is not reset here: it tracks a
+    // request that is genuinely still in flight.
+    this.summaryErrors.set([]);
     this.leadService.get(id).subscribe({
       next: (lead) => {
         this.lead.set(lead);
         this.loading.set(false);
+        // Read-through cache: generate only when the server has nothing stored.
+        // This is a side effect and fires exactly once per load, which is why it
+        // lives here and not in the template or a computed — either of those
+        // would re-run on change detection and bill for every render.
+        if (lead.summary === null) this.generateSummary(lead.id);
       },
       error: (error: unknown) => {
         this.missing.set(isNotFound(error));
@@ -144,6 +161,49 @@ export class LeadDetailPage {
         this.errors.set(apiErrorMessages(error));
       },
     });
+  }
+
+  // --- AI summary -----------------------------------------------------------
+
+  /**
+   * Called on first view when the server has no summary, and by Regenerate.
+   *
+   * Nothing on this page is gated on `summarizing()` — the lead, the form and the
+   * history all render from `lead()`, which is set before this request starts. A
+   * summary that is slow, or that fails outright, costs the user the card and
+   * nothing else.
+   */
+  private generateSummary(id: string): void {
+    if (this.summarizing()) return;
+
+    this.summarizing.set(true);
+    this.summaryErrors.set([]);
+    this.leadService.summarize(id).subscribe({
+      next: (summary) => {
+        // Splice the 200 body in rather than refetch, as logInteraction does with
+        // its 201. The id check matters more here than there: this request can be
+        // in flight for minutes, and the user may have navigated to another lead
+        // in the meantime — without it, lead A's summary lands on lead B.
+        this.lead.update((current) =>
+          current && current.id === id ? { ...current, summary } : current,
+        );
+        this.summarizing.set(false);
+      },
+      error: (error: unknown) => {
+        // 429/502/503 are one family per the API contract — the server's message
+        // is already the right thing to show, so apiErrorMessages just unwraps
+        // it. Any existing summary stays on screen; only the error line is added.
+        if (this.lead()?.id === id) this.summaryErrors.set(apiErrorMessages(error));
+        this.summarizing.set(false);
+      },
+    });
+  }
+
+  /** Regenerating is unconditional server-side; it replaces the stored summary. */
+  protected regenerate(): void {
+    const lead = this.lead();
+    if (!lead) return;
+    this.generateSummary(lead.id);
   }
 
   // --- Log interaction ------------------------------------------------------
@@ -205,5 +265,9 @@ export class LeadDetailPage {
 
   protected interactionTypeLabel(type: InteractionType): string {
     return INTERACTION_TYPE_LABELS[type];
+  }
+
+  protected urgencyLabel(urgency: SummaryUrgency): string {
+    return SUMMARY_URGENCY_LABELS[urgency];
   }
 }
