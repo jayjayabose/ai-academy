@@ -80,6 +80,49 @@
   </section>
 
   <section class="card">
+    <h2>AI summary</h2>
+
+    <!-- Outside the state chain below, not another branch of it: a regenerate can
+         fail while a good summary is still on screen, and the user needs both. -->
+    @if (summaryErrors().length > 0) {
+      <ul class="errors">
+        @for (message of summaryErrors(); track message) {
+          <li>{{ message }}</li>
+        }
+      </ul>
+    }
+
+    @if (lead.summary; as summary) {
+      <p class="prewrap summary__narrative">{{ summary.narrative }}</p>
+
+      <h3 class="summary__label">Next action</h3>
+      <p class="prewrap summary__next">{{ summary.nextAction }}</p>
+
+      <div class="summary__foot">
+        <!-- The label carries the meaning; the colour only reinforces it. -->
+        <span class="status summary__urgency--{{ summary.urgency }}">
+          {{ urgencyLabel(summary.urgency) }}
+        </span>
+        <span class="muted summary__meta">
+          Generated {{ summary.generatedAt | timestamp }} by {{ summary.model }}
+        </span>
+        <!-- The old summary stays put while this runs. Blanking the card would
+             trade something useful for a spinner. -->
+        <button type="button" class="button" (click)="regenerate()" [disabled]="summarizing()">
+          {{ summarizing() ? 'Regenerating…' : 'Regenerate' }}
+        </button>
+      </div>
+    } @else if (summarizing()) {
+      <p class="loading">Generating summary…</p>
+    } @else {
+      <p class="muted">No summary yet.</p>
+      <button type="button" class="button" (click)="regenerate()" [disabled]="summarizing()">
+        Generate summary
+      </button>
+    }
+  </section>
+
+  <section class="card">
     <h2>Log an interaction</h2>
 
     @if (interactionErrors().length > 0) {
