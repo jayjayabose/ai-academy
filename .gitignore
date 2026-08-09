@@ -59,9 +59,8 @@ logs/
 
 # Methodology workspace (engineer's feature work)
 # This will normally be gitignored in normal projects, but for the course we want to see it
-# .claude/workspace/
+.claude/workspace/
 
 # Methodology session handoffs (local context)
 # This will normally be gitignored in normal projects, but for the course we want to see it
-# .claude/meta/session-handoffs/
-
+.claude/meta/session-handoffs/
