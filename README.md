@@ -140,7 +140,9 @@ git pull origin main
 # Copy environment template
 cp .env.local.template .env.local
 
-# Edit .env.local with your database credentials, OPENROUTER_API_KEY
+# Edit .env.local with your database credentials and ANTHROPIC_API_KEY
+# (ANTHROPIC_API_KEY is optional at boot — the CRM runs without it, but
+#  POST /api/leads/:id/summary answers 503 until it is set)
 # (You'll set up PostgreSQL during Day 1 infrastructure setup)
 ```
 

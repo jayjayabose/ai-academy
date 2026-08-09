@@ -18,6 +18,7 @@ export const envValidationSchema = Joi.object({
   DB_NAME: Joi.string().required(),
   DB_TEST_NAME: Joi.string().required(),
 
-  // Optional until Day 2 introduces the AI features.
-  OPENROUTER_API_KEY: Joi.string().allow('').optional(),
+  // Optional at boot so a fresh clone without a key still runs the CRM.
+  // The summarize path fails loudly and specifically when it is missing.
+  ANTHROPIC_API_KEY: Joi.string().allow('').optional(),
 });
