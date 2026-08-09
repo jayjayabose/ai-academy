@@ -1,4 +1,8 @@
-import type { Lead as LeadResource, LeadDetail } from '@ai-academy/shared';
+import type {
+  Lead as LeadResource,
+  LeadDetail,
+  LeadSummary,
+} from '@ai-academy/shared';
 import {
   Body,
   Controller,
@@ -41,7 +45,7 @@ export class LeadsController {
     return this.leads.findAll();
   }
 
-  /** The same row plus its interactions. */
+  /** The same row plus its interactions and its summary. */
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string): Promise<LeadDetail> {
     return this.leads.findOne(id);
@@ -64,5 +68,22 @@ export class LeadsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.leads.remove(id);
+  }
+
+  /**
+   * 200, not the 201 the rest of this controller's POSTs return: this does not
+   * create a subordinate resource with its own identity, it (re)computes a field
+   * of the lead.
+   *
+   * That is also why it is a POST on `leads` rather than a nested resource the way
+   * interactions are. An interaction has an id and a life of its own; a summary
+   * has neither — one per lead, replaced wholesale, gone when the lead is. POST
+   * rather than PATCH because the work is not idempotent and the body is empty:
+   * the client is asking the server to go and produce something.
+   */
+  @Post(':id/summary')
+  @HttpCode(HttpStatus.OK)
+  summarize(@Param('id', ParseUUIDPipe) id: string): Promise<LeadSummary> {
+    return this.leads.summarize(id);
   }
 }
