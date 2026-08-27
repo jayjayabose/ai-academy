@@ -42,4 +42,4 @@ portable	4	orchestration/templates/session-handoff.md	Structural template only.
 adapt-light	1	commands/orchestration.md	The phantom template list is FIXED upstream. Remaining, and it is essential: its MANDATORY read list (12 numbered @-references) does not include meta/project-profile.md, which phase 2 creates. Add it as the FIRST entry, or the partner never loads the project's real facts and all other phase-2 work is wasted.
 adapt-light	3	commands/handoff.md	Pre-handoff checklist hardcodes `npm run type-check` and `npm run lint`. Retarget to the project's real scripts.
 adapt-light	1	commands/validate.md	Hardcodes `npm run type-check`, `npm run lint` and `npm run dev` in its validation phases (lines ~67, 68, 186). Retarget to the project's real scripts.
-adapt-light	3	commands/README.md	The curriculum path is FIXED upstream (now meta/methodology-discoveries.md). Remaining: example commands and the course framing.
+adapt-light	3	orchestration/COMMANDS.md	The curriculum path is FIXED upstream (now meta/methodology-discoveries.md). Remaining: example commands and the course framing.

@@ -153,7 +153,26 @@ copy_one() {
 
 echo "commands:"
 while IFS= read -r f; do
-  copy_one "commands/$(basename "$f")"
+  base="$(basename "$f")"
+  # README.md is too generic a filename to sit in .claude/commands/: a user keeping this
+  # install local needs to name it in a global gitignore, where it would also hide real
+  # project READMEs. Land the command docs under orchestration/ instead, which is already
+  # covered by the common `.claude/*` rule.
+  if [ "$base" = "README.md" ]; then
+    if [ -e "$TARGET_CLAUDE/orchestration/COMMANDS.md" ] && [ "$FORCE" -eq 0 ]; then
+      echo "  SKIP    orchestration/COMMANDS.md (exists)"
+      skipped=$((skipped + 1))
+    else
+      echo "  copy    orchestration/COMMANDS.md (was commands/README.md)"
+      copied=$((copied + 1))
+      if [ "$DRY_RUN" -eq 0 ]; then
+        mkdir -p "$TARGET_CLAUDE/orchestration"
+        cp "$f" "$TARGET_CLAUDE/orchestration/COMMANDS.md"
+      fi
+    fi
+    continue
+  fi
+  copy_one "commands/$base"
 done < <(find "$SOURCE_CLAUDE/commands" -maxdepth 1 -name '*.md' | sort)
 
 echo

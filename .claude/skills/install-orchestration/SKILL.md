@@ -170,6 +170,43 @@ real value. Do not consider phase 2 done while any remain.
   Project commands normally win, but flag it.
 - **`.claude/workspace/`** fills with per-feature artifacts and screenshots. Ask whether
   they want it gitignored.
+
+## Keeping an install local-only (personal workflow, shared repo)
+
+Default assumption for a work repo: the user does **not** want to commit this. Ask before
+touching a tracked `.gitignore` — that is itself a team-visible change.
+
+Use the **global** ignore (`git config --global core.excludesFile`, often `~/.gitignore`):
+
+```
+.claude/orchestration/
+.claude/workspace/
+.claude/commands/orchestration.md
+.claude/commands/handoff.md
+.claude/commands/validate.md
+```
+
+**File-level patterns for the commands are not optional.** Many repos already carry
+`.claude/*` plus `!.claude/commands/` so the team can share project commands. A *directory*
+pattern in the global file loses to that negation; a *file* pattern does not, because
+`!.claude/commands/` has a trailing slash and therefore only ever matches the directory.
+Verify per repo rather than trusting precedence:
+
+```bash
+git check-ignore -v .claude/commands/orchestration.md
+```
+
+`.git/info/exclude` works identically and is per-repo; prefer the global file when the user
+installs into several projects.
+
+**Do not install `commands/README.md`.** `README.md` is too generic a name to put in a
+global ignore — it would hide a real project file. Install the command documentation as
+`orchestration/COMMANDS.md`, which `.claude/*` already covers.
+
+**Warn about `git clean -xfd`.** Ignored files are exactly what it deletes, and phase-2 work
+is hand-authored and not regenerable. Back the filled `meta/project-profile.md` and
+`meta/project-mission.md` up outside the repo — `~/.claude/orchestration-installs/<project>/`
+— and say so.
 - **Re-running** is safe and idempotent. Phase-2 edits are protected — a re-run skips
   modified files unless `--force`, which would discard the adaptation work.
 - **A pre-existing `.claude/`** in the target is left alone; the installer only adds files.
