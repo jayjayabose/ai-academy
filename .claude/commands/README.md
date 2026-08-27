@@ -114,7 +114,7 @@ Custom slash commands for AI Orchestration Mastery course workflow.
 2. `BUG-FIX-PROMPT.md` - Step-by-step fix instructions (if bugs)
 3. `methodology-learnings.md` - Feature-specific insights
 4. `DELIVERABLES-SUMMARY.md` - Quick reference guide
-5. Updates to `.claude/curriculum/methodology-discoveries.md`
+5. Updates to `.claude/orchestration/meta/methodology-discoveries.md`
 
 ---
 

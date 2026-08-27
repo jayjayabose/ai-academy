@@ -129,7 +129,7 @@ For each proposed parallel task, evaluate:
 ALL agents MUST maintain detailed session logs during execution:
 
 **Log Location:** `.claude/workspace/[feature]/agent-logs/[agent-name]-session.md`
-**Required Logging:** Use templates from `.claude/methodology/logging-templates.md`
+**Required Logging:** Use templates from `.claude/orchestration/methodology/logging-templates.md`
 **Critical Log Points:**
 
 - Technology stack decisions affecting other agents
@@ -305,7 +305,7 @@ ALL agents MUST maintain detailed session logs during execution:
 #### 1. TypeScript Compilation
 
 ```bash
-npm run type-check
+npm run --workspace apps/api typecheck
 ```
 
 **REQUIRED:** Output must show "✔ No TypeScript errors" (0 errors)
@@ -316,7 +316,7 @@ errors)
 #### 2. ESLint
 
 ```bash
-npm run lint
+npm run --workspace apps/api lint
 ```
 
 **REQUIRED:** Output must show "✔ No ESLint warnings or errors" (0 warnings)
@@ -338,12 +338,12 @@ npm test
 
 ### TypeScript
 
-[paste npm run type-check output]
+[paste npm run --workspace apps/api typecheck output]
 ✔ No TypeScript errors
 
 ### ESLint
 
-[paste npm run lint output]
+[paste npm run --workspace apps/api lint output]
 ✔ No ESLint warnings or errors
 
 ### Tests

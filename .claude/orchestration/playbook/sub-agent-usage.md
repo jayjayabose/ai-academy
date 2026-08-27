@@ -56,6 +56,6 @@ and return a summary of existing patterns"
 
 ---
 
-**Complete guide:** guidebook/chapters/15-sub-agents.md
+**Complete guide:** course/guidebook/chapters/05-sub-agents.md
 
-**Context strategies:** guidebook/chapters/16-context-management.md
+**Context strategies:** course/guidebook/chapters/07-context-management.md

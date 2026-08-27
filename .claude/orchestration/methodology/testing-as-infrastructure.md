@@ -296,7 +296,7 @@ Task Complete When:
 npx tsc --noEmit         # Zero errors required
 
 # Linting
-npm run lint                 # Zero errors required
+npm run --workspace apps/api lint                 # Zero errors required
 
 # Testing (NEW)
 npm test                 # All tests pass

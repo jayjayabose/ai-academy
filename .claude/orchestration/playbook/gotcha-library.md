@@ -50,7 +50,7 @@
 
 **Problem:** Runtime test success ≠ compilation success
 **Symptoms:** Tests pass, TypeScript fails, deployment blocked
-**Solution:** Run npm run type-check before claiming complete
+**Solution:** Run npm run --workspace apps/api typecheck before claiming complete
 **Evidence:** 221 errors undetected by tests alone
 **See:** Chapter 4: Validation Gate 1
 

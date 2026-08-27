@@ -122,8 +122,8 @@ path/to/file2.ts - Fixed Y bug
 
 ### Validation Needed
 - [ ] Run tests: `npm test`
-- [ ] Check TypeScript: `npm run type-check`
-- [ ] Check ESLint: `npm run lint`
+- [ ] Check TypeScript: `npm run --workspace apps/api typecheck`
+- [ ] Check ESLint: `npm run --workspace apps/api lint`
 - [ ] Manual testing: {specific scenarios to test}
 
 ### Documentation Updates Needed

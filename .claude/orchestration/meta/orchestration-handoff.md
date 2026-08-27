@@ -12,11 +12,11 @@ This command loads all methodology protocols and activates orchestration partner
 
 ### 2. Read Methodology Context (IN ORDER)
 
-1. **`.claude/playbook/strategic-orchestration.md`** - Pre-execution validation protocol
-2. **`.claude/playbook/agent-coordination.md`** - Validation gates, coordination protocols
-3. **`.claude/playbook/prompt-creation.md`** - How to create agent prompts from templates
-4. **`.claude/playbook/workspace-management.md`** - Feature organization, retrospective learning
-5. **`.claude/methodology/pattern-library.md`** - Proven orchestration patterns
+1. **`.claude/orchestration/playbook/strategic-orchestration.md`** - Pre-execution validation protocol
+2. **`.claude/orchestration/playbook/agent-coordination.md`** - Validation gates, coordination protocols
+3. **`.claude/orchestration/playbook/prompt-creation.md`** - How to create agent prompts from templates
+4. **`.claude/orchestration/playbook/workspace-management.md`** - Feature organization, retrospective learning
+5. **`.claude/orchestration/methodology/pattern-library.md`** - Proven orchestration patterns
 
 ### 3. Check Current Workspace Status
 
@@ -32,7 +32,7 @@ find .claude/workspace -name "execution-plan.md" -exec grep -l "Status: In Progr
 
 ```bash
 # Check for recent handoff files (if they exist)
-ls -la .claude/meta/session-handoffs/ 2>/dev/null || echo "No previous handoffs"
+ls -la .claude/orchestration/meta/session-handoffs/ 2>/dev/null || echo "No previous handoffs"
 ```
 
 ## Key Behavioral Traits to Replicate
@@ -48,13 +48,13 @@ ls -la .claude/meta/session-handoffs/ 2>/dev/null || echo "No previous handoffs"
 
 - **Always use TodoWrite tool** for task tracking and transparency
 - **Investigate THEN ask** - Search codebase for technical reality before asking engineer
-    - Full workflow: @.claude/methodology/investigation-workflow.md
+    - Full workflow: @.claude/orchestration/methodology/investigation-workflow.md
 - **Validate integration strategy** (who owns what, who integrates where)
 - **Enforce all 5 validation gates (MANDATORY)** - TypeScript, ESLint, Tests, Process cleanup, Manual testing
-    - Full specifications: @.claude/methodology/validation-gates.md
+    - Full specifications: @.claude/orchestration/methodology/validation-gates.md
 - **Create workspace structure** before generating prompts
 - **Require specific success criteria** - Not "works" but "opening X shows Y"
-    - Full guide: @.claude/methodology/success-criteria.md
+    - Full guide: @.claude/orchestration/methodology/success-criteria.md
 
 ### Avoid These Patterns
 
@@ -114,10 +114,10 @@ ls -la .claude/meta/session-handoffs/ 2>/dev/null || echo "No previous handoffs"
 ### Technical Standards
 
 - A+ code quality baseline
-- **5 validation gates mandatory** - See @.claude/methodology/validation-gates.md for details
+- **5 validation gates mandatory** - See @.claude/orchestration/methodology/validation-gates.md for details
 - Integration compatibility required
 - Fresh clone → working app capability
-- **Specific success criteria required** - See @.claude/methodology/success-criteria.md
+- **Specific success criteria required** - See @.claude/orchestration/methodology/success-criteria.md
 
 ### Orchestration Standards
 
@@ -195,16 +195,20 @@ You're successfully serving as orchestration partner when:
 
 ## Template Quick Reference
 
-Available in `.claude/templates/agent-prompts/`:
+**Check what is actually on disk before citing a template:**
 
-1. `nestjs-service-agent.md` - Backend API services
-2. `sequelize-model-agent.md` - Database models
-3. `rest-controllers-agent.md` - REST API controllers
-4. `angular-component-agent.md` - Frontend components
-5. `pwa-agent.md` - Mobile features
-6. `playwright-testing-agent.md` - E2E testing
-7. `bugfix-agent.md` - Bug fixes with regression prevention
-8. `infrastructure-agent.md` - General infrastructure
+```bash
+ls .claude/orchestration/templates/agent-prompts/
+```
+
+Shipped in this repo:
+
+1. `infrastructure-patterns.md` - Task 0 foundation work (setup, dev scripts, config)
+2. `testing-infrastructure-agent.md` - Test harness setup
+
+Everything else is built from `@.claude/orchestration/methodology/prompt-templates.md`
+plus the role definitions in `@.claude/orchestration/methodology/agent-specs-library.md`.
+There is no per-framework template file; do not cite one that isn't in the listing above.
 
 ## Handoff Creation Command
 

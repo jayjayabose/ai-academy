@@ -1,0 +1,45 @@
+# tier	priority	path	what is project-specific
+generate	1	orchestration/meta/project-profile.md	NEW FILE. Does not exist upstream. The single source of truth for target-project facts: real gate commands, stack, layout, ports, DB. Everything else defers to it.
+generate	1	orchestration/meta/project-mission.md	100% ai-academy. Written about "AI Orchestration Methodology Validation" and teaching a course. Nothing here survives; author fresh from the target project's actual mission.
+adapt	1	orchestration/methodology/validation-gates.md	Highest-value file in the set. The source commands are now correct FOR THE SOURCE REPO (npm run --workspace apps/api typecheck / lint, with documented coverage gaps) -- they are still wrong for any other project. Take the target's commands from its hook/CI config (lefthook, .husky, .github/workflows) before its scripts: CI is what a project actually enforces. NOTE: Gate 1 is a TypeScript-compilation gate with NO equivalent in Ruby, plain JS or untyped Python. Do not invent one -- drop to four gates or substitute a real load-time check. Also check whether the target's lint script auto-fixes; a gate that mutates the tree to pass is not a gate.
+adapt	1	orchestration/methodology/environment-validation.md	Docker/Postgres/npm setup probes and fresh-clone checks, all written for this stack.
+adapt	2	orchestration/methodology/success-criteria.md	Densest file (100 stack refs, 18 domain refs). Worked examples name new_crm, migration counts, ports 3000/5432, Sequelize models, npm run db:migrate. Rewrite the examples against the target's real commands; the criteria-writing *method* is portable.
+adapt	2	orchestration/methodology/testing-as-infrastructure.md	Jest/Vitest/Playwright config, integration-test-without-mocks examples, test DB setup. On Rails this is RSpec + `bin/rails db:test:prepare`; if the project uses parallel_tests or appraisal, the commands and the meaning of "the suite passed" both change (matrix across dependency versions).
+adapt	2	orchestration/playbook/testing-standards.md	Same as above in checklist form: runner names, coverage commands, test file layout.
+adapt	2	orchestration/templates/agent-prompts/testing-infrastructure-agent.md	A ready-to-paste prompt naming this stack throughout (79 stack + 23 domain refs). Rewrite wholesale for the target.
+adapt	2	orchestration/methodology/prompt-templates.md	Prompt bodies embed stack specs, import patterns, library versions.
+adapt	2	orchestration/playbook/prompt-creation.md	Checklist tells you to state exact library versions and import patterns; the examples given are Angular/NestJS.
+adapt	2	orchestration/methodology/coordination-protocols.md	Field-naming locks and cross-agent contracts use camelCase/REST/Sequelize examples. Convention may differ (snake_case, GraphQL, protobuf).
+adapt	2	orchestration/methodology/agent-specs-library.md	Per-role agent specs keyed to NestJS services, Sequelize models, Angular components.
+adapt	2	orchestration/methodology/pattern-library.md	Patterns are portable; the evidence and examples attached to them are not.
+adapt	2	orchestration/methodology/bugfix-prompt-template.md	Regression-test instructions assume Jest + this repo layout.
+adapt	2	orchestration/templates/agent-prompts/infrastructure-patterns.md	Task-0 infrastructure prompt: setup scripts, docker-compose, dev scripts for this stack.
+adapt	2	orchestration/methodology/database-migration-strategy.md	19 domain refs. Sequelize umzug migrations, new_crm, seed scripts. DROP THIS FILE ENTIRELY if the target has no database. On Rails, rewrite around ActiveRecord: `db/migrate` vs `db/data` (data_migrate), strong_migrations blocking unsafe changes, and schema.rb being a checked-in merge-conflict hotspot.
+generate	2	orchestration/playbook/nestjs-patterns.md	Named for the stack. RENAME to `<framework>-patterns.md` and author fresh (rails-patterns.md, django-patterns.md, ...). For Rails cover at minimum: engine vs app layout, ActiveRecord migration safety (strong_migrations), service/form/serializer object conventions, Sidekiq job idempotency, RSpec structure, and fixtures vs factories. Delete if the target has no dominant backend framework.
+adapt-light	3	orchestration/meta/orchestration-handoff.md	Paths and the phantom template list are FIXED upstream. Remaining: command references and the curriculum framing.
+adapt-light	3	orchestration/meta/working-relationship.md	Paths are FIXED upstream. Mostly portable now -- it describes the engineer's own communication preferences. Skim for command references only.
+adapt-light	3	orchestration/methodology/pre-execution-validation-protocol.md	A few npm/stack commands in the probe examples.
+adapt-light	3	orchestration/playbook/strategic-orchestration.md	Curriculum framing + a few stack commands.
+adapt-light	3	orchestration/playbook/agent-coordination.md	Gate list restates the npm commands from validation-gates.md; keep in sync.
+adapt-light	3	orchestration/methodology/atomic-commit-guidelines.md	12 domain refs: example commit messages about CRM leads. Swap for the target's domain and match its real commit style.
+adapt-light	3	orchestration/methodology/logging-protocol-integration.md	Curriculum framing; a couple of stack commands.
+adapt-light	3	orchestration/methodology/session-logging-system.md	Justified in terms of "curriculum development" and teaching. Re-justify in terms of the target project's own goals.
+adapt-light	3	orchestration/playbook/sub-agent-usage.md	Chapter numbers FIXED upstream (05/07, not 15/16), but the links point into `course/`, which only exists in the source repo. Remove them in any other target.
+adapt-light	3	orchestration/playbook/gotcha-library.md	Gotchas are stack-observed. Keep the transferable ones, drop the rest, and let the target accumulate its own.
+adapt-light	3	orchestration/playbook/workspace-management.md	A few command references.
+adapt-light	3	orchestration/playbook/README.md	Index; fix any renamed/dropped files.
+adapt-light	3	orchestration/methodology/investigation-workflow.md	One or two stack-flavoured search examples.
+adapt-light	3	orchestration/methodology/logging-templates.md	Minor command references.
+adapt-light	3	orchestration/templates/logging-templates.md	Minor command references.
+adapt-light	3	orchestration/templates/execution-plan-template.md	Placeholder examples reference this stack.
+adapt-light	3	orchestration/templates/retrospective-template.md	Placeholder examples reference this stack.
+adapt-light	3	orchestration/README.md	Links to `/course/guidebook/companion/day-2-ai-intelligence.md`. Remove the course links.
+portable	4	orchestration/manual-usage.md	No project-specific content.
+portable	4	orchestration/methodology/README.md	Index of methodology files; no project-specific content.
+portable	4	orchestration/playbook/coordination-decision-tree.md	Pure decision logic.
+portable	4	orchestration/playbook/session-continuity.md	Pure process.
+portable	4	orchestration/templates/session-handoff.md	Structural template only.
+adapt-light	1	commands/orchestration.md	The phantom template list is FIXED upstream. Remaining, and it is essential: its MANDATORY read list (12 numbered @-references) does not include meta/project-profile.md, which phase 2 creates. Add it as the FIRST entry, or the partner never loads the project's real facts and all other phase-2 work is wasted.
+adapt-light	3	commands/handoff.md	Pre-handoff checklist hardcodes `npm run type-check` and `npm run lint`. Retarget to the project's real scripts.
+adapt-light	1	commands/validate.md	Hardcodes `npm run type-check`, `npm run lint` and `npm run dev` in its validation phases (lines ~67, 68, 186). Retarget to the project's real scripts.
+adapt-light	3	commands/README.md	The curriculum path is FIXED upstream (now meta/methodology-discoveries.md). Remaining: example commands and the course framing.

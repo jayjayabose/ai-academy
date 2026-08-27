@@ -409,15 +409,19 @@ NOT: Widget agents create files, separate agent integrates all.
 
 ### Step 3: Template Selection (30 seconds)
 
-**Match feature to template:**
+**Only two agent-prompt templates ship in this repo. Verify before citing one:**
 
-- Backend API service → `nestjs-service-agent.md`
-- Database model → `sequelize-model-agent.md`
-- REST controllers → `rest-controllers-agent.md`
-- Frontend component → `angular-component-agent.md`
-- Mobile feature → `angular-agent.md`
-- E2E testing → `playwright-testing-agent.md`
-- Bug fix → `bugfix-agent.md`
+```bash
+ls .claude/orchestration/templates/agent-prompts/
+```
+
+- Task 0 / foundation work → `infrastructure-patterns.md`
+- Test harness setup → `testing-infrastructure-agent.md`
+
+For every other role, build the prompt from
+@.claude/orchestration/methodology/prompt-templates.md using the matching role definition in
+@.claude/orchestration/methodology/agent-specs-library.md. Naming a template file that does
+not exist sends the agent looking for a file it will never find.
 
 ### Step 4: Prompt Customization (5-10 minutes)
 
@@ -544,7 +548,7 @@ returns 200 with a valid JWT token"
 **Coordination:** MEDIUM (imports Dashboard, adds widgets to existing page)
 **Dependencies:** Needs dashboard.component.ts existing
 **Execution:** Parallel possible (3 independent widgets)
-**Template:** `angular-component-agent.md`
+**Template:** built from prompt-templates.md (frontend component role)
 
 **Your Response (Steps 2.5-6 - Integration + Validation):**
 

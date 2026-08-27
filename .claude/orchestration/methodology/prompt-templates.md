@@ -422,7 +422,7 @@ Before claiming "COMPLETE", run ALL validation steps and paste output in session
 
 ### 1. TypeScript Compilation
 ```bash
-npm run type-check
+npm run --workspace apps/api typecheck
 ````
 
 **REQUIRED:** Output must show "✔ No TypeScript errors" (0 errors)
@@ -430,7 +430,7 @@ npm run type-check
 ### 2. ESLint
 
 ```bash
-npm run lint
+npm run --workspace apps/api lint
 ```
 
 **REQUIRED:** Output must show "✔ No ESLint warnings or errors" (0 warnings)
@@ -452,12 +452,12 @@ npm test
 
 ### TypeScript
 
-[paste npm run type-check output]
+[paste npm run --workspace apps/api typecheck output]
 ✔ No TypeScript errors
 
 ### ESLint
 
-[paste npm run lint output]
+[paste npm run --workspace apps/api lint output]
 ✔ No ESLint warnings or errors
 
 ### Tests
@@ -497,7 +497,7 @@ npm test
 
 **Created After:** Experience showed bug fixes can introduce new bugs due to missing validation requirements.
 
-**See:** `.claude/methodology/bugfix-prompt-template.md` for complete template.
+**See:** `.claude/orchestration/methodology/bugfix-prompt-template.md` for complete template.
 
 ### Key Requirements for ALL Bug Fix Prompts
 
@@ -555,7 +555,7 @@ npm test
 
 ---
 
-**Template Location:** `.claude/methodology/bugfix-prompt-template.md`
+**Template Location:** `.claude/orchestration/methodology/bugfix-prompt-template.md`
 **Usage:** Mandatory for ALL bug fix prompts
 **Evidence:** Experience showed bug fixes can introduce bugs due to incomplete validation requirements
 

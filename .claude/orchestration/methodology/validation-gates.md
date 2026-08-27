@@ -9,10 +9,20 @@
 ## Gate 1: TypeScript Compilation
 
 ```bash
-npm run type-check
+npm run --workspace apps/api typecheck   # tsc -p tsconfig.spec.json --noEmit
 ```
 
 **Required:** 0 errors
+
+**Coverage caveat — read this before claiming Gate 1 passed:**
+
+- There is **no root-level `type-check` script**. Running `npm run type-check` from the repo
+  root fails with "missing script"; the command above is the real one.
+- This checks **`apps/api` only**. `apps/web` has no typecheck script — Angular type-checks
+  as part of `npm run --workspace apps/web build`. If you changed frontend code, Gate 1 is
+  not complete until that build passes too.
+- `packages/shared` has no scripts at all. Changes there are only type-checked transitively,
+  by whichever app imports them.
 
 **Why:** Code that doesn't compile definitely doesn't work. But code that compiles might still be broken (that's what
 the other gates catch).
@@ -29,10 +39,26 @@ the other gates catch).
 ## Gate 2: ESLint
 
 ```bash
-npm run lint
+npm run --workspace apps/api lint    # NOTE: this script runs eslint --fix
 ```
 
 **Required:** 0 warnings, 0 errors
+
+**Coverage caveats — read these before claiming Gate 2 passed:**
+
+- There is **no root-level `lint` script**. The command above is the real one.
+- **This script auto-fixes.** `apps/api`'s `lint` is `eslint ... --fix`, so it mutates the
+  working tree to make itself pass. That is convenient while developing and wrong as a gate.
+  To verify without mutating, run eslint directly:
+
+  ```bash
+  npm exec --workspace apps/api -- eslint "src/**/*.ts" "test/**/*.ts"
+  ```
+
+  Then check `git status` is clean — if `--fix` changed files, those changes are part of
+  your diff and need reviewing, not silently shipping.
+- **`apps/web` has no lint gate at all**: no `lint` script and no eslint config. Frontend
+  changes are currently unlinted. Don't report Gate 2 as covering them.
 
 **Why:** Consistent code quality, catches common mistakes, enforces team conventions
 
@@ -186,11 +212,11 @@ curl -X POST http://localhost:3000/auth/login \
 ## Pre-Completion Validation Results
 
 ### Gate 1: TypeScript
-[paste npm run type-check output]
+[paste npm run --workspace apps/api typecheck output]
 ✔ No TypeScript errors
 
 ### Gate 2: ESLint
-[paste npm run lint output]
+[paste npm run --workspace apps/api lint output]
 ✔ No ESLint warnings or errors
 
 ### Gate 3: Tests

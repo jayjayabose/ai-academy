@@ -5,7 +5,7 @@
 **Purpose:** Quick reference for understanding agent types, coordination requirements, and proven patterns from low/high
 coordination experiments.
 
-**For Detailed Specifications:** See `.claude/agents/[agent-name].md` for copy-paste ready prompts with all protocols
+**For Detailed Specifications:** `.claude/agents/` is a planned location and is mostly unbuilt -- check `ls .claude/agents/` before citing a path from it. The one spec that exists today is `.claude/orchestration/templates/agent-prompts/testing-infrastructure-agent.md`. Build the rest from @.claude/orchestration/methodology/prompt-templates.md.
 included.
 
 **This File:** Evidence-based overview to help decide which agents to use for your feature.
@@ -58,7 +58,7 @@ learnings.
 
 ### SESSION LOGGING REQUIREMENT (MANDATORY):
 - Create: `.claude/workspace/[FEATURE]/agent-logs/database-agent-session.md`
-- Use: Infrastructure Agent Log template from `.claude/methodology/logging-templates.md`
+- Use: Infrastructure Agent Log template from `.claude/orchestration/methodology/logging-templates.md`
 - Log: Technology decisions, database design choices, integration setup decisions
 - Purpose: Teaching material for database setup methodology and coordination patterns
 ```
@@ -423,7 +423,7 @@ Use this file to:
 - **See proven patterns** from low/high coordination experiments
 - **Get quick overview** of agent capabilities
 
-### Detailed Specifications (`.claude/agents/` directory)
+### Detailed Specifications (`.claude/agents/` directory -- not yet created)
 
 Use individual agent files for:
 
@@ -436,7 +436,7 @@ Use individual agent files for:
 
 **✅ Detailed Specs Available:**
 
-- Testing Infrastructure Agent (`.claude/agents/testing-infrastructure-agent.md`)
+- Testing Infrastructure Agent (`.claude/orchestration/templates/agent-prompts/testing-infrastructure-agent.md`)
 
 **📝 To Be Created (Extract from this file):**
 

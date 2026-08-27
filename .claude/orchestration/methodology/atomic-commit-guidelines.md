@@ -40,7 +40,7 @@ You MUST follow atomic commit practices throughout your implementation. This mak
 
 **IMPORTANT**: All commits must pass automated checks before being accepted:
 
-1. **ESLint** - Code must pass linting rules (`npm run lint`)
+1. **ESLint** - Code must pass linting rules (`npm run --workspace apps/api lint`)
 2. **TypeScript** - No type errors allowed (`tsc`)
 3. **Unit Tests** - All tests must pass (`npm test`)
 
@@ -141,7 +141,7 @@ This project has automated quality gates that enforce standards:
 
 ```bash
 # Pre-commit checks that MUST pass
-1. npm run lint     # ESLint - code style and quality
+1. npm run --workspace apps/api lint     # ESLint - code style and quality
 2. tsc           # TypeScript - type safety
 3. npm test     # Unit tests - functionality
 ```

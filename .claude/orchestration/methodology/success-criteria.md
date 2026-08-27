@@ -67,7 +67,7 @@
 - "docker ps shows postgres container running with correct version (PostgreSQL 18)"
 - "Running npm test immediately after setup executes test suite (not 'framework not configured' error)"
 - "Database migrations apply successfully: npm run db:migrate shows '5 migrations applied' with 0 errors"
-- "tsconfig.json compiles project: npm run type-check returns 0 errors on fresh setup"
+- "tsconfig.json compiles project: npm run --workspace apps/api typecheck returns 0 errors on fresh setup"
 - "Opening http://localhost:3000 after npm run dev displays landing page (not connection refused)"
 - "docker-compose down → docker ps shows no project containers (clean teardown)"
 
@@ -94,7 +94,7 @@ INFRASTRUCTURE (for setup/config tasks):
 2. Verify Docker services running: docker ps shows all required containers (if using Docker)
 3. Verify setup completes: 0 errors, creates database, runs migrations, seeds data
 4. Verify dev server starts: npm run dev → server accessible on expected port
-5. Verify TypeScript compiles: npm run type-check → 0 errors
+5. Verify TypeScript compiles: npm run --workspace apps/api typecheck → 0 errors
 6. Verify tests run immediately: npm test → framework configured, test DB ready
 7. Verify works on clean machine: No local PostgreSQL/Redis/etc required (if using Docker)
 
@@ -202,7 +202,7 @@ npm run db:migrate:status  # Shows "5 migrations up, 0 down"
 psql -d new_crm -c "SELECT COUNT(*) FROM users;"  # Shows "3" (seeded users)
 
 # 4. Models load without error
-npm run type-check  # TypeScript compiles successfully with Sequelize models
+npm run --workspace apps/api typecheck  # TypeScript compiles successfully with Sequelize models
 
 # 5. Can run app
 npm run dev  # Server starts on port 3000 without database connection errors
@@ -298,7 +298,7 @@ npm run dev  # Starts both backend + frontend concurrently
 
 ```bash
 # Test compilation works
-npm run type-check  # Returns 0 errors
+npm run --workspace apps/api typecheck  # Returns 0 errors
 
 # Test strict mode enabled
 cat tsconfig.json | grep strict  # Shows "strict": true
@@ -306,7 +306,7 @@ cat tsconfig.json | grep strict  # Shows "strict": true
 # Test path aliases work
 # Create test file that imports using @ alias
 echo 'import { User } from "@/models/user"' > test-import.ts
-npm run type-check  # Resolves @ alias correctly (not "cannot find module")
+npm run --workspace apps/api typecheck  # Resolves @ alias correctly (not "cannot find module")
 
 # Test editor integration
 # Open VSCode → TypeScript errors show inline
@@ -315,7 +315,7 @@ npm run type-check  # Resolves @ alias correctly (not "cannot find module")
 
 **Success criteria:**
 
-- "tsconfig.json has strict mode enabled, path aliases (@/models, @/services) resolve correctly, npm run type-check returns
+- "tsconfig.json has strict mode enabled, path aliases (@/models, @/services) resolve correctly, npm run --workspace apps/api typecheck returns
   0 errors on fresh clone"
 
 ### Example 5: Environment Configuration
@@ -624,7 +624,7 @@ When creating agent prompts, verify success criteria include:
 - [ ] Docker verification (if using Docker): docker ps shows all required containers running
 - [ ] Setup completion criteria (0 errors, database created, migrations applied)
 - [ ] Dev server start verification (npm run dev → accessible on expected port)
-- [ ] TypeScript compilation check (npm run type-check → 0 errors)
+- [ ] TypeScript compilation check (npm run --workspace apps/api typecheck → 0 errors)
 - [ ] Test framework readiness (npm test → runs immediately, not "framework not configured")
 - [ ] Environment variables documented (.env.example with DATABASE_URL for Docker/local)
 - [ ] Works on clean machine: No local database installation required (if using Docker)

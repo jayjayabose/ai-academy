@@ -135,7 +135,7 @@ Before claiming "COMPLETE", run ALL validation steps:
 ### 1. TypeScript Compilation (BLOCKING)
 
 \`\`\`bash
-npm run type-check
+npm run --workspace apps/api typecheck
 \`\`\`
 **REQUIRED:** \`✔ No TypeScript errors\` (0 errors)
 **BEFORE FIX:** {X errors}
@@ -148,7 +148,7 @@ npm run type-check
 ### 2. ESLint (BLOCKING)
 
 \`\`\`bash
-npm run lint
+npm run --workspace apps/api lint
 \`\`\`
 **REQUIRED:** \`✔ No ESLint warnings or errors\` (0 warnings)
 **BEFORE FIX:** {X warnings}
@@ -213,10 +213,10 @@ lsof -i :3000 | grep LISTEN || echo "Cleanup successful ✅"
 
 ### After Fix
 
-[Paste npm run type-check output]
+[Paste npm run --workspace apps/api typecheck output]
 ✔ No TypeScript errors (0 errors) ← MUST show this
 
-[Paste npm run lint output]
+[Paste npm run --workspace apps/api lint output]
 ✔ No ESLint warnings or errors
 
 [Paste npm test summary]
@@ -286,13 +286,13 @@ Port 3000 available ✅
 
 **TypeScript:**
 \`\`\`bash
-$ npm run type-check
+$ npm run --workspace apps/api typecheck
 ✔ No TypeScript errors
 \`\`\`
 
 **ESLint:**
 \`\`\`bash
-$ npm run lint
+$ npm run --workspace apps/api lint
 ✔ No ESLint warnings or errors
 \`\`\`
 
@@ -345,7 +345,7 @@ Port 3000 available ✅
 
 **During Validation:**
 
-- [ ] \`npm run type-check\` shows MORE errors than before
+- [ ] \`npm run --workspace apps/api typecheck\` shows MORE errors than before
 - [ ] \`npm test\` shows MORE failures than before
 - [ ] Different tests now failing (broke something else)
 - [ ] Need to modify production code extensively for a "bug fix"

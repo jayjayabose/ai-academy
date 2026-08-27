@@ -511,12 +511,12 @@ When using a prompt from this library:
 
 **Root Causes:**
 
-- Agents ran `npm test` but not `npm run type-check`
+- Agents ran `npm test` but not `npm run --workspace apps/api typecheck`
 - Runtime success ≠ compilation success
 
 **New Requirements:**
 
-- **TypeScript validation mandatory:** Run `npm run type-check` before claiming complete
+- **TypeScript validation mandatory:** Run `npm run --workspace apps/api typecheck` before claiming complete
 - **Validation output required:** Paste all validation results in session log
 
 **These Are Now Standard in All Agent Prompts (Not Just Infrastructure).**

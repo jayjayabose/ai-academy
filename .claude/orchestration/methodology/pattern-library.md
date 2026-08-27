@@ -199,7 +199,7 @@ Import schema types and use them directly.
 #### 1. TypeScript Compilation
 
 ```bash
-npm run type-check
+npm run --workspace apps/api typecheck
 ```
 
 **Required:** Output shows "✔ No TypeScript errors" (0 errors)
@@ -207,7 +207,7 @@ npm run type-check
 #### 2. ESLint
 
 ```bash
-npm run lint
+npm run --workspace apps/api lint
 ```
 
 **Required:** Output shows "✔ No ESLint warnings or errors" (0 warnings)
@@ -440,13 +440,13 @@ Task 0: Infrastructure
 **Gate 1: TypeScript (0 errors)**
 
 ```bash
-npm run type-check
+npm run --workspace apps/api typecheck
 ```
 
 **Gate 2: ESLint (0 warnings)**
 
 ```bash
-npm run lint
+npm run --workspace apps/api lint
 ```
 
 **Gate 3: Tests (all passing)**

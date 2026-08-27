@@ -64,8 +64,8 @@ ls .claude/workspace/{feature-id}/agent-logs/
 **Run in parallel:**
 
 ```bash
-npm run type-check 2>&1
-npm run lint 2>&1
+npm run --workspace apps/api typecheck 2>&1
+npm run --workspace apps/api lint 2>&1
 git status --short
 ```
 

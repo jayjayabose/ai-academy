@@ -128,7 +128,7 @@ For each proposed parallel task, evaluate:
 ALL agents MUST maintain detailed session logs during execution:
 
 **Log Location:** `.claude/workspace/[feature]/agent-logs/[agent-name]-session.md`
-**Required Logging:** Use templates from `.claude/methodology/logging-templates.md`
+**Required Logging:** Use templates from `.claude/orchestration/methodology/logging-templates.md`
 **Critical Log Points:**
 
 - Technology stack decisions affecting other agents
@@ -299,13 +299,13 @@ ALL agents MUST maintain detailed session logs during execution:
 
 **ALL agents must pass 5 validation gates before claiming "COMPLETE":**
 
-1. **TypeScript:** 0 errors (`npm run type-check`)
-2. **ESLint:** 0 warnings (`npm run lint`)
+1. **TypeScript:** 0 errors (`npm run --workspace apps/api typecheck`)
+2. **ESLint:** 0 warnings (`npm run --workspace apps/api lint`)
 3. **Tests:** All passing (`npm test`)
 4. **Process Cleanup:** No hanging dev servers
 5. **Manual Testing:** Browser verification (frontend) OR curl testing (backend)
 
-**Full gate specifications:** @.claude/methodology/validation-gates.md
+**Full gate specifications:** @.claude/orchestration/methodology/validation-gates.md
 
 **IF ANY GATE FAILS:**
 
