@@ -139,7 +139,31 @@ same two inputs: the detection output and the finished `project-profile.md`.
 
 ### Finishing
 
-Verify before claiming done — run from the target:
+**Run the verifier.** Every defect class it checks was originally found by a human using
+the tool, not by tooling — that is why it exists.
+
+```bash
+./verify-install.sh /path/to/target              # read-only
+./verify-install.sh /path/to/target --run-gates   # also execute the non-stateful gates
+```
+
+It errors (exit 1) on things that actively mislead an agent: a missing or unfilled
+`project-profile.md`, a profile that `commands/orchestration.md` never loads, stray
+`{{markers}}` outside templates, dead cross-references, named-but-nonexistent template
+files, conventions contradicting the profile, and a gate *count* disagreeing with it. It
+warns on stale examples and on infrastructure the docs reference but the project lacks
+(`docker-compose`, `.env.example`).
+
+Two rules it follows that any addition must keep:
+
+- **Never mutate the project.** `--run-gates` refuses anything matching
+  `db:|migrat|purge|reset|drop|seed|prepare|--fix|--autocorrect`. A "verification" that runs
+  `db:test:prepare` can destroy local work.
+- **Distinguish "cannot verify" from "gate is red."** If the output shows an unreachable
+  database or a missing binary, that is a warning about the environment, not a failing gate.
+  A verifier that emits false reds is worse than no verifier.
+
+Then also grep by hand — run from the target:
 
 ```bash
 grep -rEil 'nestjs|sequelize|angular|npm run|postgres|new_crm|localhost:3000' \
