@@ -1,7 +1,7 @@
 ---
 name: install-orchestration
 description: Install the ai-academy orchestration slash commands (/orchestration, /handoff, /validate) into another project, then adapt the knowledge base to that project's real stack, commands and conventions. Use when the user wants to set up, install, copy, port or bootstrap the orchestration tooling in a new or existing project.
-argument-hint: "[path to target project] [--force] [--dry-run]"
+argument-hint: "[path to target project] [--force] [--dry-run] [--with-backup]"
 ---
 
 # Install orchestration tooling into a project
@@ -245,10 +245,44 @@ installs into several projects.
 global ignore — it would hide a real project file. Install the command documentation as
 `orchestration/COMMANDS.md`, which `.claude/*` already covers.
 
-**Warn about `git clean -xfd`.** Ignored files are exactly what it deletes, and phase-2 work
-is hand-authored and not regenerable. Back the filled `meta/project-profile.md` and
-`meta/project-mission.md` up outside the repo — `~/.claude/orchestration-installs/<project>/`
-— and say so.
+**`git clean -xfd` deletes exactly this.** Ignored files are its target, and phase-2 work is
+hand-authored and not regenerable. `install.sh` now detects the situation itself:
+
+```bash
+git -C "$TARGET" check-ignore -q .claude/orchestration
+```
+
+- **Tracked** → git already provides durability. The installer says so and does nothing. Do
+  not add a second mechanism; it is redundant noise.
+- **Ignored** → the installer reports that nothing is tracked, and names the ignore rule.
+  Re-run with `--with-backup` to act on it.
+
+`--with-backup` sets up, all opt-in:
+
+1. `~/.claude/orchestration-installs/<project>/` as a **git repo** — every sync is a commit,
+   so `git log`/`git diff`/rollback all work. Not date-stamped copies: on a per-change
+   trigger those multiply and need a pruning policy. The working tree stays a plain
+   directory, so `cp -R` restore instructions keep working.
+2. `sync-install-backup.sh` copied to `~/.claude/orchestration-installs/`.
+3. Three hooks in the target's **`.claude/settings.local.json`** — gitignored by convention,
+   and the `.local.` name keeps it personal if `.claude/` is ever un-ignored.
+
+**Why three hooks and not just the obvious one.** `PostToolUse` on `Write|Edit` is the
+precise event and is *not sufficient*: edits driven through Bash (a `sed` run, a python
+heredoc, `install.sh` itself) never fire it, nor do edits made outside Claude Code. Measured,
+not assumed — a 51-edit KB correction pass done via python heredocs fired it zero times.
+`SessionStart` and `SessionEnd` close that hole. The script commits only on a real content
+difference, so the overlap costs nothing.
+
+**Health guard.** The script refuses to mirror a damaged install over a **non-empty** backup,
+in two cases: the source has fewer than 30 files, or the backup holds
+`meta/project-profile.md` and the source no longer does. A first run has nothing to lose and
+proceeds, which matters because `project-profile.md` does not exist until phase 2 or a
+profile supplies it. Net effect: `git clean -xfd` produces a loud alert naming the restore
+command, not a silently emptied backup.
+
+**Not backed up: `.claude/workspace/`.** Per-repo scratch — execution plans, agent logs,
+retrospectives. Different lifetime from install state. Say so rather than leaving it implicit.
 - **Re-running** is safe and idempotent. Phase-2 edits are protected — a re-run skips
   modified files unless `--force`, which would discard the adaptation work.
 - **A pre-existing `.claude/`** in the target is left alone; the installer only adds files.

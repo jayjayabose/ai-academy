@@ -17,10 +17,11 @@ TARGET_PROJECT="$PWD"
 FORCE=0
 DRY_RUN=0
 PROFILE=""
+WITH_BACKUP=0
 
 usage() {
   cat <<'USAGE'
-Usage: install.sh [TARGET_PROJECT] [--profile NAME] [--force] [--dry-run]
+Usage: install.sh [TARGET_PROJECT] [--profile NAME] [--force] [--dry-run] [--with-backup]
 
 Copies the orchestration slash commands and their knowledge base into
 TARGET_PROJECT/.claude/ (defaults to the current directory).
@@ -30,6 +31,11 @@ TARGET_PROJECT/.claude/ (defaults to the current directory).
                   Available: rails
   --force         overwrite files that already exist in the target
   --dry-run       print what would happen, change nothing
+  --with-backup   if TARGET_PROJECT/.claude is gitignored, set up a git-versioned
+                  backup of the install and hooks that keep it current. Without
+                  this flag the situation is only REPORTED, never acted on --
+                  writing hooks changes runtime behaviour for every future session
+                  in that repo, so it stays opt-in.
 
 Override the source with AI_ACADEMY_CLAUDE=/path/to/ai-academy/.claude
 USAGE
@@ -41,6 +47,7 @@ for arg in "$@"; do
   case "$arg" in
     --force)      FORCE=1 ;;
     --dry-run)    DRY_RUN=1 ;;
+    --with-backup) WITH_BACKUP=1 ;;
     --profile)    expect_profile=1 ;;
     --profile=*)  PROFILE="${arg#--profile=}" ;;
     -h|--help)    usage; exit 0 ;;
@@ -389,6 +396,89 @@ if [ "$DRY_RUN" -eq 0 ]; then
     echo
     echo "  Files marked MUST FIX are not templates — a marker there reads as a real"
     echo "  value. Give it this project's value, or point at meta/project-profile.md."
+  fi
+fi
+
+# ---------------------------------------------------------------- durability
+# The hand-authored layer of this install (meta/project-profile.md, project-mission.md,
+# the retargeted commands) is explicitly NOT regenerable. Whether it survives depends
+# entirely on something we can detect in one line: is the target path tracked?
+#
+# In a repo that COMMITS .claude/, git already provides durability and a second
+# mechanism is redundant noise. Only the gitignored case needs anything -- and that
+# case is common, sometimes deliberately (a personal install nobody wants shared).
+if [ "$DRY_RUN" -eq 0 ] && [ "$copied" -gt 0 ]; then
+  echo
+  echo "durability:"
+  if ! git -C "$TARGET_PROJECT" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "  $TARGET_PROJECT is not a git repo — nothing to check."
+  elif ! git -C "$TARGET_PROJECT" check-ignore -q .claude/orchestration 2>/dev/null; then
+    echo "  .claude/orchestration is tracked by git. Durability is handled; nothing to do."
+  else
+    ign="$({ git -C "$TARGET_PROJECT" check-ignore -v .claude/orchestration 2>/dev/null || true; } | cut -f1)"
+    echo "  .claude/orchestration is GITIGNORED (${ign:-ignored})."
+    echo "  Nothing you just installed is tracked, so \`git clean -xfd\` destroys it"
+    echo "  silently — including project-profile.md, which is not regenerable."
+    if [ "$WITH_BACKUP" -eq 1 ]; then
+      SYNC_SRC="$SKILL_DIR/sync-install-backup.sh"
+      SYNC_DST="$HOME/.claude/orchestration-installs/sync-install-backup.sh"
+      NAME="$(basename "$TARGET_PROJECT")"
+      if [ ! -f "$SYNC_SRC" ]; then
+        echo "  ERROR: $SYNC_SRC missing; cannot set up the backup."
+      else
+        mkdir -p "$HOME/.claude/orchestration-installs"
+        cp "$SYNC_SRC" "$SYNC_DST" && chmod +x "$SYNC_DST"
+        echo "  installed sync script: $SYNC_DST"
+        bash "$SYNC_DST" "$TARGET_PROJECT" "$NAME"
+        # The sync script always exits 0 by design (a backup must never fail a
+        # session), so confirm by looking at the result rather than the status.
+        BK_DIR="$HOME/.claude/orchestration-installs/$NAME"
+        bk_n=$({ find "$BK_DIR/orchestration" -type f 2>/dev/null || true; } | wc -l | tr -d ' ')
+        if [ "${bk_n:-0}" -gt 0 ]; then
+          echo "  initial backup taken: $bk_n files, git-versioned, at $BK_DIR"
+        else
+          echo "  WARNING: backup directory is empty — the sync did not run. See its output above."
+        fi
+        # Hooks go in settings.local.json: gitignored by convention, and the .local.
+        # name keeps it personal if .claude/ is ever un-ignored.
+        SETTINGS="$TARGET_CLAUDE/settings.local.json"
+        if command -v python3 >/dev/null 2>&1; then
+          SYNC_DST="$SYNC_DST" TARGET_PROJECT="$TARGET_PROJECT" NAME="$NAME" SETTINGS="$SETTINGS" python3 - <<'PY'
+import json, os, pathlib
+sp = pathlib.Path(os.environ["SETTINGS"])
+cfg = json.loads(sp.read_text()) if sp.exists() and sp.read_text().strip() else {}
+cmd = f"bash {os.environ['SYNC_DST']} {os.environ['TARGET_PROJECT']} {os.environ['NAME']}"
+filt = ('jq -r ".tool_input.file_path // .tool_response.filePath // empty" '
+        '| grep -qE "\\.claude/(orchestration|commands)/" && ' + cmd + ' || true')
+hooks = cfg.setdefault("hooks", {})
+def add(event, entry):
+    arr = hooks.setdefault(event, [])
+    for e in arr:
+        for h in e.get("hooks", []):
+            if "sync-install-backup.sh" in h.get("command", ""):
+                return False
+    arr.append(entry); return True
+n = 0
+n += add("SessionStart", {"hooks": [{"type": "command", "command": cmd, "timeout": 30, "async": True,
+                                    "statusMessage": "Backing up orchestration install..."}]})
+n += add("SessionEnd",   {"hooks": [{"type": "command", "command": cmd, "timeout": 30}]})
+n += add("PostToolUse",  {"matcher": "Write|Edit",
+                          "hooks": [{"type": "command", "command": filt, "timeout": 30, "async": True}]})
+sp.write_text(json.dumps(cfg, indent=2) + "\n")
+print(f"  wrote {n} hook(s) to {sp}" if n else f"  hooks already present in {sp}")
+PY
+          echo "  triggers: PostToolUse (KB edits) + SessionStart/SessionEnd (Bash-driven"
+          echo "            edits and crashed sessions bypass PostToolUse entirely)."
+          echo "  NOT backed up: .claude/workspace/ — per-repo scratch, different lifetime."
+        else
+          echo "  python3 not found; add the hooks by hand — see sync-install-backup.sh header."
+        fi
+      fi
+    else
+      echo "  Re-run with --with-backup to set up a git-versioned backup plus hooks that"
+      echo "  keep it current. Left alone otherwise: writing hooks changes runtime"
+      echo "  behaviour for every session in that repo, so it is opt-in."
+    fi
   fi
 fi
 
