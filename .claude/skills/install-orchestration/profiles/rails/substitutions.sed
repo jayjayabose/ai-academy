@@ -41,6 +41,17 @@ s|npm run audit|bundle exec bundler-audit check --update|g
 # Rails usually has no build step. Leave a visible marker rather than inventing one:
 # the residue check greps for {{ so this surfaces instead of reading as a real command.
 s|npm run build|{{BUILD_COMMAND -- Rails often has none; assets:precompile if using Sprockets/Propshaft}}|g
+# --- absent gates: kill the claim, do not translate it ---------------------
+# Ruby has no type checker, so `npx tsc --noEmit` must not be carried through the
+# npx rule below into `bundle exec tsc --noEmit` -- a command that does not exist.
+# An agent runs it, cannot fix the failure, and either stalls or reports a pass it
+# never got. Removing the tool name is not enough either: the surrounding claim
+# ("TypeScript + ESLint + Tests mandatory") still asserts a gate this stack cannot
+# run. Rewrite the whole claim, not the token inside it.
+# MUST precede `s|npx |bundle exec |g` and `s|ESLint|RuboCop|g`.
+s|npx tsc --noEmit.*|# no type or load gate in this project -- see meta/project-profile.md|g
+s|TypeScript + ESLint + Tests mandatory|RuboCop + Specs + Cleanup + Manual mandatory (no type/load gate here)|g
+
 s|npx |bundle exec |g
 
 # --- process cleanup -----------------------------------------------------
@@ -102,6 +113,26 @@ s|camelCase ONLY (matching the shared API types exactly)|snake_case (Rails conve
 s|camelCase consistency|snake_case consistency|g
 s|camelCase throughout|snake_case throughout|g
 s|camelCase|snake_case|g
+
+# NB: everything below runs AFTER the bare-word rule above ON PURPOSE. Placed before
+# it, the `camelCase` inside these replacement strings is itself rewritten and you get
+# "**NO snake_case:** Never leadId" -- a rule that flips the convention and then
+# mangles its own output. Order is load-bearing twice over in this section.
+# A rule that flips a convention must own the WHOLE block. Rewriting only the
+# positive claim leaves its negation standing, and the pair then cancels out:
+#   - **ALL FIELDS:** Use snake_case consistently (lead_id, ...)   <- rewritten
+#   - **NO SNAKE_CASE:** Avoid field names like lead_id, ...       <- forbids it
+#   - **Boolean Fields:** Use isActive, hasPermission, canEdit     <- and camelCase again
+# Three adjacent lines mandating snake_case, forbidding snake_case, then giving
+# camelCase examples. verify-install.sh §5 catches this now; these rules prevent it.
+s|- \*\*NO SNAKE_CASE:\*\* Avoid field names like lead_id, budget_min, first_name|- **NO camelCase:** Never `leadId`, `budgetMin`, `firstName`. Rails is snake_case end to end, including JSON responses, unless a serializer explicitly converts at one named boundary|g
+s|- \*\*Boolean Fields:\*\* Use isActive, hasPermission, canEdit patterns|- **Boolean Fields:** Use `active?` predicates / `is_active`, `has_permission`, `can_edit`|g
+s|- \*\*Date Fields:\*\* Use createdAt, updatedAt, completedAt patterns|- **Date Fields:** Use `created_at`, `updated_at`, `completed_at`|g
+# `leadId (NOT lead_id)` mandates camelCase without containing the word at all,
+# so the bare-word rule below cannot see it. Flip the pair.
+s|- leadId (NOT lead_id)|- lead_id (NOT leadId)|g
+s|- budgetMin (NOT budget_min)|- budget_min (NOT budgetMin)|g
+s|- createdAt (NOT created_at)|- created_at (NOT createdAt)|g
 
 # --- unknown project facts: point at the profile, never invent a placeholder ---
 # A surviving `{{DATABASE_NAME}}` is WORSE than a wrong name because it looks filled in.
