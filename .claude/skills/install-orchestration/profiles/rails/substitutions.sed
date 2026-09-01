@@ -11,9 +11,76 @@ s#npm run --workspace=apps/[a-zA-Z][a-zA-Z0-9_-]* #npm run #g
 s#npm exec --workspace apps/[a-zA-Z][a-zA-Z0-9_-]* -- eslint [^\n]*#bin/rubocop#g
 s#npm --workspace apps/[a-zA-Z][a-zA-Z0-9_-]* run #npm run #g
 
+# --- absent gates: rewrite the CLAIM, never translate the token ------------
+# Ruby has no type checker and this profile's project-profile.md defines FOUR gates
+# (2-5). Two failure modes to avoid, both seen in a real install:
+#   * translating the tool  -> `bundle exec tsc --noEmit`, `bin/rails zeitwerk:check`:
+#     commands that do not exist here. An agent runs one, cannot fix the failure, and
+#     either stalls or reports a pass it never got.
+#   * translating the tool but not the sentence around it -> "5 validation gates
+#     (TypeScript, ...)" still asserts a gate this stack cannot run.
+# So: whole claims first, then the generic mop-up. ORDER IS LOAD-BEARING -- these must
+# precede the command rules below, `s|npx |bundle exec |g` and `s|ESLint|RuboCop|g`,
+# or the text they match will already have changed underneath them.
+
+# -- whole claims that name a gate this stack does not have --
+s|- \*\*Enforce all 5 validation gates (MANDATORY)\*\* - TypeScript, ESLint, Tests, Process cleanup, Manual testing|- **Enforce all 4 validation gates (MANDATORY)** - RuboCop, Specs, Process cleanup, Manual verification. There is no type or load gate in this project.|g
+s|- ✅ 5 validation gates (TypeScript, ESLint, tests, process cleanup, manual testing)|- ✅ 4 validation gates (RuboCop, specs, process cleanup, manual verification -- no type/load gate here)|g
+s|- \[ \] 5 validation gates (TypeScript, ESLint, tests, process cleanup, manual testing)|- [ ] 4 validation gates (RuboCop, specs, process cleanup, manual verification -- no type/load gate here)|g
+s|- ✅ \*\*5 validation gates (MANDATORY):\*\* TypeScript (0 errors), ESLint (0 warnings), Tests (all passing), Process|- ✅ **4 validation gates (MANDATORY):** RuboCop (0 offenses), Specs (all passing), Process|g
+s|  cleanup (no hanging servers), Manual testing (browser OR curl)|  cleanup (no hanging servers), Manual verification (rails console, or the dummy host app)|g
+s|- Validation gate failures (TypeScript errors, test failures)|- Validation gate failures (RuboCop offenses, spec failures)|g
+s|- \[ \] TypeScript: 0 errors (MANDATORY)|- [ ] Load/type gate: N/A in this project -- say so; do not fabricate a command|g
+s|- \*\*TypeScript Pre-Completion Validation Gate\*\* (proven pattern)|- **Pre-Completion Validation Gates** -- RuboCop, specs, cleanup, manual (proven pattern)|g
+s|- TypeScript validation gate added to prevent false completion claims|- Static-analysis gate added upstream; no equivalent exists here (see meta/project-profile.md)|g
+s|- Phase 4: TypeScript validation gate added|- Phase 4: static-analysis gate added upstream -- no equivalent here|g
+s|- ✅ All validation gates passed (TypeScript, ESLint, tests, device/browser testing)|- ✅ All validation gates passed (RuboCop, specs, cleanup, manual verification)|g
+s|- \*\*TypeScript validation mandatory:\*\* Run `npm run typecheck` before claiming complete|- **Lint validation mandatory:** Run `bin/rubocop` (0 offenses) before claiming complete. There is no type or load gate in this project.|g
+s|- Agents ran `npm test` but not `npm run typecheck`|- Agents ran `bin/rspec` but not `bin/rubocop` (the real lint gate here)|g
+s|\*\*Gate 1: TypeScript (0 errors)\*\*|**Gate 1: Load check -- N/A IN THIS PROJECT** (no Sorbet/RBS; `app:zeitwerk:check` is red on a clean `main`). Four gates here, 2-5.|g
+s|npx tsc --noEmit.*|# no type or load gate in this project -- see meta/project-profile.md|g
+s|TypeScript + ESLint + Tests mandatory|RuboCop + Specs + Cleanup + Manual mandatory (no type/load gate here)|g
+
+# -- session-log placeholders: say the gate is absent, do not ask for its output --
+s|\[paste npm run typecheck output\]|N/A -- this project has no type or load gate. State that; do not paste output.|g
+s|\[Paste npm run typecheck output\]|N/A -- this project has no type or load gate. State that; do not paste output.|g
+
+# -- gate assertions in prose: rewrite the whole sentence --
+s|1. TypeScript: 0 errors (`npm run typecheck`)|1. Load/type gate: N/A in this project -- see meta/project-profile.md|g
+s|1. \*\*TypeScript:\*\* 0 errors (`npm run typecheck`)|1. **Load/type gate:** N/A in this project -- see meta/project-profile.md|g
+s|\*\*Solution:\*\* Run npm run typecheck before claiming complete|**Solution:** Run `bin/rubocop` before claiming complete|g
+s|- \[ \] Check TypeScript: `npm run typecheck`|- [ ] Check lint: `bin/rubocop`|g
+
+# -- the BARE command only (whole line, optionally indented, optionally with a trailing
+#    comment or a `$ ` prompt). A `#` comment is safe where a command was expected.
+#    Deliberately NOT a global swap: mid-sentence it produces
+#    "Run # no type or load gate ... before claiming complete", which is the same
+#    translate-the-token-not-the-claim bug this block exists to prevent. Prose
+#    occurrences are left for the residue check to surface, per this file's header --
+#    most of them sit in success-criteria.md, which the profile already flags for a
+#    full phase-2 rewrite.
+s|^npm run typecheck$|# no type or load gate in this project -- see meta/project-profile.md|
+s|^npm run type-check$|# no type or load gate in this project -- see meta/project-profile.md|
+s|^\( *\)npm run typecheck$|\1# no type or load gate in this project -- see meta/project-profile.md|
+s|^\( *\)npm run typecheck  *#.*|\1# no type or load gate in this project -- see meta/project-profile.md|
+s|^\$ npm run typecheck$|$ # no type or load gate in this project -- see meta/project-profile.md|
+s|^npm run typecheck .*$|# no type or load gate in this project -- see meta/project-profile.md|
+# a gate assertion in a regression checklist -- rewrite the claim, not the token
+s|- \[ \] \\`npm run typecheck\\` shows MORE errors than before|- [ ] \\`bin/rubocop\\` shows MORE offenses than before|g
+
+# -- template count: this profile ships two agent-prompt templates --
+s|- 8 prompt templates ready to use|- 2 prompt templates on disk (infrastructure-patterns.md, rspec-testing-agent.md); every other role is built from methodology/prompt-templates.md + agent-specs-library.md|g
+
+# -- gate COUNT mop-up: four here, because Gate 1 does not exist --
+s|Five mandatory validation gates|Four mandatory validation gates|g
+s|5 validation gates|4 validation gates|g
+s|all 5 in every prompt|all 4 in every prompt|g
+s|5 gates|4 gates|g
+
 # --- commands -------------------------------------------------------------
-s|npm run type-check|bin/rails zeitwerk:check|g
-s|npm run typecheck|bin/rails zeitwerk:check|g
+# (typecheck -> no-gate marker handled in the absent-gates block above;
+#  it must NOT become `bin/rails zeitwerk:check` -- un-namespaced that task does
+#  not exist in an engine, and the profile documents the gate as absent anyway.)
 s|npm run lint|bin/rubocop|g
 s|npm run test:integration|bin/rspec spec/requests|g
 s|npm run test:watch|bin/rspec --watch|g
@@ -41,17 +108,6 @@ s|npm run audit|bundle exec bundler-audit check --update|g
 # Rails usually has no build step. Leave a visible marker rather than inventing one:
 # the residue check greps for {{ so this surfaces instead of reading as a real command.
 s|npm run build|{{BUILD_COMMAND -- Rails often has none; assets:precompile if using Sprockets/Propshaft}}|g
-# --- absent gates: kill the claim, do not translate it ---------------------
-# Ruby has no type checker, so `npx tsc --noEmit` must not be carried through the
-# npx rule below into `bundle exec tsc --noEmit` -- a command that does not exist.
-# An agent runs it, cannot fix the failure, and either stalls or reports a pass it
-# never got. Removing the tool name is not enough either: the surrounding claim
-# ("TypeScript + ESLint + Tests mandatory") still asserts a gate this stack cannot
-# run. Rewrite the whole claim, not the token inside it.
-# MUST precede `s|npx |bundle exec |g` and `s|ESLint|RuboCop|g`.
-s|npx tsc --noEmit.*|# no type or load gate in this project -- see meta/project-profile.md|g
-s|TypeScript + ESLint + Tests mandatory|RuboCop + Specs + Cleanup + Manual mandatory (no type/load gate here)|g
-
 s|npx |bundle exec |g
 
 # --- process cleanup -----------------------------------------------------
