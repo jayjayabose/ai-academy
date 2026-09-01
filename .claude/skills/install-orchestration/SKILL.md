@@ -154,7 +154,25 @@ files, conventions contradicting the profile, and a gate *count* disagreeing wit
 warns on stale examples and on infrastructure the docs reference but the project lacks
 (`docker-compose`, `.env.example`).
 
-Two rules it follows that any addition must keep:
+Later checks, each added because a human found the defect first:
+
+| § | Catches |
+| --- | --- |
+| 9 | Bracketed prose sitting where a command belongs (`cd x && [no such gate here]`). Fence *language* decides — `[paste output]` in a ```markdown block is a log placeholder and fine; the same line in ```bash is a fake command. |
+| 10 | Gate *names*, not just the count. A gate the profile correctly dropped surviving by name elsewhere, so an agent reports running a tool this project does not have. |
+| 11 | A claimed count contradicting reality ("8 prompt templates" when 2 shipped). |
+| 11b | A coverage floor contradicting the profile's. An agent that stops at 80% ships work CI rejects at 95%. |
+| 12 | Concrete paths the profile asserts that do not exist. It is declared authoritative, so a wrong path there reads as verified fact. |
+| 13 | `playbook/` files that duplicate `methodology/` rather than summarising it — the tree's own documented contract. |
+
+Three rules it follows that any addition must keep:
+
+- **A check must not flag the correct fix.** §5 originally grepped for the mere *presence*
+  of `camelCase`, so the right correction — "NO camelCase: never `leadId`" — was reported
+  as a camelCase mandate forever. Match at line level and exclude negations; §10 needs the
+  same treatment for the same reason. A check that stays red after the proper fix teaches
+  people to ignore the verifier, which is the failure §8 already warns about for gates.
+  Anchor negation words (`[Nn]o` unanchored also matches `--noEmit` and eats real hits).
 
 - **Never mutate the project.** `--run-gates` refuses anything matching
   `db:|migrat|purge|reset|drop|seed|prepare|--fix|--autocorrect`. A "verification" that runs

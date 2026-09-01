@@ -309,6 +309,226 @@ else
   fi
 fi
 
+# ------------------------------- 9. placeholder prose in command position
+head2 "9. Placeholder prose in command position"
+# A substitution that swaps a command for an explanation leaves prose where a command
+# belongs: `cd spec/dummy && [no such gate in this project]`. The sentence is honest;
+# an agent copying the block still runs a bracket. Honest prose in a command's clothing
+# is worse than a wrong command, because nothing errors loudly.
+TMP9="$(mktemp -t ph9-XXXXXX)"
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  # Fence LANGUAGE decides. `[paste rubocop output]` inside a ```markdown fence is a
+  # session-log placeholder and correct; the same line inside ```bash is a fake command.
+  awk -v F="${f#"$C/"}" '
+    /^[[:space:]]*```/ {
+      if (fence) { fence = 0; lang = "" }
+      else { fence = 1; lang = tolower(substr($0, index($0, "```") + 3)); gsub(/[^a-z]/, "", lang) }
+      next
+    }
+    # Prose instructions to the reader are not commands, whatever fence they sit in.
+    $0 ~ /\[[[:space:]]*([Pp]aste|[Ff]ill|[Yy]our|[Dd]escribe|[Pp]rovide|[Oo]nly if|[Ss]tandard|[Tt]argeted|[Ww]hat you|[Ll]ist)/ { next }
+    {
+      shell = (lang == "bash" || lang == "sh" || lang == "shell" || lang == "zsh" || lang == "console")
+      if (fence && shell && $0 ~ /^[[:space:]]*\[[^]]+\][[:space:]]*(#.*)?$/) { print F ":" NR ": " $0; next }
+      if ($0 ~ /&&[[:space:]]*`?\[[^]]+\]/)                                   { print F ":" NR ": " $0; next }
+      if (fence && shell && $0 ~ /^[[:space:]]*\$[[:space:]]+\[[^]]+\]/)     { print F ":" NR ": " $0 }
+    }' "$f" >> "$TMP9" 2>/dev/null
+done < <(md)
+if [ -s "$TMP9" ]; then
+  err "$({ wc -l < "$TMP9"; } | tr -d ' ') line(s) put bracketed prose where a command belongs:"
+  cut -c1-150 "$TMP9" | sed 's|^|           |'
+  echo "         Say the gate is absent in PROSE, outside the code fence — never on the command line."
+else
+  ok "no placeholder prose in command position"
+fi
+rm -f "$TMP9"
+
+# --------------------------------------- 10. gate NAMES match the stack
+head2 "10. Gate names match the stack"
+# §5b checks how MANY gates there are. It does not check what they are CALLED, so a
+# gate the profile correctly dropped (Ruby has no type checker) survives by name
+# elsewhere and an agent tries to run it.
+if [ -f "$PROFILE" ] && grep -qiE 'no (type|load)[^.]{0,20}gate|GATE 1 DOES NOT EXIST|N/A' "$PROFILE"; then
+  ABSENT_TOOLS=''
+  [ -f "$P/tsconfig.json" ] || ABSENT_TOOLS='TypeScript|tsc'
+  [ -d "$P/sorbet" ]        || ABSENT_TOOLS="${ABSENT_TOOLS:+$ABSENT_TOOLS|}sorbet|srb tc"
+  [ -d "$P/sig" ]           || ABSENT_TOOLS="${ABSENT_TOOLS:+$ABSENT_TOOLS|}steep"
+  grep -qi 'mypy' "$P/setup.cfg" "$P/pyproject.toml" 2>/dev/null || ABSENT_TOOLS="${ABSENT_TOOLS:+$ABSENT_TOOLS|}mypy"
+  TMP10="$(mktemp -t gn10-XXXXXX)"
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    rel="${f#"$C/"}"
+    # validation-gates.md may legitimately explain what the gate WAS upstream.
+    case "$rel" in *ADAPTATION-TODO*|*validation-gates.md) continue ;; esac
+    # Same trap as §5: prose stating the gate is ABSENT names the tool in order to
+    # rule it out. Flagging that punishes the correct fix.
+    # Word-anchored: an unanchored 'no' also matches --noEmit and swallows real hits.
+    NEG10='(^|[^A-Za-z])([Nn]o|NOT|[Nn]ot|[Nn]ever|[Aa]bsent|N/A|[Dd]ropped|[Uu]pstream|cannot)([^A-Za-z]|$)|not applicable|does not exist|has no|no equivalent'
+    while IFS= read -r hit; do
+      [ -n "$hit" ] || continue
+      printf '%s' "${hit#*:}" | grep -qE "$NEG10" && continue
+      printf '%s:%s\n' "$rel" "$hit" >> "$TMP10"
+    done < <({ grep -nEi "(gate[s]?[ :][^.]{0,50}($ABSENT_TOOLS))|(($ABSENT_TOOLS)[^.]{0,40}(gate|mandatory|required))|^[[:space:]]*(bundle exec )?($ABSENT_TOOLS)" \
+        "$f" 2>/dev/null || true; })
+  done < <(md)
+  if [ -s "$TMP10" ]; then
+    err "$({ wc -l < "$TMP10"; } | tr -d ' ') line(s) name a gate this project cannot run:"
+    cut -c1-150 "$TMP10" | sed 's|^|           |'
+    echo "         The profile dropped it; these did not. An agent will report a gate it never ran."
+  else
+    ok "no file names an absent gate"
+  fi
+  rm -f "$TMP10"
+else
+  ok "profile runs every gate it defines; nothing to cross-check"
+fi
+
+# ------------------------------------ 11. claimed counts match reality
+head2 "11. Claimed counts match reality"
+ACTUAL_TPL=$({ ls "$C/orchestration/templates/agent-prompts/" 2>/dev/null || true; } | { grep -c '\.md$' || true; })
+TMP11="$(mktemp -t cnt11-XXXXXX)"
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  rel="${f#"$C/"}"
+  case "$rel" in *ADAPTATION-TODO*) continue ;; esac
+  while IFS= read -r hit; do
+    [ -n "$hit" ] || continue
+    n=$(printf '%s' "${hit#*:}" | grep -oE '^[0-9]+')
+    [ -n "${n:-}" ] || continue
+    [ "$n" = "$ACTUAL_TPL" ] && continue
+    printf '%s:%s claims "%s templates" but %s exist on disk\n' "$rel" "${hit%%:*}" "$n" "$ACTUAL_TPL" >> "$TMP11"
+  done < <({ grep -noE '[0-9]+ (prompt )?templates' "$f" 2>/dev/null || true; })
+done < <(md)
+if [ -s "$TMP11" ]; then
+  err "template count contradicted ($ACTUAL_TPL on disk):"
+  sed 's|^|           |' "$TMP11"
+  echo "         An agent told there are more templates goes looking for files that were never copied."
+else
+  ok "no file contradicts the $ACTUAL_TPL shipped agent-prompt template(s)"
+fi
+rm -f "$TMP11"
+
+# --------------- 11b. coverage threshold agrees with the profile / CI
+head2 "11b. Coverage threshold agrees with the profile"
+# Same shape as 5b: a number stated in the KB that contradicts the authoritative one.
+# An agent told "80% is the bar" stops there and CI fails it at 95%.
+PROF_COV=$({ grep -ohE '(minimum_suite_coverage|coverage)[^0-9]{0,20}([0-9]{2,3})%?' "$PROFILE" 2>/dev/null || true; } \
+           | { grep -ohE '[0-9]{2,3}' || true; } | sort -rn | head -1)
+if [ -n "${PROF_COV:-}" ]; then
+  ok "profile states a $PROF_COV% coverage floor"
+  TMP11B="$(mktemp -t cov11-XXXXXX)"
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    rel="${f#"$C/"}"
+    case "$rel" in *project-profile*|*ADAPTATION-TODO*) continue ;; esac
+    while IFS= read -r hit; do
+      [ -n "$hit" ] || continue
+      text="${hit#*:}"
+      # A line contrasting the two ("95%, not 80%") is a correction, not a claim.
+      printf '%s' "$text" | grep -qE "$PROF_COV" && continue
+      n=$(printf '%s' "$text" | grep -oE '[0-9]{2,3}%' | head -1 | tr -d '%')
+      [ -n "${n:-}" ] || continue
+      [ "$n" = "$PROF_COV" ] && continue
+      printf '%s:%s  says %s%%\n' "$rel" "${hit%%:*}" "$n" >> "$TMP11B"
+    done < <({ grep -nEi 'coverage[^0-9]{0,24}[0-9]{2,3}%|[0-9]{2,3}%[^.]{0,16}coverage' "$f" 2>/dev/null || true; })
+  done < <(md)
+  if [ -s "$TMP11B" ]; then
+    err "$({ wc -l < "$TMP11B"; } | tr -d ' ') line(s) state a coverage floor other than $PROF_COV%:"
+    cut -c1-150 "$TMP11B" | sed 's|^|           |'
+    echo "         An agent that stops at the lower number ships work CI will reject."
+  else
+    ok "no file contradicts the $PROF_COV% floor"
+  fi
+  rm -f "$TMP11B"
+else
+  ok "profile states no coverage floor; skipping"
+fi
+
+# -------------------------- 12. paths the profile asserts actually exist
+head2 "12. Paths asserted by the profile exist"
+# The profile is declared authoritative. A wrong path in it (e.g. factories in
+# spec/dummy/factories when they live in spec/dummy/spec/factories) sends every agent
+# to a directory that is not there, and it reads as verified fact.
+if [ -f "$PROFILE" ]; then
+  TMP12="$(mktemp -t path12-XXXXXX)"
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    ln="${line%%:*}"; text="${line#*:}"
+    # Skip lines that are ABOUT something not existing -- the profile deliberately
+    # documents wrong paths in order to warn about them.
+    printf '%s' "$text" | grep -qiE 'does not exist|not exist|NOT `|absent|missing|wrong|stale|aspirational|never|no longer|~~|instead of|rather than|used to|was |had ' && continue
+    while IFS= read -r cand; do
+      [ -n "$cand" ] || continue
+      case "$cand" in *'*'*|*'<'*|*'{{'*|*'...'*|*' '*) continue ;; esac
+      case "$cand" in */) cand="${cand%/}" ;; esac
+      # Only check things actually shaped like a path IN THIS PROJECT: a known top-level
+      # dir, or something with a file extension. `Metrics/MethodLength` is a cop name;
+      # `business_rules` is a bare word. Neither is a claim about the filesystem.
+      case "$cand" in
+        app/*|spec/*|db/*|lib/*|bin/*|config/*|docs/*|test/*|src/*|.github/*|.claude/*) : ;;
+        *.rb|*.md|*.yml|*.yaml|*.json|*.gemspec|*.lock|*.sh|*.ts|*.py) : ;;
+        *) continue ;;
+      esac
+      [ -e "$P/$cand" ] && continue
+      printf '%s: `%s`\n' "$ln" "$cand" >> "$TMP12"
+    done < <(printf '%s' "$text" | { grep -oE '`[A-Za-z0-9_.][A-Za-z0-9_./-]*/[A-Za-z0-9_./-]*`' || true; } | tr -d '`')
+  done < <({ grep -n '`' "$PROFILE" || true; })
+  if [ -s "$TMP12" ]; then
+    warn "$({ wc -l < "$TMP12"; } | tr -d ' ') path(s) asserted in the profile do not exist here:"
+    sort -u "$TMP12" | sed 's|^|           meta/project-profile.md:|'
+    echo "         Some may be illustrative. Any that is presented as this project's layout is a fabricated fact."
+  else
+    ok "every concrete path the profile names resolves"
+  fi
+  rm -f "$TMP12"
+fi
+
+# ------------- 13. playbook/ are summaries, not copies of methodology/
+head2 "13. playbook/ files summarise rather than duplicate methodology/"
+# commands/orchestration.md tells the agent playbook/ is "brief summaries + links to
+# methodology" and methodology/ is the full spec. When they are near-copies the agent
+# cannot tell which is authoritative, pays the context cost twice, and -- worst --
+# every fix has to be applied in both or it silently survives in the other.
+TMP13="$(mktemp -t dup13-XXXXXX)"
+uniq_lines() { sort -u "$1" | grep -c '[A-Za-z]'; }
+for a in "$C/orchestration/playbook"/*.md; do
+  [ -f "$a" ] || continue
+  la=$({ wc -l < "$a"; } | tr -d ' ')
+  [ "$la" -ge 150 ] || continue
+  for b in "$C/orchestration/methodology"/*.md; do
+    [ -f "$b" ] || continue
+    lb=$({ wc -l < "$b"; } | tr -d ' ')
+    [ "$lb" -ge 150 ] || continue
+    ua=$(uniq_lines "$a"); ub=$(uniq_lines "$b")
+    small=$ua; [ "$ub" -lt "$ua" ] && small=$ub
+    [ "${small:-0}" -gt 0 ] || continue
+    common=$(comm -12 <(sort -u "$a" | grep '[A-Za-z]') <(sort -u "$b" | grep '[A-Za-z]') | wc -l | tr -d ' ')
+    pct=$(( common * 100 / small ))
+    [ "$pct" -ge 60 ] && printf '%s%% playbook/%s <-> methodology/%s\n' "$pct" "$(basename "$a")" "$(basename "$b")" >> "$TMP13"
+  done
+done
+# templates/ vs methodology/ duplicates of the same basename are always accidental.
+for a in "$C/orchestration/templates"/*.md; do
+  [ -f "$a" ] || continue
+  b="$C/orchestration/methodology/$(basename "$a")"
+  [ -f "$b" ] || continue
+  ua=$(uniq_lines "$a"); ub=$(uniq_lines "$b")
+  small=$ua; [ "$ub" -lt "$ua" ] && small=$ub
+  [ "${small:-0}" -gt 0 ] || continue
+  common=$(comm -12 <(sort -u "$a" | grep '[A-Za-z]') <(sort -u "$b" | grep '[A-Za-z]') | wc -l | tr -d ' ')
+  pct=$(( common * 100 / small ))
+  [ "$pct" -ge 60 ] && printf '%s%% templates/%s <-> methodology/%s  (same basename)\n' "$pct" "$(basename "$a")" "$(basename "$a")" >> "$TMP13"
+done
+if [ -s "$TMP13" ]; then
+  warn "$({ wc -l < "$TMP13"; } | tr -d ' ') near-duplicate pair(s) — playbook/ is documented as summaries:"
+  sort -rn "$TMP13" | sed 's|^|           |'
+  echo "         Fixes must be applied twice or they survive in the other copy."
+else
+  ok "playbook/ does not duplicate methodology/"
+fi
+rm -f "$TMP13"
+
 # ------------------------------------------------------------------ summary
 head2 "Summary"
 echo "  errors:   $ERRORS"
