@@ -119,15 +119,42 @@ fi
 # --------------------------------------------- 5. convention contradictions
 head2 "5. Conventions agree with the profile"
 if [ -f "$PROFILE" ] && grep -qi 'snake_case' "$PROFILE"; then
-  hits=$({ grep -rlE 'camelCase' "$C/orchestration" "$C/commands" --include='*.md' 2>/dev/null || true; } \
-         | grep -vE 'project-profile|rails-patterns|agent-specs-library|ADAPTATION-TODO')
-  if [ -n "$hits" ]; then
-    err "profile mandates snake_case, but these still mandate camelCase:"
-    printf '%s\n' "$hits" | sed "s|$C/|           |"
+  # A bare `grep -l camelCase` cannot tell a MANDATE from a PROHIBITION. The CORRECT
+  # fix reads "NO camelCase: never leadId", which a presence test then flags forever --
+  # and a check that stays red after the right fix teaches people to ignore it, the
+  # exact failure §8 warns about. So match per LINE, and require mandate-shaped
+  # wording with no negation near it.
+  MANDATE='([Uu]se|MUST|[Mm]andatory|ALL FIELDS|convention).*camelCase|camelCase (consistently|throughout|only|everywhere)'
+  NEGATED='([Nn][Oo]|NOT|[Nn]ever|[Aa]void|[Ii]nstead of|[Rr]ather than|[Dd]o not|[Dd]on.t)[^.]{0,40}camelCase|camelCase[^.]{0,30}(forbidden|prohibited|is wrong|mismatch)'
+  # `leadId (NOT lead_id)` mandates camelCase without containing the word at all --
+  # wording checks are blind to it, so match the identifier shape too.
+  IDENT='[a-z][a-zA-Z0-9]*[A-Z][a-zA-Z0-9]* \(NOT [a-z][a-z0-9]*_[a-z]'
+  TMP5="$(mktemp -t conv5-XXXXXX)"
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    rel="${f#"$C/"}"
+    case "$rel" in
+      *project-profile*|*rails-patterns*|*agent-specs-library*|*ADAPTATION-TODO*) continue ;;
+    esac
+    while IFS= read -r hit; do
+      [ -n "$hit" ] || continue
+      text="${hit#*:}"
+      printf '%s' "$text" | grep -qE "$NEGATED" && continue
+      printf '%s:%s\n' "$rel" "$hit" >> "$TMP5"
+    done < <({ grep -nE "$MANDATE" "$f" 2>/dev/null || true; })
+    while IFS= read -r hit; do
+      [ -n "$hit" ] || continue
+      printf '%s:%s  <- camelCase identifier mandated over snake_case\n' "$rel" "${hit%%:*}" >> "$TMP5"
+    done < <({ grep -nE "$IDENT" "$f" 2>/dev/null || true; })
+  done < <(md)
+  if [ -s "$TMP5" ]; then
+    err "profile mandates snake_case, but these LINES mandate camelCase:"
+    cut -c1-150 "$TMP5" | sed 's|^|           |'
     err "(an agent reading the playbook instead of the profile will name fields wrong)"
   else
-    ok "no camelCase mandates contradicting the profile"
+    ok "no camelCase mandates contradicting the profile (prohibitions are fine)"
   fi
+  rm -f "$TMP5"
 else
   ok "profile does not assert snake_case; skipping"
 fi
