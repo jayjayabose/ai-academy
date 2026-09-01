@@ -147,6 +147,33 @@ if [ -f "$PROFILE" ] && grep -qi 'snake_case' "$PROFILE"; then
       printf '%s:%s  <- camelCase identifier mandated over snake_case\n' "$rel" "${hit%%:*}" >> "$TMP5"
     done < <({ grep -nE "$IDENT" "$f" 2>/dev/null || true; })
   done < <(md)
+  # A convention MANDATED on one line and FORBIDDEN two lines later cancels out, and
+  # neither line names the other convention, so the checks above cannot see it. This is
+  # what a blanket casing substitution produces when it rewrites a positive claim and
+  # leaves its negation standing -- the original defect this section exists for.
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    rel="${f#"$C/"}"
+    case "$rel" in *ADAPTATION-TODO*) continue ;; esac
+    awk -v F="$rel" '
+      # shift the window BEFORE recording the current line, or n[2] is overwritten
+      # with the current line number and every hit reports itself as its own cause.
+      { for (i = 3; i > 1; i--) { w[i] = w[i-1]; n[i] = n[i-1] }
+        w[1] = $0; n[1] = NR
+        if ($0 ~ /[Nn][Oo] SNAKE_CASE|[Aa]void[^.]*snake_case/) {
+          for (i = 2; i <= 3; i++)
+            if (w[i] ~ /[Uu]se snake_case|snake_case consistently/) {
+              print F ":" n[i] " mandates snake_case, then :" NR " forbids it"; break
+            }
+        }
+        if ($0 ~ /[Nn][Oo] CAMELCASE|[Aa]void[^.]*camelCase/) {
+          for (i = 2; i <= 3; i++)
+            if (w[i] ~ /[Uu]se camelCase|camelCase consistently/) {
+              print F ":" n[i] " mandates camelCase, then :" NR " forbids it"; break
+            }
+        }
+      }' "$f" >> "$TMP5" 2>/dev/null
+  done < <(md)
   if [ -s "$TMP5" ]; then
     err "profile mandates snake_case, but these LINES mandate camelCase:"
     cut -c1-150 "$TMP5" | sed 's|^|           |'
