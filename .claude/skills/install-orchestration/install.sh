@@ -184,8 +184,15 @@ done < <(find "$SOURCE_CLAUDE/commands" -maxdepth 1 -name '*.md' | sort)
 
 echo
 echo "knowledge base:"
+# meta/session-handoffs/ is excluded for the same reason as workspace/ (see the comment
+# at the workspace step): those are the SOURCE project's own session notes -- its
+# blockers, its decisions, its file paths. Copying them plants another project's history
+# in this one, and their claims get read as facts about the target. The directory is
+# where the target writes ITS handoffs; it does not need the source's.
 while IFS= read -r f; do
-  copy_one "orchestration/${f#"$SOURCE_CLAUDE/orchestration/"}"
+  rel="orchestration/${f#"$SOURCE_CLAUDE/orchestration/"}"
+  case "$rel" in orchestration/meta/session-handoffs/*) continue ;; esac
+  copy_one "$rel"
 done < <(find "$SOURCE_CLAUDE/orchestration" -type f | sort)
 
 subbed=0

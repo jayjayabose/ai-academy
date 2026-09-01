@@ -35,7 +35,7 @@ adapt-light	3	orchestration/templates/execution-plan-template.md	Placeholder exa
 adapt-light	3	orchestration/templates/retrospective-template.md	Placeholder examples reference this stack.
 adapt-light	3	orchestration/README.md	Links to `/course/guidebook/companion/day-2-ai-intelligence.md`. Remove the course links.
 portable	4	orchestration/manual-usage.md	No project-specific content.
-portable	4	orchestration/methodology/README.md	Index of methodology files; no project-specific content.
+adapt-light	4	orchestration/methodology/README.md	Index of methodology files, but it states the gate COUNT, which is stack-specific.
 portable	4	orchestration/playbook/coordination-decision-tree.md	Pure decision logic.
 portable	4	orchestration/playbook/session-continuity.md	Pure process.
 portable	4	orchestration/templates/session-handoff.md	Structural template only.
