@@ -16,6 +16,59 @@ examples. Dropped into a Django or Go project unmodified, it instructs agents to
 
 So: phase 1 copies, phase 2 rewrites. **An install that stops after phase 1 is not done.**
 
+## Principles
+
+The goal is not "the files are copied". It is **an install where every command runs, every
+fact holds, and every claim is one this project can honour** — because the consumer is an
+agent that will act on the text and cannot smell wrongness the way you can.
+
+These are ordered: each beats the ones below it when they conflict. Check a change against
+them before shipping it.
+
+**1. Truthfulness over completeness.** A documented gap beats a plausible guess. The rails
+profile refuses to invent a Gate 1 rather than substitute something Ruby-shaped. An unfilled
+`{{placeholder}}` is worse than a wrong command, because it looks filled in.
+
+**2. Never destroy the irreplaceable.** The generic KB regenerates in one command;
+`meta/project-profile.md`, `meta/project-mission.md` and the retargeted commands do not.
+Hence the `generate` tier that is never copied, and the staging/`.install-manifest`
+reconcile. A stale file that is yours beats a fresh one that overwrote your work — you can
+fix the first.
+
+**3. A visible gap beats an invisible guess.** `substitutions.sed` handles high-confidence
+literal swaps only; anything needing judgement is left alone so the residue check surfaces
+it. Leaving `npm run typecheck` in a sentence is *correct* — the check warns and a human
+decides. Converting it to something Ruby-flavoured that nobody can run is not.
+
+**4. Rewrite whole claims, not tokens.** A half-translated sentence is a *new* falsehood, not
+a smaller one. `s|camelCase|snake_case|g` once produced three adjacent lines mandating
+snake_case, forbidding snake_case, then giving camelCase examples. `npx -> bundle exec`
+produced `bundle exec tsc --noEmit`. Both read as deliberate.
+
+**5. Verify by executing, not by convention.** `project-profile.md` is filled from `ci.yml`
+and the hook config with every command actually run — which is how it knows `bin/linter` is
+red and `bin/rubocop` is the real gate. Corollary: **a check already red on a clean checkout
+is not a gate**, because it teaches people to ignore gates.
+
+**6. Encode each human-found defect as a check.** `verify-install.sh` exists to convert
+experience into automation; every section in it started as something a person hit while
+using the tool. Adding the check matters more than fixing the one instance.
+
+**7. Do not plant another project's history.** `workspace/` and `meta/session-handoffs/` are
+excluded: the source's decisions and blockers read as facts about the target.
+
+**8. Phase 1 alone is not done.** Copying is the easy half. Roughly 4,000 of 7,300 lines name
+the source stack.
+
+### The tension this accepts, deliberately
+
+Principles 1 and 3 cost completeness. A fresh `--profile rails` install arrives with errors
+and ~100 foreign-stack warnings, and that is the *intended* state — the alternative is an
+installer guessing at Angular examples in a Rails repo. **The KB is designed to arrive
+visibly unfinished rather than invisibly wrong.** That is also why `verify-install.sh`
+matters more than `install.sh`: the installer cannot finish the job, so the verifier has to
+make the unfinished parts impossible to miss.
+
 ## Phase 1 — copy
 
 ```bash
