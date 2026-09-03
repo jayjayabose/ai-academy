@@ -18,9 +18,17 @@ So: phase 1 copies, phase 2 rewrites. **An install that stops after phase 1 is n
 
 ## Principles
 
-The goal is not "the files are copied". It is **an install where every command runs, every
+There are two goals, and both are load-bearing.
+
+**Correctness.** Not "the files are copied" but **an install where every command runs, every
 fact holds, and every claim is one this project can honour** — because the consumer is an
 agent that will act on the text and cannot smell wrongness the way you can.
+
+**Invisibility.** A common reason to install this is **personal use inside a team that has
+not adopted it.** That only works if the install leaves *no git trace*: an
+`orchestration/` tree appearing in someone's PR is a social event, not just noise. The
+install must be adoptable by one person without becoming a team decision they did not ask
+for.
 
 These are ordered: each beats the ones below it when they conflict. Check a change against
 them before shipping it.
@@ -59,6 +67,18 @@ excluded: the source's decisions and blockers read as facts about the target.
 
 **8. Phase 1 alone is not done.** Copying is the easy half. Roughly 4,000 of 7,300 lines name
 the source stack.
+
+**9. Every artifact must be ignorable, and the installer must prove it.** This is how the
+invisibility goal is enforced rather than hoped for. Any new file the install writes —
+`.install-manifest`, `*.new`, hooks in `settings.local.json` — widens the surface that has
+to stay hidden, so the installer checks *every path it wrote* against `git check-ignore`
+and reports what leaks.
+
+Checking one directory is not enough, and assuming is worse. `.claude/*` plus
+`!.claude/commands/` is a widespread pattern: the negation re-exposes the three command
+files while `.claude/orchestration` still reports as ignored. The installer used to check
+only that directory and print "nothing you just installed is tracked" — false, in the most
+common team configuration, and a violation of principle 1 by the tool itself.
 
 ### The tension this accepts, deliberately
 

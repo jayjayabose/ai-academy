@@ -531,6 +531,45 @@ fi
 # case is common, sometimes deliberately (a personal install nobody wants shared).
 if [ "$DRY_RUN" -eq 0 ] && [ "$copied" -gt 0 ]; then
   echo
+  echo "git trace:"
+  # A common reason to install this is personal use inside a team that has not adopted
+  # it. That only works if the install is invisible to git -- an orchestration/ tree in
+  # someone's PR is a social event, not just noise. Checking one directory is not
+  # enough: `.claude/*` plus `!.claude/commands/` is a widespread pattern, and the
+  # negation re-exposes exactly the three command files while .claude/orchestration
+  # still reports as ignored. Check every path actually written.
+  if ! git -C "$TARGET_PROJECT" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "  not a git repo — nothing can leak."
+  else
+    exposed=""; n_checked=0
+    while IFS= read -r rel; do
+      [ -n "$rel" ] || continue
+      n_checked=$((n_checked + 1))
+      git -C "$TARGET_PROJECT" check-ignore -q -- ".claude/$rel" 2>/dev/null && continue
+      exposed="$exposed .claude/$rel"
+    done < <({ [ -f "$MANIFEST_FILE" ] && awk '!/^#/ && NF>1 {print $2}' "$MANIFEST_FILE"; } 2>/dev/null)
+    # settings.local.json only exists if --with-backup wrote hooks into it
+    if [ -f "$FINAL_CLAUDE/settings.local.json" ]; then
+      n_checked=$((n_checked + 1))
+      git -C "$TARGET_PROJECT" check-ignore -q -- ".claude/settings.local.json" 2>/dev/null \
+        || exposed="$exposed .claude/settings.local.json"
+    fi
+    if [ -z "$exposed" ]; then
+      echo "  clean — none of the $n_checked installed path(s) are visible to git."
+    else
+      n_exp=$(printf '%s\n' $exposed | grep -c . || true)
+      echo "  $n_exp of $n_checked installed path(s) ARE visible to git and would show in a PR:"
+      printf '%s\n' $exposed | sed 's/^/    /'
+      echo
+      echo "  To keep this install personal, add FILE patterns to your global ignore"
+      echo "  (git config --global core.excludesFile), not directory patterns:"
+      printf '%s\n' $exposed | sed 's/^/    /'
+      echo "  A directory pattern loses to a repo's \`!.claude/commands/\` negation; a file"
+      echo "  pattern does not, because the negation only ever matches the directory."
+    fi
+  fi
+
+  echo
   echo "durability:"
   if ! git -C "$TARGET_PROJECT" rev-parse --git-dir >/dev/null 2>&1; then
     echo "  $TARGET_PROJECT is not a git repo — nothing to check."
@@ -539,7 +578,7 @@ if [ "$DRY_RUN" -eq 0 ] && [ "$copied" -gt 0 ]; then
   else
     ign="$({ git -C "$TARGET_PROJECT" check-ignore -v .claude/orchestration 2>/dev/null || true; } | cut -f1)"
     echo "  .claude/orchestration is GITIGNORED (${ign:-ignored})."
-    echo "  Nothing you just installed is tracked, so \`git clean -xfd\` destroys it"
+    echo "  The knowledge base is not tracked, so \`git clean -xfd\` destroys it"
     echo "  silently — including project-profile.md, which is not regenerable."
     if [ "$WITH_BACKUP" -eq 1 ]; then
       SYNC_SRC="$SKILL_DIR/sync-install-backup.sh"
