@@ -283,8 +283,34 @@ command, not a silently emptied backup.
 
 **Not backed up: `.claude/workspace/`.** Per-repo scratch — execution plans, agent logs,
 retrospectives. Different lifetime from install state. Say so rather than leaving it implicit.
-- **Re-running** is safe and idempotent. Phase-2 edits are protected — a re-run skips
-  modified files unless `--force`, which would discard the adaptation work.
+- **Re-running is safe.** The installer builds the complete expected install in a staging
+  directory first, then reconciles it file by file against the target. Nothing is touched
+  until every phase has succeeded, and each file lands in one of four states:
+
+  | State | Meaning | Action |
+  | --- | --- | --- |
+  | new | not in the target | installed |
+  | already current | byte-identical to what a pristine install produces | nothing |
+  | updated | matches the hash we last wrote, so you never edited it | overwritten |
+  | **kept local** | differs from what we last wrote — you adapted it | **yours kept; the new version lands as `<file>.new`** |
+
+  `--force` overrides all of it and discards your version.
+
+  Provenance lives in `orchestration/.install-manifest` (sha256 per file, as the installer
+  last wrote it). An install that predates the manifest seeds itself: any file still
+  byte-identical to pristine output is provably untouched and gets recorded; everything
+  else is treated as localised and protected. On a real adapted install that split was
+  18 recorded / 26 protected.
+
+  After a re-run, review what it held back:
+
+  ```bash
+  find .claude -name '*.new'
+  ```
+
+  **This was not true before.** The profile's file overlay ignored `--force` *and* ignored
+  existing files, so a plain re-run silently replaced `meta/project-profile.md` — the one
+  file the whole knowledge base defers to — with the unfilled template.
 - **A pre-existing `.claude/`** in the target is left alone; the installer only adds files.
   Detection lists what's already there so you can spot commands that overlap with these.
 

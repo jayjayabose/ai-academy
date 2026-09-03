@@ -111,6 +111,43 @@ echo "target: $TARGET_CLAUDE"
 [ -n "$PROFILE" ] && echo "profile: $PROFILE ($PROFILE_DIR)"
 echo
 
+# A single EXIT trap for the whole script. bash keeps only the LAST handler per
+# signal, so a second `trap ... EXIT` further down would silently discard this one --
+# exactly how the staging dir leaked on every run until it was caught.
+CLEANUP_PATHS=""
+cleanup_all() { for _p in $CLEANUP_PATHS; do [ -n "$_p" ] && rm -rf "$_p"; done; }
+trap cleanup_all EXIT
+register_cleanup() { CLEANUP_PATHS="$CLEANUP_PATHS $1"; }
+
+# --- build into a staging dir, reconcile afterwards -----------------------
+# Writing straight into the target means the only way to protect phase-2 work is a
+# per-file "does it exist" check -- and the profile overlay skipped that check, so a
+# plain re-run silently replaced meta/project-profile.md, the one file everything else
+# defers to. Building the complete expected install somewhere else first turns that
+# into a comparison we can reason about: for each file we know what a pristine install
+# WOULD produce, what is on disk, and what we last wrote. Nothing in the target is
+# touched until every phase has succeeded.
+FINAL_CLAUDE="$TARGET_CLAUDE"
+MANIFEST_FILE="$FINAL_CLAUDE/orchestration/.install-manifest"
+if [ "$DRY_RUN" -eq 0 ]; then
+  STAGE="$(mktemp -d -t orchinstall-XXXXXX)"
+  register_cleanup "$STAGE"
+  # The build phases below all write through $TARGET_CLAUDE; point it at the stage.
+  # Their "already exists" branches go inert against an empty dir, which is what we
+  # want: the stage always receives the complete, unconditional install.
+  TARGET_CLAUDE="$STAGE"
+fi
+
+hash_of() {
+  if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
+  else sha256sum "$1" | awk '{print $1}'; fi
+}
+# What we recorded writing last time, if anything.
+recorded_hash() {
+  [ -f "$MANIFEST_FILE" ] || return 1
+  awk -v p="$1" '$2 == p { print $1; f=1 } END { exit !f }' "$MANIFEST_FILE"
+}
+
 copied=0
 skipped=0
 to_generate=0
@@ -258,6 +295,84 @@ if [ -n "$PROFILE" ]; then
   fi
 fi
 
+# ------------------------------------------------------- reconcile + manifest
+# Three states per file, and only the middle one is a judgement call:
+#   absent          -> install it
+#   matches what we last wrote (or matches the stage exactly) -> yours is untouched,
+#                      safe to update
+#   differs from what we last wrote -> YOU localised it. Keep yours, drop the new
+#                      version alongside as .new so the merge is your decision.
+# This is how dpkg and rpm treat config files, for the same reason: the installer
+# cannot tell an improvement from a regression in a file it did not write.
+n_new=0; n_same=0; n_updated=0; n_local=0; n_forced=0; n_dropped=0
+if [ "$DRY_RUN" -eq 0 ]; then
+  echo
+  echo "reconcile:"
+  NEWMAN="$(mktemp -t orchman-XXXXXX)"
+  while IFS= read -r src; do
+    rel="${src#"$STAGE/"}"
+    final="$FINAL_CLAUDE/$rel"
+    mkdir -p "$(dirname "$final")"
+    if [ ! -e "$final" ]; then
+      cp "$src" "$final"; n_new=$((n_new + 1))
+      printf '%s  %s\n' "$(hash_of "$final")" "$rel" >> "$NEWMAN"
+    elif cmp -s "$src" "$final"; then
+      # Identical to what a pristine install produces -- provably untouched, so it is
+      # safe to record even if we have never recorded it before. This is what lets an
+      # install that predates the manifest seed itself instead of assuming the worst.
+      n_same=$((n_same + 1))
+      printf '%s  %s\n' "$(hash_of "$final")" "$rel" >> "$NEWMAN"
+    elif [ "$FORCE" -eq 1 ]; then
+      cp "$src" "$final"; n_forced=$((n_forced + 1))
+      echo "  FORCED  $rel (your version discarded)"
+      printf '%s  %s\n' "$(hash_of "$final")" "$rel" >> "$NEWMAN"
+    elif rec="$(recorded_hash "$rel" 2>/dev/null)" && [ "$rec" = "$(hash_of "$final")" ]; then
+      cp "$src" "$final"; n_updated=$((n_updated + 1))
+      echo "  update  $rel (unmodified since we wrote it)"
+      printf '%s  %s\n' "$(hash_of "$final")" "$rel" >> "$NEWMAN"
+    else
+      cp "$src" "$final.new"; n_local=$((n_local + 1))
+      echo "  LOCAL   $rel — yours kept, new version at $rel.new"
+      # keep the previous record: the file we protected is still the one we last wrote
+      if rec="$(recorded_hash "$rel" 2>/dev/null)"; then
+        printf '%s  %s\n' "$rec" "$rel" >> "$NEWMAN"
+      fi
+    fi
+  done < <(find "$STAGE" -type f | sort)
+
+  # A file the profile removes must also go from the target, and from the manifest.
+  if [ -n "$PROFILE" ] && [ -f "$PROFILE_DIR/remove.txt" ]; then
+    while IFS= read -r rel; do
+      case "$rel" in ''|\#*) continue ;; esac
+      if [ -e "$FINAL_CLAUDE/$rel" ]; then
+        rm -f "$FINAL_CLAUDE/$rel"; n_dropped=$((n_dropped + 1))
+        echo "  remove  $rel (superseded by this profile)"
+      fi
+    done < "$PROFILE_DIR/remove.txt"
+  fi
+
+  mkdir -p "$(dirname "$MANIFEST_FILE")"
+  { echo "# sha256 of each file as this installer last wrote it. Do not hand-edit:"
+    echo "# a wrong hash here makes the installer overwrite work it should protect."
+    sort -k2 "$NEWMAN"
+  } > "$MANIFEST_FILE"
+  rm -f "$NEWMAN"
+
+  printf '  %s new, %s already current, %s updated, %s kept local, %s forced' \
+    "$n_new" "$n_same" "$n_updated" "$n_local" "$n_forced"
+  [ "$n_dropped" -gt 0 ] && printf ', %s removed' "$n_dropped"
+  echo
+  if [ "$n_local" -gt 0 ]; then
+    echo
+    echo "  $n_local file(s) you had localised were left alone. Their new versions sit"
+    echo "  beside them as *.new — diff and merge deliberately, then delete the .new:"
+    echo "    find '$FINAL_CLAUDE' -name '*.new'"
+  fi
+fi
+
+# the build phases are done; everything below talks about the real target again
+TARGET_CLAUDE="$FINAL_CLAUDE"
+
 echo
 # workspace/ is DELIBERATELY not copied. The source repo's workspace holds finished
 # feature artifacts (execution plans, agent prompts and logs, screenshots) for features
@@ -305,7 +420,7 @@ if [ "$DRY_RUN" -eq 0 ]; then
 
   # Effective manifest = base rows, with profile rows replacing same-path rows.
   EFF="$(mktemp -t effmanifest-XXXXXX)"
-  trap 'rm -f "$EFF"' EXIT
+  register_cleanup "$EFF"
   OVR="$PROFILE_DIR/manifest-overrides.tsv"
   if [ -n "$PROFILE" ] && [ -f "$OVR" ]; then
     awk -F'\t' -v ovr="$OVR" '
