@@ -18,10 +18,10 @@
 
 **What Qualifies as Infrastructure:**
 
-- Database setup and migrations (Sequelize ORM)
-- Testing framework with example tests (Jest)
-- Development scripts (setup, seed, reset, dev)
-- Project scaffolding (NestJS backend, Angular frontend)
+- Database setup and migrations
+- Testing framework with at least one example test
+- Development scripts (setup, seed, reset, run)
+- Project scaffolding for each layer the project has
 - Environment configuration
 - **MCP Server configuration** (Filesystem, Playwright, Context7)
 
@@ -35,7 +35,7 @@ Tasks A, B, C (Parallel): Build features on established foundation
 
 **Why It Matters:**
 
-- Demo readiness: Fresh clone → npm install → npm run setup → npm run dev = working app
+- Demo readiness: fresh clone → install deps → setup → run = working app, with no undocumented step
 - Parallel independence: All agents start with complete working environment
 - No excuses: Testing framework exists, setup scripts work
 - Professional standards: Eliminates "works on my machine" problems
@@ -62,7 +62,7 @@ MCP (Model Context Protocol) servers extend agent capabilities and must be confi
 
 3. **Context7 MCP** - Up-to-date library documentation
     - Why: Prevents outdated patterns and deprecated API usage
-    - Provides: Current docs for Sequelize, NestJS, Angular, and other libraries
+    - Provides: current docs for the libraries this project actually uses
     - Benefit: Agents reference latest best practices, not training data
 
 **Configuration as Infrastructure:**
@@ -153,36 +153,30 @@ MCP (Model Context Protocol) servers extend agent capabilities and must be confi
 
 **Mandatory Convention:**
 
-- **API Fields (DTOs):** camelCase (leadId, budgetMin, lastContactDate)
-- **Database Layer:** snake_case (mapped in the models/services)
-- **Frontend Code:** camelCase ONLY (matching the shared API types exactly)
-- **Validation:** TypeScript compilation enforces consistency
+- **Pick one convention per layer** and write it down before any parallel work starts.
+- **Name the single boundary** where a conversion may happen (usually the serializer). A
+  convention converted in two places is converted twice.
+- **Name the enforcement mechanism** — a type checker, a linter rule, or a spec asserting a
+  literal payload. A convention nothing checks is a preference.
+
+The concrete convention is a per-project fact. Record it wherever the project records its
+conventions; a worked instance is in `examples/<stack>/pattern-library-examples.md`.
 
 **How to Apply:**
 
 1. Define field naming convention before parallel agents start
 2. Schema agent defines field names as source of truth
 3. All other agents import and use exact field names
-4. TypeScript type-check catches violations automatically
+4. The enforcement mechanism catches violations automatically
 
-**Integration Points:**
-
-```markdown
-## FIELD NAMING CONVENTION (MANDATORY)
-
-You MUST use these exact field names matching the shared API types:
-
-- leadId (NOT lead_id)
-- budgetMin (NOT budget_min)
-- createdAt (NOT created_at)
-
-Import schema types and use them directly.
-```
+**Integration Points:** state the locked convention verbatim in every agent prompt, with
+examples in the project's own field names. A worked instance is in
+`examples/<stack>/pattern-library-examples.md`.
 
 **Why It Matters:**
 
 - Prevents systematic mismatches across agent boundaries
-- TypeScript catches coordination errors before runtime
+- The enforcement mechanism catches coordination errors before release
 - Schema as single source of truth for all agents
 - Professional practice: coordination contracts are mandatory
 
@@ -202,9 +196,9 @@ make the system green.
 **Why It Matters:**
 
 - Automated tests validate code logic, not end-to-end workflows
-- TypeScript catches type mismatches across agents
-- Browser/device testing reveals integration issues tests miss
-- Process cleanup prevents RAM exhaustion during development
+- Static analysis catches mismatches that cross agent boundaries
+- Manual verification reveals integration failures tests cannot see
+- Process cleanup prevents resource exhaustion during development
 
 ---
 
@@ -239,27 +233,14 @@ per_feature:
   e2e_tests: "At least 1 (full flow validation)"
 ```
 
-**Critical Pattern:**
-
-```typescript
-//  WRONG: All mocked (hides type mismatches)
-jest.mock('@/lib/services/notification.service');
-
-//  CORRECT: Real database, real services
-test('integration: create notification end-to-end', async () => {
-  // No mocks - executes actual SQL
-  const notification = await notificationService.createAndPublish({...});
-
-  // Verify in real database
-  const dbRecord = await Notification.findOne({where: {...}});
-  expect(dbRecord).toBeDefined();
-});
-```
+**Critical Pattern:** an integration test that mocks the collaborator it is supposed to
+exercise is a unit test wearing a costume. The integration tier must hit the real database
+and the real service. A worked example is in `examples/<stack>/pattern-library-examples.md`.
 
 **Why It Matters:**
 
 - Mock-heavy tests pass while production code would crash
-- Database types don't match TypeScript assumptions (strings vs Date objects)
+- Database types don't match what the code assumes (strings vs date objects, decimals vs floats)
 - Constraint violations caught silently (invalid UUIDs, null violations)
 - Integration tests catch bugs unit tests hide
 
@@ -354,7 +335,7 @@ test('integration: create notification end-to-end', async () => {
 ```
 Task A: REST Backend
     ↓ exports: LOGIN_MUTATION, User type
-Task B: Angular Context
+Task B: Frontend state layer
     ↓ imports from A, exports: useAuth hook
 Task C: UI Components
     ↓ imports from B
