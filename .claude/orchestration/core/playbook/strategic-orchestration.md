@@ -20,7 +20,7 @@ Proactive: validate → remove blockers → launch → smooth execution
 30-60 minutes of pre-execution work against 1-3 hours of stuck states. Budget it: context recovery 5-10 min,
 infrastructure validation 10-20 min, blocker removal 15-30 min, launch 1-2 min.
 
-**Evidence and return on investment:** methodology/pre-execution-validation-protocol.md § How Long This Takes
+**Evidence and return on investment:** core/methodology/pre-execution-validation-protocol.md § How Long This Takes
 
 ---
 
@@ -37,7 +37,7 @@ Starting fresh:
 - [ ] Read the requirements; identify dependencies on earlier features
 - [ ] Look for a past feature with the same shape and reuse what it learned
 
-**Full phase:** methodology/pre-execution-validation-protocol.md § Phase 1: Context Recovery
+**Full phase:** core/methodology/pre-execution-validation-protocol.md § Phase 1: Context Recovery
 
 ---
 
@@ -53,7 +53,7 @@ Before committing to any new tooling:
 The rule: **do not assume, validate.** A tool advertised as an improvement can carry a setup cost an order of
 magnitude larger than the alternative it replaces, and you only find that out by running it.
 
-**Worked trade-off analysis:** methodology/pre-execution-validation-protocol.md § Phase 2: Infrastructure Validation
+**Worked trade-off analysis:** core/methodology/pre-execution-validation-protocol.md § Phase 2: Infrastructure Validation
 
 ---
 
@@ -67,7 +67,7 @@ For each blocker from Phase 1:
 - [ ] Confirm prerequisites are green: compiler, test suite, installed dependencies
 - [ ] Write the fixes into the agent prompt as "X is FIXED" context
 
-**Commands per blocker category:** methodology/pre-execution-validation-protocol.md § Common Blocker Categories
+**Commands per blocker category:** core/methodology/pre-execution-validation-protocol.md § Common Blocker Categories
 
 The five recurring categories: import paths · connection configuration · service dependencies · infrastructure
 requirements · environment mismatches.
@@ -80,7 +80,7 @@ requirements · environment mismatches.
 - [ ] Prompt states one clear focus area
 - [ ] Prompt requires the validation gates
 
-**Directive template:** methodology/pre-execution-validation-protocol.md § Phase 4: Agent Launch with Clear Directive
+**Directive template:** core/methodology/pre-execution-validation-protocol.md § Phase 4: Agent Launch with Clear Directive
 
 ---
 
@@ -91,7 +91,7 @@ discovering blockers this checklist should have caught · fighting tooling that 
 
 Any of those means Phase 2 or Phase 3 was skipped, not that the agent is weak.
 
-**Success and failure metrics:** methodology/pre-execution-validation-protocol.md § Validation: Did the Protocol Work?
+**Success and failure metrics:** core/methodology/pre-execution-validation-protocol.md § Validation: Did the Protocol Work?
 
 ---
 

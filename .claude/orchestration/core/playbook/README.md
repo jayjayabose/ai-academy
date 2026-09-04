@@ -43,7 +43,7 @@ Checklists here are stack-neutral. The commands that satisfy them are in
 Example:
 
 ```
-Playbook: "5 gates MANDATORY" → Links to methodology/validation-gates.md
+Playbook: "5 gates MANDATORY" → Links to core/methodology/validation-gates.md
 Methodology: [Complete 2000-token specification]
 ```
 

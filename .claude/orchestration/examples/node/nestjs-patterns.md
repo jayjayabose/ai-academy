@@ -90,5 +90,5 @@ divided.
 
 **See Also:**
 
-- Chapter 2: Infrastructure-First Pattern
-- Chapter 5: Shared Types as the Coordination Contract
+- Infrastructure-first pattern: @.claude/orchestration/core/methodology/pattern-library.md § 1. Infrastructure-First Pattern
+- Shared types as the coordination contract: @.claude/orchestration/core/methodology/coordination-protocols.md § High Coordination Protocol: Contract-Code Integration

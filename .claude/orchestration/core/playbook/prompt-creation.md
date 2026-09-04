@@ -14,8 +14,8 @@
 
 | Situation                                                           | Template                                                       |
 | ------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Infrastructure task, no shared contract (database, API scaffolding)  | prompt-templates.md § Infrastructure-Independent Agent Prompts   |
-| Contract-code integration (types → controllers → UI)                 | prompt-templates.md § Schema-Code Integration Prompts            |
+| Infrastructure task, no shared contract (database, API scaffolding)  | core/methodology/prompt-templates.md § Infrastructure-Independent Agent Prompts |
+| Contract-code integration (types → controllers → UI)                 | core/methodology/prompt-templates.md § Schema-Code Integration Prompts          |
 | Fixing a bug rather than building a feature                          | @.claude/orchestration/core/methodology/bugfix-prompt-template.md     |
 
 Unsure which agent the work needs at all: @.claude/orchestration/core/methodology/agent-specs-library.md
@@ -35,7 +35,7 @@ Every prompt, without exception:
 - [ ] **Quality standards** — type safety, tests, error handling, accessibility where relevant
 - [ ] **Success criteria** — specific and verifiable, never "feature works"
 
-**What each block must contain:** methodology/coordination-protocols.md § Quick Protocol Validation Checklist
+**What each block must contain:** core/methodology/coordination-protocols.md § Quick Protocol Validation Checklist
 **Turning vague criteria into testable ones:** @.claude/orchestration/core/methodology/success-criteria.md
 **Logging templates:** @.claude/orchestration/core/templates/logging-templates.md
 
@@ -48,7 +48,7 @@ Every prompt, without exception:
 - [ ] The instruction to paste gate output into the session log
 
 **Gate commands, required output and evidence format:** @.claude/orchestration/core/methodology/validation-gates.md
-**Why manual verification is separate from the test suite:** validation-gates.md § Gate 5: Manual Testing
+**Why manual verification is separate from the test suite:** core/methodology/validation-gates.md § Gate 5: Manual Testing
 
 Automated tests passing is not the same as the feature working. A suite can be green while the schema was never
 applied — that is the failure Gate 5 exists to catch, and a prompt that omits it makes the gate optional in
@@ -72,7 +72,7 @@ practice.
 - **Coordination stated, not implied.** If another agent's output is an input, name the file and the fields.
 - **Standards inline.** An agent will not go and look up a standard the prompt only alludes to.
 
-**Full guidance:** methodology/prompt-templates.md § Agent Prompt Best Practices
+**Full guidance:** core/methodology/prompt-templates.md § Agent Prompt Best Practices
 
 ---
 

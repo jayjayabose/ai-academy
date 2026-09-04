@@ -66,5 +66,5 @@
 
 **See Also:**
 
-- Chapter 6: Field Naming Locks
-- Chapter 8: Import Dependency Analysis
+- Field naming locks: @.claude/orchestration/core/methodology/pattern-library.md § 3. Field Naming Convention Locks
+- Import dependency analysis: @.claude/orchestration/core/methodology/pattern-library.md § 9. Import Chain Parallelization Analysis

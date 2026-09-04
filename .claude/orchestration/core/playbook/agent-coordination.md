@@ -22,7 +22,7 @@ Risk read: **GREEN** independent, proven parallel pattern · **YELLOW** coordina
 **RED** high complexity, consider sequential.
 
 **Flowchart:** `coordination-decision-tree.md`
-**Assessment questions:** methodology/coordination-protocols.md § Phase 1: Task Classification and
+**Assessment questions:** core/methodology/coordination-protocols.md § Phase 1: Task Classification and
 Coordination Planning
 
 ---
@@ -34,8 +34,8 @@ Coordination Planning
 - [ ] Shared-context documents identified and owned: contract types, conventions, integration points
 - [ ] Execution order set: the agent that authors the contract runs first, consumers after
 
-**Stack lock template:** methodology/coordination-protocols.md § 1.2 Technology Stack Coordination Lock
-**Context inheritance rules:** methodology/coordination-protocols.md § 2.2 Shared Context Management System
+**Stack lock template:** core/methodology/coordination-protocols.md § 1.2 Technology Stack Coordination Lock
+**Context inheritance rules:** core/methodology/coordination-protocols.md § 2.2 Shared Context Management System
 
 ---
 
@@ -46,7 +46,7 @@ Coordination Planning
 - [ ] Every agent keeps a session log at `.claude/workspace/[feature]/agent-logs/[agent-name]-session.md`
 
 **Logging templates:** @.claude/orchestration/core/templates/logging-templates.md
-**Consultation process and documentation format:** methodology/coordination-protocols.md § 2.1 Cross-Agent
+**Consultation process and documentation format:** core/methodology/coordination-protocols.md § 2.1 Cross-Agent
 Communication Protocol
 
 ---
@@ -61,7 +61,7 @@ Every agent reporting "complete" is not a working system. This step is the one m
 - [ ] Fresh clone → install → run → working application
 - [ ] UI renders real data (no `undefined`)
 
-**Full checklist and failure-resolution protocol:** methodology/coordination-protocols.md § Integration Validation
+**Full checklist and failure-resolution protocol:** core/methodology/coordination-protocols.md § Integration Validation
 Layer Protocol
 
 ---
@@ -92,7 +92,7 @@ Verify every agent prompt carries:
 - [ ] Quality standards
 - [ ] Success criteria
 
-**What each block must contain:** methodology/coordination-protocols.md § Quick Protocol Validation Checklist
+**What each block must contain:** core/methodology/coordination-protocols.md § Quick Protocol Validation Checklist
 
 The engineer should never have to remember these. The orchestration partner adds them.
 

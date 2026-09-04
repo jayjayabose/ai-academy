@@ -17,7 +17,7 @@ symptom exactly as it appeared in one project -- the command, the framework, the
 **Solution:** Lock one convention per layer with one named conversion boundary, and import the shared schema types
 rather than retyping field names by hand
 **Evidence:** High-coordination challenge
-**See:** Chapter 6: Field Naming Locks
+**See:** @.claude/orchestration/core/methodology/pattern-library.md § 3. Field Naming Convention Locks
 
 ---
 
@@ -29,7 +29,7 @@ rather than retyping field names by hand
 **Symptoms:** Tests pass (mocked), production crashes (real DB)
 **Solution:** Integration tests WITHOUT mocks catch this
 **Evidence:** Integration testing discovery
-**See:** Chapter 3: Two-Tier Testing Strategy
+**See:** @.claude/orchestration/core/methodology/pattern-library.md § 5. Two-Tier Testing Strategy
 
 ### External Dependency Validation
 
@@ -50,7 +50,7 @@ rather than retyping field names by hand
 **Solution:** Configure proper test timeouts, and run resource-intensive suites serially rather than across parallel
 workers
 **Evidence:** Validation gate discovery
-**See:** Chapter 4: Validation Gate 4
+**See:** @.claude/orchestration/core/methodology/validation-gates.md § Gate 4: Process Cleanup (Resource Check)
 
 ### Type Errors While Tests Pass
 
@@ -58,7 +58,7 @@ workers
 **Symptoms:** Tests pass, the type/compile check fails, deployment blocked
 **Solution:** Run the project's type/compile check (Gate 1) before claiming complete
 **Evidence:** 221 errors undetected by tests alone
-**See:** Chapter 4: Validation Gate 1
+**See:** @.claude/orchestration/core/methodology/validation-gates.md § Gate 1: Type / Compile Check
 
 ---
 
@@ -70,7 +70,7 @@ workers
 **Symptoms:** Agents refuse to proceed (correctly!)
 **Solution:** Map imports before claiming parallel possible
 **Evidence:** Authentication import dependency
-**See:** Chapter 8: Import Dependency Analysis
+**See:** @.claude/orchestration/core/methodology/pattern-library.md § 9. Import Chain Parallelization Analysis
 
 ### Integration Without Validation
 
@@ -78,7 +78,7 @@ workers
 **Symptoms:** Type errors, field mismatches after parallel work
 **Solution:** Integration validation layer (5 gates mandatory)
 **Evidence:** ~60 coordination errors after parallel completion
-**See:** Chapter 4: The 5 Validation Gates
+**See:** @.claude/orchestration/core/methodology/validation-gates.md
 
 ---
 
@@ -91,7 +91,7 @@ default
 **Symptoms:** Offline/install features "don't work" during development
 **Solution:** Test against a production build served by a static server, not against the dev server
 **Evidence:** PWA development discovery
-**See:** Chapter 12: Progressive Web App Patterns
+**See:** /course/guidebook/companion/day-4-mobile-app.md § PWA-Specific Gotchas to Watch For
 
 ### HTTPS Required on Real Devices
 
@@ -99,7 +99,7 @@ default
 **Symptoms:** Install/offline works on desktop localhost but not on a phone via `http://192.168.X.X`
 **Solution:** Serve over HTTPS (deployed host or an `ngrok`/`cloudflared` tunnel) to test on device
 **Evidence:** PWA setup issue
-**See:** Chapter 12: Progressive Web App Patterns
+**See:** /course/guidebook/companion/day-4-mobile-app.md § PWA-Specific Gotchas to Watch For
 
 ---
 
