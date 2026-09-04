@@ -2,13 +2,17 @@
 
 ## Critical Problem Identified
 
-**What Happened:** Running `npm run db:migrate` during feature migration work deleted all production data because the main
-schema file contains `DROP TABLE IF EXISTS` commands.
+**What Happened:** Running the project's migrate command during feature migration work deleted all production data,
+because the command ran the initial schema file and that file contains `DROP TABLE IF EXISTS` statements.
 
 **Impact:** Fresh database required re-seeding, loss of any custom/test data, potential production disaster if this
 pattern continues.
 
 **Root Cause:** No distinction between "initial schema setup" vs "incremental migrations" in project structure.
+
+**Commands and paths are per-project.** This page names two roles -- an initial schema file and a migrations
+directory -- and the examples below use `src/db/schema.sql` and `scripts/migrations/` for them. Substitute the
+project's own. A worked set of commands is in `examples/<stack>/database-migration-strategy-examples.md`.
 
 ---
 
@@ -16,17 +20,17 @@ pattern continues.
 
 ### Track 1: Initial Schema (Destructive)
 
-**File:** `src/db/schema.sql`
+**File:** the initial schema file (`src/db/schema.sql`)
 **Purpose:** Create database from scratch for fresh setups
 **Contains:** `DROP TABLE IF EXISTS` + `CREATE TABLE` statements
 **Used For:**
 
-- Fresh project setup (`npm run setup`)
-- Development database resets (`npm run reset`)
-- Test database initialization (`npm run test:db:setup`)
+- Fresh project setup
+- Development database resets
+- Test database initialization
 - CI/CD pipeline fresh environments
 
-**Command:** `npm run db:migrate`
+**Command:** the project's fresh-schema command
 **⚠️ WARNING:** This DESTROYS all existing data
 
 **Example:**
@@ -38,7 +42,7 @@ DROP TABLE IF EXISTS leads;
 
 -- Create leads table
 CREATE TABLE leads (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     name TEXT NOT NULL,
     ...
 );
@@ -46,7 +50,7 @@ CREATE TABLE leads (
 
 ### Track 2: Incremental Migrations (Safe)
 
-**Directory:** `scripts/migrations/`
+**Directory:** the migrations directory (`scripts/migrations/`)
 **Purpose:** Add columns/indexes to existing tables WITHOUT data loss
 **Contains:** `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements ONLY
 **Used For:**
@@ -55,7 +59,7 @@ CREATE TABLE leads (
 - Adding indexes for performance
 - Modifying existing schemas incrementally
 
-**Command:** `psql $DATABASE_URL -f scripts/migrations/XXX-description.sql`
+**Command:** apply that one migration file against the target database, using the database's own client
 ** SAFE:** Preserves all existing data
 
 **Example:**
@@ -68,7 +72,7 @@ CREATE TABLE leads (
 ALTER TABLE leads
 ADD COLUMN IF NOT EXISTS ai_summary_text TEXT,
 ADD COLUMN IF NOT EXISTS ai_summary_generated_at TIMESTAMP WITH TIME ZONE,
-ADD COLUMN IF NOT EXISTS ai_summary_metadata JSONB;
+ADD COLUMN IF NOT EXISTS ai_summary_metadata JSON;
 
 -- Create index for performance
 CREATE INDEX IF NOT EXISTS idx_leads_ai_summary_generated_at
@@ -85,7 +89,7 @@ src/db/
   schema.sql                    # Initial schema (includes DROP commands)
 
 scripts/
-  run-schema.js                 # Executes schema.sql (DESTRUCTIVE)
+  run-schema                    # Executes schema.sql (DESTRUCTIVE)
   migrations/                   # Incremental migrations (SAFE)
     001-add-summary-columns.sql
     002-add-notification-tables.sql
@@ -162,27 +166,27 @@ ADD COLUMN IF NOT EXISTS ai_summary_text TEXT;
 
 ---
 
-## npm Scripts Strategy
+## Task Runner Script Strategy
 
 ### Current Scripts (Need Enhancement)
 
-```json
-{
-  "db:migrate": "node scripts/run-schema.js", // DESTRUCTIVE
-  "db:reset": "node scripts/reset-db.js", // DESTRUCTIVE
-  "reset": "npm run db:reset && npm run seed" // DESTRUCTIVE
-}
-```
+Whatever the project's task runner is, the usual starting state is three commands that all destroy data and only
+one name that admits it:
+
+- `db:migrate` — runs the initial schema file. DESTRUCTIVE, and named as though it were not.
+- `db:reset` — drops and recreates. DESTRUCTIVE, and honestly named.
+- `reset` — reset plus re-seed. DESTRUCTIVE, and honestly named.
+
+The dangerous one is `db:migrate`, because "migrate" is the word every other ecosystem uses for the *safe*
+operation.
 
 ### Proposed Additional Scripts
 
-```json
-{
-  "db:migrate:fresh": "node scripts/run-schema.js", // Explicit: DROPS tables
-  "db:migrate:incremental": "node scripts/run-migrations.js", // NEW: Runs migration files
-  "db:migrate": "npm run db:migrate:incremental" // SAFE default
-}
-```
+Split the name that is doing two jobs:
+
+- `db:migrate:fresh` — runs the initial schema file. The name states that it drops tables.
+- `db:migrate:incremental` — runs the pending files in the migrations directory. Additive only.
+- `db:migrate` — an alias for the incremental one, so the habitual command is the safe one.
 
 **Rationale:**
 
@@ -212,7 +216,7 @@ ADD COLUMN IF NOT EXISTS ai_summary_text TEXT;
 2. Use additive-only SQL commands
 3. Update `src/db/schema.sql` to match final state
 4. Document which command to run in session log
-5. **Never suggest `npm run db:migrate` for feature changes**
+5. **Never suggest the fresh-schema command for feature changes**
 
 ### 3. Development Workflow
 
@@ -220,12 +224,8 @@ ADD COLUMN IF NOT EXISTS ai_summary_text TEXT;
 
 ```bash
 # 1. Agent creates scripts/migrations/005-new-feature.sql
-# 2. Apply migration safely:
-psql $DATABASE_URL -f scripts/migrations/005-new-feature.sql
-
-# 3. Verify migration worked:
-psql $DATABASE_URL -c "\d table_name"
-
+# 2. Apply that one file against the development database, with the database's own client
+# 3. Verify it worked: describe the table and confirm the new columns are there
 # 4. Continue development with data intact
 ```
 
@@ -233,7 +233,7 @@ psql $DATABASE_URL -c "\d table_name"
 
 ```bash
 #  DON'T DO THIS if you have data you want to keep:
-npm run db:migrate  # This drops all tables!
+#    running the fresh-schema command -- it drops all tables
 ```
 
 ---
@@ -263,7 +263,7 @@ WHERE [optional_condition];
 COMMENT ON COLUMN [table_name].[column_name] IS '[Description of purpose]';
 
 -- Verify changes
--- Run: \d [table_name] to verify
+-- Run the database client's "describe table" command against [table_name] to verify
 ```
 
 ---
@@ -275,21 +275,16 @@ COMMENT ON COLUMN [table_name].[column_name] IS '[Description of purpose]';
 **Safe testing workflow:**
 
 ```bash
-# 1. Create a test database with current data
-pg_dump new_crm > backup.sql
-createdb new_crm_test
-psql new_crm_test < backup.sql
-
-# 2. Test migration on test database
-psql new_crm_test -f scripts/migrations/XXX-new-migration.sql
-
-# 3. Verify it worked and data is intact
-psql new_crm_test -c "SELECT COUNT(*) FROM leads;"
-psql new_crm_test -c "\d leads"
-
-# 4. If successful, apply to main database
-psql new_crm -f scripts/migrations/XXX-new-migration.sql
+# 1. Snapshot the current database and restore the snapshot into a scratch copy
+# 2. Apply the migration file to the scratch copy
+# 3. Verify it worked and the data is intact:
+#      SELECT COUNT(*) FROM <table>;   -- row count unchanged
+#      describe <table>                 -- new columns present
+# 4. If successful, apply the same file to the main database
 ```
+
+The point is the scratch copy, not the tooling. Every database has a dump/restore pair; the migration you have
+not run against a copy of real data is a migration you have not tested.
 
 ---
 
@@ -300,9 +295,9 @@ psql new_crm -f scripts/migrations/XXX-new-migration.sql
 1.  Feature agent creates migration file in `scripts/migrations/`
 2.  Migration file uses additive-only commands (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`)
 3.  Agent updates `src/db/schema.sql` to reflect final state (for documentation)
-4.  Agent documents command to run: `psql $DATABASE_URL -f scripts/migrations/XXX.sql`
+4.  Agent documents the exact command to run, including the migration filename
 5.  Session log includes: "Migration tested, data preserved"
-6.  Agent NEVER suggests `npm run db:migrate` for feature changes
+6.  Agent NEVER suggests the fresh-schema command for feature changes
 
 ---
 

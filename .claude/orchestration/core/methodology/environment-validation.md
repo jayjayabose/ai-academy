@@ -4,6 +4,10 @@
 
 **Pattern:** Validate schema, detect missing variables, automatically update .env.example
 
+**`<env-accessor>` throughout this page** means the token your language uses to read the environment. Substitute
+it before running any search below; it is the only stack-dependent part of the protocol. A worked set of searches
+and code is in `examples/<stack>/environment-validation-examples.md`.
+
 ---
 
 ## Core Principle: Schema Validation, Not Secret Reading
@@ -23,28 +27,27 @@
 **Search codebase for environment variable usage:**
 
 ```bash
-# Find all process.env usage
-grep -r "process.env" src/ --include="*.ts" --include="*.js"
+# Find every read of the environment
+grep -r "<env-accessor>" <source root>
 
 # Common patterns:
-# process.env.DATABASE_URL
-# process.env.JWT_SECRET
-# process.env.PORT
-# process.env.NODE_ENV
+# <env-accessor>DATABASE_URL
+# <env-accessor>JWT_SECRET
+# <env-accessor>PORT
+# <env-accessor>APP_ENV
 ```
 
-**Extract variable names from code:**
+**Extract variable names from code.** For each hit, record where it was found, the variable name, and -- the part
+that matters -- whether the code supplies a fallback at the read site:
 
-```typescript
-// Found in src/config/database.ts
-const dbUrl = process.env.DATABASE_URL;  // → Required: DATABASE_URL
+| Where found | Variable | Verdict |
+| --- | --- | --- |
+| the database config module | `DATABASE_URL` | Required — no fallback |
+| the auth/token service | `JWT_SECRET` | Required — no fallback |
+| the server entry point | `PORT` | Optional — falls back to a default |
 
-// Found in src/auth/jwt.service.ts
-const secret = process.env.JWT_SECRET;   // → Required: JWT_SECRET
-
-// Found in src/main.ts
-const port = process.env.PORT || 3000;   // → Optional: PORT (has default)
-```
+A read with no fallback and no explicit check is the failure case this protocol exists to catch. It does not fail
+at startup; it fails later, somewhere unrelated, with an error that does not name the variable.
 
 ### Categorize Variables
 
@@ -55,8 +58,8 @@ const port = process.env.PORT || 3000;   // → Optional: PORT (has default)
 
 **Optional (has default):**
 
-- PORT (defaults to 3000)
-- NODE_ENV (defaults to 'development')
+- PORT (defaults to the server's conventional port)
+- APP_ENV (defaults to 'development')
 
 **By service:**
 
@@ -72,14 +75,14 @@ const port = process.env.PORT || 3000;   // → Optional: PORT (has default)
 ### Step 1: Scan Code for Environment Variables
 
 ```bash
-# Find all process.env usage
-grep -r "process.env\." src/ -o | sort -u
+# Find every read of the environment, deduplicated
+grep -r "<env-accessor>" <source root> -o | sort -u
 
 # Example output:
-# process.env.DATABASE_URL
-# process.env.JWT_SECRET
-# process.env.PORT
-# process.env.REDIS_URL
+# <env-accessor>DATABASE_URL
+# <env-accessor>JWT_SECRET
+# <env-accessor>PORT
+# <env-accessor>REDIS_URL
 ```
 
 ### Step 2: Check .env.example Completeness
@@ -114,7 +117,7 @@ Missing: REDIS_URL ← FLAG THIS
 I found environment variables used in code that are NOT in .env.example:
 
 Missing variables:
-- REDIS_URL (used in src/cache/redis.service.ts:12)
+- REDIS_URL (used in the cache service, with the file and line number)
 
 I will add these to .env.example with placeholder values.
 
@@ -147,8 +150,8 @@ echo "REDIS_URL=redis://localhost:6379" >> .env.example
 **1. Check if your feature introduces NEW environment variables:**
 
 ```bash
-# Search your implementation for process.env usage
-grep -r "process.env" <files-you-will-create>
+# Search your implementation for environment reads
+grep -r "<env-accessor>" <files-you-will-create>
 ```
 
 **2. If you introduce NEW variables, you MUST:**
@@ -160,19 +163,13 @@ grep -r "process.env" <files-you-will-create>
 
 **Example:**
 
-```typescript
-//  BAD - Silent failure if missing
-const jwtSecret = process.env.JWT_SECRET;
+ BAD — read the variable and use it. If it is absent the code carries on with nothing, and the failure surfaces
+later, somewhere unrelated, in an error that does not name the variable.
 
-//  GOOD - Clear error if required variable missing
-const jwtSecret = process.env.JWT_SECRET;
-if (!jwtSecret) {
-  throw new Error('JWT_SECRET environment variable is required. Add to .env file.');
-}
+ GOOD — read it, and if it is required and absent, fail immediately with a message that names the variable and
+says where to set it: `JWT_SECRET environment variable is required. Add to .env file.`
 
-//  GOOD - Safe default for optional variable
-const port = process.env.PORT || 3000;
-```
+ GOOD — for an optional variable, supply the default at the single point of read, not separately at each use.
 
 ### Before Claiming "COMPLETE"
 
@@ -217,12 +214,12 @@ grep "DATABASE_URL" .env.example  # Should exist if you use it
 
 ```bash
 # Find all variables currently used
-grep -r "process\.env\.[A-Z_]" src/ -oh | sort -u > current-env-vars.txt
+grep -r "<env-accessor>[A-Z_]" <source root> -oh | sort -u > current-env-vars.txt
 
 # Example output:
-# process.env.DATABASE_URL
-# process.env.JWT_SECRET
-# process.env.PORT
+# <env-accessor>DATABASE_URL
+# <env-accessor>JWT_SECRET
+# <env-accessor>PORT
 ```
 
 **2. Read .env.example (safe - no secrets):**
@@ -253,7 +250,7 @@ I scanned the codebase and found these environment variables:
 - PORT 
 
 **Used in code but MISSING from .env.example:**
-- REDIS_URL  (used in src/cache/redis.service.ts)
+- REDIS_URL  (used in the cache service)
 
 **Recommended action:**
 Before I create agent prompts, should I:
@@ -275,10 +272,10 @@ This ensures agents have complete environment schema when they start.
 ## Required Environment Variables
 
 **Database:**
-- DATABASE_URL: PostgreSQL connection string
-  - Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE
-  - Docker default: postgresql://postgres:password@localhost:5433/new_crm
-  - Local PostgreSQL: postgresql://postgres:password@localhost:5432/new_crm
+- DATABASE_URL: database connection string
+  - Format: the driver's connection URL — scheme, user, password, host, port, database name
+  - Document one placeholder per supported setup (containerised service, locally installed service); they
+    usually differ only in the port
 
 **Authentication:**
 - JWT_SECRET: Secret key for JWT token signing
@@ -286,8 +283,8 @@ This ensures agents have complete environment schema when they start.
   - Generate: openssl rand -base64 32
 
 **Server:**
-- PORT: Backend server port (optional, defaults to 3000)
-- NODE_ENV: Environment (development/production/test)
+- PORT: Backend server port (optional, has a default)
+- APP_ENV: Environment (development/production/test)
 ```
 
 ### What Orchestration Partner CANNOT Document
@@ -298,8 +295,8 @@ This ensures agents have complete environment schema when they start.
  DON'T: JWT_SECRET=abc123supersecret (actual value)
  DO: JWT_SECRET=<generate-with-openssl-rand-base64-32> (template)
 
- DON'T: DATABASE_URL=postgresql://user:MyP@ssw0rd@... (actual password)
- DO: DATABASE_URL=postgresql://postgres:password@localhost:5433/new_crm (placeholder)
+ DON'T: DATABASE_URL=<scheme>://user:MyP@ssw0rd@... (the real password)
+ DO: DATABASE_URL=<scheme>://user:password@host:port/database (placeholder)
 ```
 
 ---
@@ -314,17 +311,17 @@ This ensures agents have complete environment schema when they start.
 ## Environment Configuration
 
 **Default configuration (.env.example):**
-- DATABASE_URL: Points to Docker PostgreSQL on port 5433
+- DATABASE_URL: Points to the standard development database the team agreed on
 
 **Developer override pattern (.env.local):**
 
-If you need custom configuration (different port, local PostgreSQL, etc.):
+If you need custom configuration (different port, a locally installed database rather than a containerised one):
 
 1. Create .env.local (gitignored, never committed)
 2. Override specific variables:
    ```
 
-DATABASE_URL=postgresql://localhost:CUSTOM_PORT/new_crm
+DATABASE_URL=<connection string pointing at your own host and port>
 
    ```
 
@@ -364,9 +361,9 @@ echo "REDIS_URL=redis://localhost:6379" >> .env.example
   - Added to .env.example: 
 
 **Engineer action required:**
-1. If using Docker: Update docker-compose.yml to include Redis service
+1. If you run services in containers: add the Redis service to your container configuration
 2. Copy REDIS_URL to your .env.local if you need custom Redis configuration
-3. Default value works for Docker setup (no action needed for standard setup)
+3. Default value works for the standard setup (no action needed)
 ```
 
 3. **Update README (if new service):**
@@ -376,7 +373,7 @@ echo "REDIS_URL=redis://localhost:6379" >> .env.example
 
 ## Environment Variables
 
-- `DATABASE_URL`: PostgreSQL connection (required)
+- `DATABASE_URL`: database connection (required)
 - `JWT_SECRET`: JWT signing key (required)
 - `REDIS_URL`: Redis cache connection (required) ← NEW
 ```
@@ -401,7 +398,7 @@ echo "REDIS_URL=redis://localhost:6379" >> .env.example
 
 **Before creating prompts:**
 
-- [ ] Scan code for all process.env usage
+- [ ] Scan code for all environment reads (`<env-accessor>`)
 - [ ] Read .env.example to see documented variables
 - [ ] Identify missing variables (code uses but not documented)
 - [ ] Alert engineer about missing variables
@@ -462,25 +459,21 @@ Ready to create prompt with environment validation included.
 ```markdown
 ## Port Conflict Resolution
 
-**If docker-compose up fails with "port already allocated":**
+**If starting the local service stack fails with "port already allocated":**
 
 1. Check what's using the port:
    ```bash
    lsof -i :5433
    ```
 
-2. Option A: Stop conflicting service
-   ```bash
-   # Stop local PostgreSQL if you don't need it
-   brew services stop postgresql
-   ```
+2. Option A: Stop the conflicting service — whatever is already holding the port, if you do not need it
 
-3. Option B: Use different port for Docker
+3. Option B: Move the project's service to a different port
    ```bash
-   # Create .env.local with custom port
-   echo "DATABASE_URL=postgresql://postgres:password@localhost:5434/new_crm" > .env.local
+   # Create .env.local pointing at the new port
+   echo "DATABASE_URL=<connection string on the new port>" > .env.local
 
-   # Update docker-compose.yml port mapping to 5434:5432
+   # Update the service definition's port mapping to match
    ```
 
 **Engineer chooses resolution - agent documents both options**
@@ -505,7 +498,7 @@ Ready to create prompt with environment validation included.
 
 ```bash
 # 1. All code variables documented
-grep -r "process\.env\.[A-Z_]" src/ -oh | sort -u > code-vars.txt
+grep -r "<env-accessor>[A-Z_]" <source root> -oh | sort -u > code-vars.txt
 grep -E "^[A-Z_]+=" .env.example | cut -d'=' -f1 > example-vars.txt
 comm -23 code-vars.txt example-vars.txt  # Should be empty (no missing vars)
 
@@ -513,7 +506,7 @@ comm -23 code-vars.txt example-vars.txt  # Should be empty (no missing vars)
 cat .env.example | grep -i "production\|actual\|real"  # Should be empty
 
 # 3. Required variables have validation
-grep -r "process.env.DATABASE_URL" src/ -A2 | grep "throw"  # Should show validation
+grep -r "<env-accessor>DATABASE_URL" <source root> -A2 | grep -iE "throw|raise|fatal"  # Should show validation
 
 # 4. .gitignore prevents .env commits
 grep ".env" .gitignore  # Should show .env files ignored

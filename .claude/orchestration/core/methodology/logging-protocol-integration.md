@@ -1,5 +1,9 @@
 # Standard Logging Protocol Block - Add to ALL Agent Prompts
 
+**Commands and file paths are per-project.** The blocks below are the shape of what every agent prompt must carry;
+where one says "the project's test command" or "the project's test locations", substitute the real thing before
+pasting. A worked set is in `examples/<stack>/logging-protocol-integration-examples.md`.
+
 ## Copy-Paste Logging Instructions
 
 Add this exact block to every feature-building agent prompt:
@@ -60,29 +64,21 @@ guideline below as a default, and adjust it if this project's stakes call for mo
 ### Test Coverage Guideline
 
 - **Unit Tests:** All business logic, services, utilities (~80% coverage as a default)
-- **Component Tests:** All Angular components with user interactions (~80% coverage as a default)
+- **Component Tests:** All UI components with user interactions (~80% coverage as a default)
 - **Integration Tests:** REST endpoints, controllers, database operations (~70% coverage as a default)
 
 ### Writing Tests
 
-**Location Pattern:**
+**Location Pattern:** one predictable location per kind of code -- services, UI components, utilities,
+controllers. Write the project's four real paths into the prompt. Agents that have to guess put tests in four
+different places, and the fifth agent then can't find them.
 
-- Services: `lib/services/__tests__/[service-name].test.ts`
-- Components: `src/app/**/[component-name].component.spec.ts`
-- Utils: `lib/utils/__tests__/[util-name].test.ts`
-- Controllers: `src/**/*.controller.spec.ts`
-
-**Running Tests:**
-
-```bash
-npm test              # Run all tests once
-npm run test:watch        # Watch mode during development
-npm run test:cov          # Check coverage metrics
-```
+**Running Tests:** an agent needs three modes -- a single full run, a watch mode for development, and a coverage
+report. Write the project's three real commands into the prompt.
 
 ### Test Quality Standards
 
-- Use descriptive test names: `it('should generate summary when lead has interactions')`
+- Use descriptive test names that state the behaviour and the condition that triggers it
 - Mock external dependencies (APIs, databases, LLM calls) appropriately
 - Test both success and error scenarios
 - Include edge cases and validation failures
@@ -93,13 +89,13 @@ npm run test:cov          # Check coverage metrics
 Before reporting task complete:
 
 - [ ] All tests written for new code
-- [ ] All tests passing (`npm test`)
-- [ ] Coverage meets this project's testing guideline for new code (`npm run test:cov`)
+- [ ] All tests passing (the project's full suite)
+- [ ] Coverage meets this project's testing guideline for new code (the project's coverage report)
 - [ ] No skipped or pending tests (unless explicitly documented)
 - [ ] Tests documented in session log
 
-**For complete pre-completion validation requirements (type check, lint, process cleanup), see
-coordination-protocols.md**
+**Validation gates:** @.claude/orchestration/core/methodology/validation-gates.md -- the complete pre-completion
+requirements (type/compile check, lint, tests, process cleanup, manual testing) are defined there and nowhere else.
 
 **Failure to write tests = Incomplete task regardless of code quality.**
 
@@ -112,7 +108,7 @@ coordination-protocols.md**
 When implementing ANY component that:
 - Fetches data from REST endpoints
 - Handles loading/error states
-- Manages client-side state (signals / RxJS)
+- Manages client-side state
 - Implements optimistic updates
 
 **MUST LOG:**
@@ -156,7 +152,7 @@ Add to all frontend agent session logs:
 **This logging helps:**
 
 - Catch API contract mismatches during development
-- Create teaching examples of proper Angular `HttpClient` patterns
+- Create teaching examples of proper HTTP client patterns
 - Document agent understanding of REST best practices
 - Provide evidence for methodology refinement
 

@@ -9,6 +9,10 @@ efficient and feature evolution clear.
 
 **Usage:** This standard block MUST be included in ALL agent prompts for feature development.
 
+**Commands are per-project.** Where a check is named below, the command that runs it belongs to the project and is
+defined once in @.claude/orchestration/core/methodology/validation-gates.md. A worked set of commit messages and
+hook commands is in `examples/<stack>/atomic-commit-guidelines-examples.md`.
+
 ## Standard Protocol Block for Agent Prompts
 
 ```markdown
@@ -24,7 +28,7 @@ You MUST follow atomic commit practices throughout your implementation. This mak
 
 2. **Commit working code**
    - Each commit should leave the codebase in a working state
-   - Pre-commit hooks will automatically verify your code (ESLint, TypeScript, tests)
+   - Pre-commit hooks will automatically verify your code (lint, type/compile check, tests)
    - Don't commit broken code "to fix later"
 
 3. **Commit related changes together**
@@ -40,9 +44,9 @@ You MUST follow atomic commit practices throughout your implementation. This mak
 
 **IMPORTANT**: All commits must pass automated checks before being accepted:
 
-1. **ESLint** - Code must pass linting rules (`npm run lint`)
-2. **TypeScript** - No type errors allowed (`tsc`)
-3. **Unit Tests** - All tests must pass (`npm test`)
+1. **Lint** - Code must pass the project's linting rules
+2. **Type / Compile Check** - No type or compile errors allowed
+3. **Unit Tests** - All tests must pass
 
 If any of these checks fail, the commit will be rejected and you'll need to fix the issues before committing.
 
@@ -96,7 +100,7 @@ Backend commits:
 
 Frontend commits:
 7. feat: create [Component] for [feature]
-8. feat: add HttpClient service methods for [feature]
+8. feat: add API client service methods for [feature]
 9. test: add frontend unit tests
 10. feat: integrate [Component] into application
 11. feat: add loading/error states
@@ -132,31 +136,27 @@ Atomic commits are part of the comprehensive **Quality Standards** that apply to
 -  A+ code quality
 -  Professional git practices (atomic commits)
 -  Test coverage guideline (~80% backend as a default — adjust to the project)
--  Type safety enforcement (TypeScript strict mode)
+-  Type safety enforcement (the project's strictest type-checking setting)
 -  Accessibility standards (WCAG 2.1 AA)
 
 ## Pre-commit Hook Enforcement
 
-This project has automated quality gates that enforce standards:
+**Validation gates:** @.claude/orchestration/core/methodology/validation-gates.md -- the checks a pre-commit hook
+runs are Gates 1-3 (type / compile check, lint, tests), defined there once, with the project's own commands.
 
-```bash
-# Pre-commit checks that MUST pass
-1. npm run lint     # ESLint - code style and quality
-2. tsc           # TypeScript - type safety
-3. npm test     # Unit tests - functionality
-```
-
-**If any check fails, the commit is rejected.** This ensures every commit maintains project quality standards.
+The rule this section adds: **if any check fails, the commit is rejected.** The pre-commit hook is the only place
+in the method where a gate is enforced by a machine rather than by an agent reporting on itself, which is why it
+is worth wiring up even though the gates are already mandatory.
 
 ## Common Atomic Commit Patterns
 
 ### Pattern 1: Service + Tests
 
 ```
-feat: create LeadSummaryService with Zod validation
+feat: create LeadSummaryService with schema validation
 
 - Add LeadSummaryService class with generateSummary method
-- Implement Zod schema for summary structure validation
+- Implement a runtime schema for summary structure validation
 - Add retry logic for invalid LLM outputs
 - Include unit tests with mocked LLM responses
 
@@ -172,7 +172,7 @@ feat: extend shared Lead type with summary field
 - Add summary field to Lead type
 - Add generateSummary mutation
 - Add getSummary query
-- Update generated TypeScript types
+- Update the generated shared API types
 
 Breaking changes: None
 Backward compatible: Yes
@@ -215,8 +215,8 @@ Files changed: 47
 ###  Good: Logical Sequence
 
 ```
-1. feat: add Vercel AI SDK dependencies
-2. feat: create LeadSummaryService with Zod validation
+1. feat: add LLM SDK dependencies
+2. feat: create LeadSummaryService with schema validation
 3. test: add unit tests for LeadSummaryService
 4. feat: extend shared Lead type with summary field
 5. feat: create SummaryCard component

@@ -4,6 +4,11 @@
 
 **Pattern:** INVESTIGATE technical facts → ASK business requirements → DETERMINE strategy
 
+**File layouts are per-project.** The investigation commands below are written against directory *roles* -- the
+pages directory, the services directory, the shared API type definitions -- because the role is what transfers
+and the path is not. A worked set against one real layout is in
+`examples/<stack>/investigation-workflow-examples.md`.
+
 ---
 
 ## Core Principle
@@ -29,33 +34,33 @@
 - What are current patterns? (how existing features integrate, naming conventions)
 - What's the file structure? (where do similar features live)
 - What dependencies exist? (imports, APIs, database relationships)
-- What's the tech stack? (Angular? Vue? NestJS? REST?)
+- What's the tech stack? (which UI framework, which server framework, which API style, which ORM?)
 
 **Example Investigations:**
 
 ```bash
 # Find if Dashboard exists
-grep -r "Dashboard" src/app/pages/
+grep -r "Dashboard" <pages directory>
 
 # Understand Dashboard structure
-# Read dashboard.component.ts to see current layout, existing widgets
+# Read the dashboard page source to see current layout, existing widgets
 
 # Check widget patterns
-ls src/components/widgets/
-# Read existing widget to understand integration pattern
+ls <widgets directory>
+# Read an existing widget to understand the integration pattern
 
 # Find authentication service
-grep -r "auth" src/services/
+grep -r "auth" <services directory>
 
 # Check the shared API types
-# Read api-types.ts / the dto/ folders to see existing types
+# Read the shared API type definitions to see existing types
 
 # Find database models
-ls src/models/
-# Read user.model.ts to see field names
+ls <models directory>
+# Read the User model to see field names
 
 # Check for JWT implementation
-grep -r "jwt" src/
+grep -r "jwt" <source root>
 ```
 
 **What This Tells You:**
@@ -137,19 +142,19 @@ After investigating codebase and asking requirements, determine:
 
 ```bash
 # Check if Dashboard exists
-grep -r "dashboard" src/app/pages/ → YES, dashboard.component.ts exists
+grep -r "dashboard" <pages directory> → YES, a dashboard page exists
 
 # Read Dashboard structure
-# Read dashboard.component.ts → Grid layout, imports components
+# Read the dashboard page source → Grid layout, imports components
 
 # Check existing widget patterns
-ls src/components/widgets/ → See 2 existing widgets
+ls <widgets directory> → See 2 existing widgets
 # Read existing widget → Each imported directly into Dashboard
 ```
 
 **What you learned:**
 
-- dashboard.component.ts exists 
+- The dashboard page exists 
 - Uses grid layout
 - Widgets imported individually
 - Pattern: Each widget is separate component imported into Dashboard
@@ -169,7 +174,7 @@ ls src/components/widgets/ → See 2 existing widgets
 
 **Integration approach:**
 
-- Each widget agent imports into dashboard.component.ts (matches existing pattern)
+- Each widget agent imports into the dashboard page (matches existing pattern)
 
 **Execution strategy:**
 
@@ -195,23 +200,23 @@ ls src/components/widgets/ → See 2 existing widgets
 
 ```bash
 # Check the shared API types
-# Read api-types.ts / the dto/ folders → YES, User type exists
+# Read the shared API type definitions → YES, User type exists
 
 # Check for auth service
-ls src/services/ → YES, auth.service.ts exists
-# Read auth.service.ts → bcrypt implementation exists
+ls <services directory> → YES, an auth service exists
+# Read the auth service → password hashing already implemented
 
 # Check database User model
-# Read user.model.ts → email, passwordHash fields exist
+# Read the User model → email, passwordHash fields exist
 
 # Find JWT implementation
-grep -r "jwt" src/ → JWT service already configured
+grep -r "jwt" <source root> → JWT service already configured
 ```
 
 **What you learned:**
 
 - User type in the shared API types 
-- Auth service with bcrypt 
+- Auth service with password hashing 
 - Database model ready 
 - JWT infrastructure exists 
 
@@ -271,7 +276,7 @@ Agent: "What's the integration pattern?" ← Should read existing widgets
 ```
 Engineer: "I need analytics widgets"
 Agent: [Investigates codebase]
-Agent: "I found dashboard.component.ts exists with grid layout. Current pattern: widgets imported individually."
+Agent: "I found the dashboard page exists with grid layout. Current pattern: widgets imported individually."
 Agent: "Where on /dashboard should these widgets display?" ← Can't determine this yourself
 ```
 

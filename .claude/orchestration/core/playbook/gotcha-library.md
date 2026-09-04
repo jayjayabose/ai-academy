@@ -2,15 +2,20 @@
 
 **Purpose:** Complete catalog of documented issues with proven solutions
 
+**Instances are per-stack.** Each gotcha below states the shape of the problem and the fix that works. The
+symptom exactly as it appeared in one project -- the command, the framework, the error string -- is in
+`examples/<stack>/gotcha-library-examples.md`. Recognise the shape here; match the symptom there.
+
 ---
 
 ## Frontend Gotchas
 
 ### Field Naming Mismatches
 
-**Problem:** Backend uses lead_id, frontend expects leadId
+**Problem:** Backend and frontend disagree on the naming convention for the same field
 **Symptoms:** the API returns null/undefined for fields
-**Solution:** Use camelCase throughout, import schema types
+**Solution:** Lock one convention per layer with one named conversion boundary, and import the shared schema types
+rather than retyping field names by hand
 **Evidence:** High-coordination challenge
 **See:** Chapter 6: Field Naming Locks
 
@@ -20,7 +25,7 @@
 
 ### Database Type Mismatches
 
-**Problem:** PostgreSQL returns strings, code expects Date objects
+**Problem:** The database returns a different type than the code assumes -- strings where date objects were expected
 **Symptoms:** Tests pass (mocked), production crashes (real DB)
 **Solution:** Integration tests WITHOUT mocks catch this
 **Evidence:** Integration testing discovery
@@ -42,15 +47,16 @@
 
 **Problem:** Test workers accumulate after timeout (2+ min tests)
 **Symptoms:** RAM exhaustion (10GB+), development machine unusable
-**Solution:** Configure proper test timeouts and use --runInBand for resource-intensive tests
+**Solution:** Configure proper test timeouts, and run resource-intensive suites serially rather than across parallel
+workers
 **Evidence:** Validation gate discovery
 **See:** Chapter 4: Validation Gate 4
 
-### TypeScript Errors While Tests Pass
+### Type Errors While Tests Pass
 
 **Problem:** Runtime test success ≠ compilation success
-**Symptoms:** Tests pass, TypeScript fails, deployment blocked
-**Solution:** Run npm run type-check before claiming complete
+**Symptoms:** Tests pass, the type/compile check fails, deployment blocked
+**Solution:** Run the project's type/compile check (Gate 1) before claiming complete
 **Evidence:** 221 errors undetected by tests alone
 **See:** Chapter 4: Validation Gate 1
 
@@ -69,7 +75,7 @@
 ### Integration Without Validation
 
 **Problem:** Individual agents complete, system integration fails
-**Symptoms:** TypeScript errors, field mismatches after parallel work
+**Symptoms:** Type errors, field mismatches after parallel work
 **Solution:** Integration validation layer (5 gates mandatory)
 **Evidence:** ~60 coordination errors after parallel completion
 **See:** Chapter 4: The 5 Validation Gates
@@ -80,9 +86,10 @@
 
 ### Service Worker Doesn't Register in Dev
 
-**Problem:** `ng serve` never registers the Angular service worker
+**Problem:** The development server does not register the service worker -- most frameworks disable it in dev by
+default
 **Symptoms:** Offline/install features "don't work" during development
-**Solution:** Test against a production build (`ng build`) served by a static server
+**Solution:** Test against a production build served by a static server, not against the dev server
 **Evidence:** PWA development discovery
 **See:** Chapter 12: Progressive Web App Patterns
 

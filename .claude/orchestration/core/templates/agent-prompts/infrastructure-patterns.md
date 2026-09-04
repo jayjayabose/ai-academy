@@ -6,6 +6,11 @@
 
 **Quality:** All prompts based on real implementations with proven results
 
+**Technologies are placeholders.** Every entry below names *roles* -- backend framework, test runner, containerised
+database service -- not products. Fill them in for the project before handing a prompt to an agent; an agent given
+`{test runner}` verbatim will pick one for you. A fully filled-in set is in
+`examples/<stack>/infrastructure-patterns-examples.md`.
+
 ---
 
 ## When to Use These Prompts
@@ -26,7 +31,7 @@ Use these prompts when adding infrastructure that **benefits all features**:
 
 4. **Authentication System** - JWT, session management, auth guards
 5. **WebSocket Server** - Real-time communication infrastructure
-6. **CI/CD Pipeline** - GitHub Actions, deployment, quality gates
+6. **CI/CD Pipeline** - Automated build/test on change, deployment, quality gates
 
 ---
 
@@ -36,19 +41,19 @@ Use these prompts when adding infrastructure that **benefits all features**:
 
 Essential infrastructure for greenfield projects.
 
-#### 1.1 NestJS + Angular + TypeScript + Database Foundation
+#### 1.1 Full-Stack Foundation (Backend + Frontend + Database)
 
 **See:** Foundation Infrastructure implementation (proven pattern)
 
 **Scope:** Comprehensive (single agent)
 **Deliverables:**
 
-- NestJS backend setup
-- Angular frontend setup
-- TypeScript strict mode
-- PostgreSQL Docker setup
+- Backend framework setup
+- Frontend framework setup
+- Strict type/compile checking enabled
+- Containerised database service
 - Database scripts (setup, seed, reset, migrate)
-- NestJS REST API (controllers + DTOs)
+- REST API layer (controllers + request/response contracts)
 - Basic UI components (Navigation, layout)
 
 **When to Use:** Starting new full-stack project with database
@@ -59,7 +64,7 @@ Essential infrastructure for greenfield projects.
 
 - Database name (replace "new_crm" with your project name)
 - Database fields (customize lead schema to your domain)
-- Shared API types / DTOs (customize to your data model)
+- Shared API types / request-response contracts (customize to your data model)
 
 ---
 
@@ -70,7 +75,7 @@ Essential infrastructure for greenfield projects.
 **Scope:** Moderate (single agent)
 **Deliverables:**
 
-- Jest + Angular Testing Library setup
+- Test runner + component testing library setup
 - Test scripts (test, test:watch, test:coverage)
 - Example unit tests (services, components, controllers)
 - Test utilities (mocking patterns, helpers)
@@ -88,12 +93,12 @@ Essential infrastructure for greenfield projects.
 
 ## Context
 
-{Project name} needs comprehensive testing infrastructure with Jest and Angular Testing Library. This infrastructure must be ready BEFORE feature agents begin work.
+{Project name} needs comprehensive testing infrastructure with {test runner} and {component testing library}. This infrastructure must be ready BEFORE feature agents begin work.
 
 ## Objectives
 
-1. Install and configure Jest + Angular Testing Library
-2. Create test scripts in package.json
+1. Install and configure {test runner} + {component testing library}
+2. Create test scripts in the project's task-runner manifest
 3. Write example tests (service, component, controller)
 4. Configure coverage reporting with thresholds (80% is a reasonable default — adjust to what this project needs)
 5. Create test utilities and mocking patterns
@@ -101,9 +106,9 @@ Essential infrastructure for greenfield projects.
 
 ## Tech Stack
 
-- Jest (test runner)
-- Angular Testing Library (component testing)
-- TypeScript (strict mode)
+- {test runner}
+- {component testing library}
+- {language, with the strictest type checking it offers}
 - {Add other relevant tech}
 
 {Continue with detailed specifications...}
@@ -129,7 +134,7 @@ Essential infrastructure for greenfield projects.
 
 **Prompt Location:** See example integration test setup prompts in workspace
 
-**Reusable As-Is:** Just replace project name and verify database setup matches your Docker config
+**Reusable As-Is:** Just replace project name and verify database setup matches your database service configuration
 
 ---
 
@@ -137,14 +142,14 @@ Essential infrastructure for greenfield projects.
 
 Infrastructure for backend services and APIs.
 
-#### 2.1 Database Setup (PostgreSQL + Docker)
+#### 2.1 Database Setup (Containerised Database Service)
 
 **See:** Example database setup implementation
 
 **Scope:** Moderate (single agent)
 **Deliverables:**
 
-- Docker container for PostgreSQL
+- Container running the database service
 - Database setup scripts
 - Schema migration system
 - Seed data scripts
@@ -152,13 +157,13 @@ Infrastructure for backend services and APIs.
 
 **Key Pattern:**
 
-```javascript
-// scripts/db-docker-setup.js
-- Check Docker installed
-- Clean up existing container
-- Start PostgreSQL container
-- Wait for database ready
-- Update .env.local with connection string
+```
+// the database container setup script
+- Check the container runtime is installed
+- Clean up any existing container
+- Start the database container
+- Wait for the database to accept connections
+- Update .env.local with the connection string
 ```
 
 **Reusable:** Yes, just change database name and credentials
@@ -173,12 +178,12 @@ Infrastructure for backend services and APIs.
 **Deliverables:**
 
 - Feature modules + controllers
-- Shared DTOs / response types foundation
+- Shared request/response type foundation
 - Basic routes (GET/POST/PATCH/DELETE)
-- Global `ValidationPipe` (whitelist + transform)
-- Error handling (exception filters)
+- Global request validation (reject unknown fields, coerce types)
+- Error handling (a single place that maps exceptions to responses)
 
-**Pattern:** NestJS feature module with REST controllers
+**Pattern:** one feature module per resource, with REST controllers
 
 **Reusable:** Yes, foundation pattern is universal
 
@@ -191,13 +196,13 @@ Infrastructure for backend services and APIs.
 **Scope:** Moderate-to-substantial (single agent)
 **Deliverables:**
 
-- WebSocket server (ws library)
+- WebSocket server
 - JWT authentication for connections
-- Connection management (Map<userId, Set<WebSocket>>)
+- Connection management (one user maps to many live sockets)
 - PubSub event broadcasting
 - Heartbeat ping/pong
 - Graceful shutdown handlers
-- Concurrent server setup (NestJS + WebSocket)
+- Concurrent server setup (HTTP server and WebSocket server in one process)
 
 **When to Use:** Adding real-time features
 
@@ -207,55 +212,55 @@ Infrastructure for backend services and APIs.
 
 - Event types (customize for your domain)
 - Authentication (integrate with your auth system)
-- PubSub vs Redis (start with PubSub, migrate to Redis later)
+- In-process PubSub vs an external broker (start in-process, move out when you need more than one node)
 
 ---
 
 ### Category 3: Frontend Infrastructure
 
-Infrastructure for Angular applications.
+Infrastructure for the client application.
 
 #### 3.1 UI Component Library Foundation
 
 **Scope:** Moderate (single agent)
 **Deliverables:**
 
-- Tailwind CSS setup
+- Styling system setup (design tokens or a utility CSS framework)
 - Base UI components (Button, Card, Input, etc.)
 - Component testing examples
 - Accessibility patterns (ARIA, semantic HTML)
 - Responsive design utilities
 
-**Pattern:** Start with Angular Material or build custom
+**Pattern:** start from an existing component library for the framework, or build custom
 
 ---
 
-#### 3.2 HTTP Client Setup (Angular HttpClient)
+#### 3.2 HTTP Client Setup
 
-**See:** Example `provideHttpClient` setup implementation
+**See:** Example HTTP client setup implementation
 
 **Scope:** Small-to-moderate (single agent)
 **Deliverables:**
 
-- `provideHttpClient()` configuration + API base URL
-- HTTP interceptor (auth header, error mapping)
+- HTTP client configured once, centrally, with the API base URL
+- Request/response interceptor (auth header, error mapping)
 - Typed data services per resource
-- Error handling patterns (`HttpErrorResponse`)
+- Error handling patterns for a failed response
 - Reusable service methods for common requests
 
-**Reusable:** Yes, HttpClient setup pattern universal
+**Reusable:** Yes, the HTTP client setup pattern is universal
 
 ---
 
 ### Category 4: Quality & Testing
 
-#### 4.1 ESLint + Prettier Configuration
+#### 4.1 Linter + Formatter Configuration
 
 **Scope:** Small-to-moderate (single agent)
 **Deliverables:**
 
-- ESLint config with TypeScript support
-- Prettier config
+- Linter config, type-aware if the language supports it
+- Formatter config
 - Pre-commit hooks (optional)
 - Editor config (.editorconfig)
 - Scripts for lint:fix
@@ -264,12 +269,12 @@ Infrastructure for Angular applications.
 
 ---
 
-#### 4.2 CI/CD Pipeline (GitHub Actions)
+#### 4.2 CI/CD Pipeline
 
 **Scope:** Moderate-to-substantial (single agent)
 **Deliverables:**
 
-- GitHub Actions workflow
+- CI workflow definition, committed to the repository
 - Test running on PR
 - Type checking on PR
 - Lint checking on PR
@@ -278,10 +283,10 @@ Infrastructure for Angular applications.
 
 **Pattern:**
 
-```yaml
-.github/workflows/test.yml:
+```
+CI workflow, on pull request:
   - Checkout code
-  - Setup Node.js
+  - Set up the language runtime
   - Install dependencies
   - Start test database
   - Run migrations
@@ -299,7 +304,7 @@ Infrastructure for Angular applications.
 
 **Phase 1: Foundation (Sequential)**
 
-1. Use prompt 1.1 (NestJS + Angular + Database Foundation)
+1. Use prompt 1.1 (Full-Stack Foundation)
 2. Use prompt 1.2 (Testing Framework)
 3. Use prompt 1.3 (Integration Testing Setup)
 
@@ -323,14 +328,14 @@ Infrastructure for Angular applications.
 
 ```bash
 # Check testing infrastructure
-ls tests/setup.ts         # Test framework?
-ls .env.test             # Separate test DB?
-ls tests/integration/    # Integration tests?
+ls <test setup file>       # Test framework?
+ls .env.test               # Separate test DB?
+ls <integration test dir>  # Integration tests?
 
 # Check backend infrastructure
-ls lib/db.ts            # Database utilities?
-ls src/app/api/         # HTTP data services?
-ls realtime/server.ts   # WebSocket server?
+ls <database utilities>    # Database utilities?
+ls <api client directory>  # HTTP data services?
+ls <realtime server>       # WebSocket server?
 ```
 
 **Add missing pieces:**
@@ -458,7 +463,7 @@ When using a prompt from this library:
 
 **4. Fresh Clone Validation:**
 
-- New developer can run `npm run setup`
+- New developer can run the project's single setup command
 - All scripts work out-of-the-box
 - No manual steps required
 - Documented in README
@@ -506,18 +511,19 @@ When using a prompt from this library:
 
 **What Failed:**
 
-- Agents claimed "complete" without TypeScript validation (221 errors went undetected)
-- Test files missing imports (tests passed at runtime, TypeScript failed)
+- Agents claimed "complete" without running the type/compile check (221 errors went undetected)
+- Test files missing imports (tests passed at runtime, the compile check failed)
 
 **Root Causes:**
 
-- Agents ran `npm test` but not `npm run type-check`
+- Agents ran the test suite but not the type/compile check
 - Runtime success ≠ compilation success
 
 **New Requirements:**
 
-- **TypeScript validation mandatory:** Run `npm run type-check` before claiming complete
-- **Validation output required:** Paste all validation results in session log
+**Validation gates:** @.claude/orchestration/core/methodology/validation-gates.md -- Gate 1 (type / compile check) and
+the mandatory pasting of validation output into the session log are defined there, once, with the project's own
+commands. This section records *why* they exist; it is not a second statement of what they say.
 
 **These Are Now Standard in All Agent Prompts (Not Just Infrastructure).**
 
@@ -530,32 +536,32 @@ As we build more features, add prompts for:
 ### Backend
 
 - [ ] Authentication & Authorization (JWT, sessions, RBAC)
-- [ ] File Upload Infrastructure (S3, local storage)
-- [ ] Background Job System (Bull, cron)
-- [ ] Email Service (SendGrid, SES)
-- [ ] Caching Layer (Redis)
+- [ ] File Upload Infrastructure (object storage, local storage)
+- [ ] Background Job System (queue worker, cron)
+- [ ] Email Service (transactional email provider)
+- [ ] Caching Layer (in-memory cache service)
 
 ### Frontend
 
-- [ ] State Management (Zustand, Context)
-- [ ] Form Handling (Angular Reactive Forms, validation)
+- [ ] State Management (the framework's own store, or a small external one)
+- [ ] Form Handling (form model + validation)
 - [ ] Data Tables (pagination, sorting, filtering)
 - [ ] File Upload UI (drag-drop, progress)
 - [ ] Toast Notifications (we have this!)
 
 ### DevOps
 
-- [ ] Docker Compose (multi-service)
+- [ ] Multi-service local orchestration (one command brings up every dependency)
 - [ ] Environment Management (.env.\*, secrets)
 - [ ] Database Migrations (versioning, rollback)
-- [ ] Monitoring & Logging (Sentry, DataDog)
+- [ ] Monitoring & Logging (error tracking, metrics)
 
 ### Quality
 
-- [ ] E2E Testing (Playwright, Cypress)
-- [ ] Performance Testing (Lighthouse, load tests)
-- [ ] Security Scanning (npm run audit, OWASP)
-- [ ] Accessibility Testing (axe-core)
+- [ ] E2E Testing (browser automation against a running app)
+- [ ] Performance Testing (page audits, load tests)
+- [ ] Security Scanning (dependency audit, OWASP)
+- [ ] Accessibility Testing (automated rule checking)
 
 **Process:** After implementing each, extract prompt to this library
 
@@ -702,11 +708,9 @@ When adding new infrastructure prompts to this library:
 
 **After foundation infrastructure (prompts 1.1, 1.2, 1.3):**
 
-- [ ] Fresh clone → `npm run setup` → working app (< 5 min)
-- [ ] `npm test` uses separate test database
-- [ ] All tests passing (unit + integration)
-- [ ] TypeScript: 0 errors
-- [ ] ESLint: 0 warnings
+- [ ] Fresh clone → one setup command → working app (< 5 min)
+- [ ] The test command uses a separate test database
+- [ ] Gates 1-3 pass — @.claude/orchestration/core/methodology/validation-gates.md
 - [ ] Test coverage meets this project's guideline (80% is a reasonable default, not a hard rule)
 - [ ] Integration tests exist (NO MOCKS)
 - [ ] Documentation complete (README, test guide)
@@ -755,8 +759,8 @@ When adding new infrastructure prompts to this library:
 
 **Available Prompts:**
 
--  1.1 Full-Stack Foundation (NestJS + Angular)
--  1.2 Testing Framework (Jest)
+-  1.1 Full-Stack Foundation (backend + frontend)
+-  1.2 Testing Framework
 -  1.3 Integration Testing
 -  2.3 WebSocket Server
 
