@@ -276,7 +276,7 @@ For multi-component features, explicit integration responsibility:
 **Before launching agents, verify all prompts include:**
 
 - [ ] Session logging requirement (`.claude/workspace/{feature}/agent-logs/{task}-session.md`)
-- [ ] 5 validation gates (TypeScript, ESLint, tests, process cleanup, manual testing)
+- [ ] 5 validation gates (type check, lint, tests, process cleanup, manual testing)
 - [ ] Testing requirements (unit + integration, NO MOCKS for integration)
 - [ ] Dependency validation (if task has imports)
 - [ ] Coordination protocols (if high coordination)

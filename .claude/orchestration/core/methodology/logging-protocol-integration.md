@@ -98,7 +98,7 @@ Before reporting task complete:
 - [ ] No skipped or pending tests (unless explicitly documented)
 - [ ] Tests documented in session log
 
-**For complete pre-completion validation requirements (TypeScript, ESLint, process cleanup), see
+**For complete pre-completion validation requirements (type check, lint, process cleanup), see
 coordination-protocols.md**
 
 **Failure to write tests = Incomplete task regardless of code quality.**

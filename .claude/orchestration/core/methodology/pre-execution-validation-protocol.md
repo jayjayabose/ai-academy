@@ -223,7 +223,7 @@ Follow the prompt exactly, including all validation gates.
 
 **Success metrics:**
 
--  All validation gates passed (TypeScript, ESLint, tests, device/browser testing)
+-  All validation gates passed (type check, lint, tests, manual verification)
 -  Feature complete and working
 -  No major blockers discovered during execution
 -  Time efficient (proactive overhead < reactive debugging)

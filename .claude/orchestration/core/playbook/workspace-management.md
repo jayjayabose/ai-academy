@@ -236,7 +236,7 @@ NOT "feature works" - but "user sees X when they do Y"
 - Coordination assumptions and validations
 - Integration challenges encountered
 - Discoveries and insights
-- Pre-completion validation results (TypeScript, ESLint, tests, process cleanup, manual testing)
+- Pre-completion validation results (type check, lint, tests, process cleanup, manual testing)
 
 **Update real-time:** Document decisions as you make them, not at the end.
 

@@ -68,8 +68,8 @@ Layer Protocol
 
 ## 5. Five gates before any agent claims COMPLETE
 
-1. TypeScript compilation
-2. ESLint
+1. Type / compile check
+2. Lint
 3. Tests passing
 4. Process cleanup
 5. Manual testing

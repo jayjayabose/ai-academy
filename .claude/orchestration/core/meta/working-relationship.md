@@ -38,7 +38,7 @@
 Orchestration partner automatically includes in EVERY agent prompt:
 
 -  Session logging requirement (with template reference)
--  5 validation gates (TypeScript, ESLint, tests, process cleanup, manual testing)
+-  5 validation gates (type check, lint, tests, process cleanup, manual testing)
 -  Testing requirements (unit + integration, no-mock integration tests)
 -  Coordination protocols (field naming locks if high coordination)
 -  Technology stack specifications (exact library versions, import patterns)

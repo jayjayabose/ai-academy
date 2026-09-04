@@ -4,13 +4,14 @@
 
 **Status:** MANDATORY - All 5 gates must pass before claiming "COMPLETE"
 
+**Commands are per-project.** Each gate below states what must be true and what output counts as evidence; the command
+that produces it belongs to the project. A worked set is in `examples/<stack>/validation-gates-examples.md`.
+
 ---
 
-## Gate 1: TypeScript Compilation
+## Gate 1: Type / Compile Check
 
-```bash
-npm run type-check
-```
+**Command:** the project's compile or static type check
 
 **Required:** 0 errors
 
@@ -24,13 +25,14 @@ the other gates catch).
 - Incorrect import paths
 - Schema/code type inconsistencies
 
+**If the project has no static check at all,** record that in the project's conventions and say so when reporting the
+gate. A gate that is silently skipped is indistinguishable in the log from one that passed.
+
 ---
 
-## Gate 2: ESLint
+## Gate 2: Lint
 
-```bash
-npm run lint
-```
+**Command:** the project's linter, at the strictness the project has agreed
 
 **Required:** 0 warnings, 0 errors
 
@@ -47,9 +49,7 @@ npm run lint
 
 ## Gate 3: Tests Passing
 
-```bash
-npm test
-```
+**Command:** the project's full test suite
 
 **Required:** All tests passing
 
@@ -65,29 +65,25 @@ npm test
 
 - Test cross-layer integration
 - Real database operations
-- Example: "Create lead → verify in database → retrieve via GET /leads/:id"
+- Example: "Create record → verify in database → retrieve it back through the API"
 
 **Why both:**
 
 - Unit tests validate logic correctness
 - Integration tests catch cross-layer bugs (mocks can hide these)
 
-**Evidence:** Integration tests found critical bugs that mocked tests missed (PostgreSQL returns strings not Dates, UUID
-format issues)
+**Evidence:** integration tests found bugs mocked tests missed, all of the same class -- the database returning a
+different type than the code assumed, and identifier formats the code never validated.
 
 ---
 
 ## Gate 4: Process Cleanup (Resource Check)
 
-```bash
-# Check what's running on common dev ports
-lsof -i :3000  # Backend server
-lsof -i :3001  # Frontend server
-```
+**Command:** list what is listening on the project's development ports
 
 **Required:** Clean development environment, no hanging processes
 
-**Why:** Multiple Claude sessions may start dev servers that don't shut down cleanly, causing port conflicts and
+**Why:** Multiple agent sessions may start dev servers that don't shut down cleanly, causing port conflicts and
 resource exhaustion
 
 **Common issues caught:**
@@ -96,18 +92,7 @@ resource exhaustion
 - Frontend dev server from previous session
 - Multiple servers competing for same port
 
-**Fix if needed:**
-
-```bash
-# See what's using a port
-lsof -i :3000
-
-# Kill specific process by PID
-kill <PID>
-
-# Or kill by process name
-pkill -f "nest start"
-```
+**Fix if needed:** identify the process holding the port and stop it, by PID or by process name.
 
 ---
 
@@ -117,23 +102,16 @@ pkill -f "nest start"
 
 **Two types based on feature:**
 
-### Frontend Manual Testing (use Playwright MCP for browser verification)
+### Frontend Manual Testing (drive a real browser; a browser-automation MCP makes this systematic)
 
-```bash
-npm run dev
-# Open http://localhost:3000
-```
-
-**Test in actual browser:**
-
-1. Open browser to {SPECIFIC_URL}
+1. Open the running application at the URL the feature lives on
 2. Navigate through all UI you created
 3. Test all forms (submit, validation, error states)
 4. Verify data displays correctly
 5. Test all user interactions
-6. Check browser console: 0 errors (Cmd+Option+J or F12)
+6. Check the browser console: 0 errors
 
-**Playwright systematic testing:**
+**Systematic browser testing:**
 
 - Navigate to all pages you created
 - Fill and submit all forms
@@ -144,27 +122,18 @@ npm run dev
 
 **Common issues caught:**
 
-- Database schema not applied to development database (tests use test DB, browser uses dev DB)
+- Schema not applied to the development database (tests use the test database, the browser uses the dev one)
 - Client state management broken
-- REST API integration failing
+- API integration failing
 - UI rendering issues
 
-### Backend Manual Testing (use curl/API testing)
-
-**Test with actual API calls:**
-
-```bash
-# Example: REST login endpoint
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "password"}'
-```
+### Backend Manual Testing (issue real requests against the running service)
 
 **Verify:**
 
-1. Response status: {EXPECTED_STATUS} (e.g., 200)
-2. Response body contains: {EXPECTED_FIELDS} (e.g., token, user.email)
-3. Authentication: login returns valid token/session
+1. Response status matches what the endpoint promises
+2. Response body contains the fields the contract declares
+3. Authentication: login returns a valid token or session
 4. Authorization: protected endpoints reject unauthorized requests
 5. Error handling: invalid requests return proper error responses
 
@@ -185,20 +154,20 @@ curl -X POST http://localhost:3000/auth/login \
 ```markdown
 ## Pre-Completion Validation Results
 
-### Gate 1: TypeScript
-[paste npm run type-check output]
-✔ No TypeScript errors
+### Gate 1: Type / Compile Check
+[paste the command and its output]
+✔ 0 errors
 
-### Gate 2: ESLint
-[paste npm run lint output]
-✔ No ESLint warnings or errors
+### Gate 2: Lint
+[paste the command and its output]
+✔ 0 warnings, 0 errors
 
 ### Gate 3: Tests
-[paste npm test summary]
+[paste the suite summary]
 ✔ Tests: X/X passing
 
 ### Gate 4: Process Cleanup
-[paste lsof output or "no hanging processes"]
+[paste the port listing, or "no hanging processes"]
 ✔ Clean development environment
 
 ### Gate 5: Manual Testing
@@ -206,15 +175,17 @@ curl -X POST http://localhost:3000/auth/login \
 FRONTEND (if applicable):
 - Browser testing:  All features work
 - Console errors: None
-- Playwright results: [details]
+- Automation results: [details]
 
 BACKEND (if applicable):
-- curl testing:  API returns expected responses
+- Request testing:  API returns expected responses
 - Authentication:  Works correctly
 - Error handling:  Proper responses
 
 **All 5 gates passed: YES**
 ```
+
+Paste the command as well as the output. Output alone does not show which gate was actually run.
 
 ---
 
@@ -235,9 +206,11 @@ BACKEND (if applicable):
 
 **Evidence from building real features:**
 
--  TypeScript: 0 errors ≠ tests pass (test-related TypeScript errors exist)
--  Tests: All passing ≠ browser works (database setup issues only caught in browser)
--  Browser: Works ≠ clean environment (resource exhaustion from hanging processes)
+-  Type check: 0 errors ≠ tests pass (test files carry type errors of their own)
+-  Tests: all passing ≠ the application works (database setup issues surface only when a person uses it)
+-  Application works ≠ clean environment (resource exhaustion from hanging processes)
+
+Each gate catches a class the one before it cannot see. That is why the set is five and not one.
 
 **All 5 gates = truly complete**
 
@@ -247,10 +220,10 @@ BACKEND (if applicable):
 
 **Feature is complete when:**
 
-- [ ] Gate 1: TypeScript - 0 errors
-- [ ] Gate 2: ESLint - 0 warnings
+- [ ] Gate 1: Type / compile check - 0 errors
+- [ ] Gate 2: Lint - 0 warnings
 - [ ] Gate 3: Tests - All passing (unit + integration)
 - [ ] Gate 4: Process cleanup - No hanging servers
-- [ ] Gate 5: Manual testing - Feature works in browser (frontend) OR API responds correctly (backend)
+- [ ] Gate 5: Manual testing - Feature works in the browser (frontend) OR the API responds correctly (backend)
 
 **All 5 MANDATORY. No exceptions.**

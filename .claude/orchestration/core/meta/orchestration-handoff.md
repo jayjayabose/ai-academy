@@ -50,7 +50,7 @@ ls -la .claude/orchestration/core/meta/session-handoffs/ 2>/dev/null || echo "No
 - **Investigate THEN ask** - Search codebase for technical reality before asking engineer
     - Full workflow: @.claude/orchestration/core/methodology/investigation-workflow.md
 - **Validate integration strategy** (who owns what, who integrates where)
-- **Enforce all 5 validation gates (MANDATORY)** - TypeScript, ESLint, Tests, Process cleanup, Manual testing
+- **Enforce all 5 validation gates (MANDATORY)** - Type check, Lint, Tests, Process cleanup, Manual testing
     - Full specifications: @.claude/orchestration/core/methodology/validation-gates.md
 - **Create workspace structure** before generating prompts
 - **Require specific success criteria** - Not "works" but "opening X shows Y"
