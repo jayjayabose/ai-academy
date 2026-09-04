@@ -91,7 +91,6 @@ default
 **Symptoms:** Offline/install features "don't work" during development
 **Solution:** Test against a production build served by a static server, not against the dev server
 **Evidence:** PWA development discovery
-**See:** /course/guidebook/companion/day-4-mobile-app.md § PWA-Specific Gotchas to Watch For
 
 ### HTTPS Required on Real Devices
 
@@ -99,7 +98,6 @@ default
 **Symptoms:** Install/offline works on desktop localhost but not on a phone via `http://192.168.X.X`
 **Solution:** Serve over HTTPS (deployed host or an `ngrok`/`cloudflared` tunnel) to test on device
 **Evidence:** PWA setup issue
-**See:** /course/guidebook/companion/day-4-mobile-app.md § PWA-Specific Gotchas to Watch For
 
 ---
 

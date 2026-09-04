@@ -56,6 +56,18 @@ and return a summary of existing patterns"
 
 ---
 
-**Complete guide:** /course/guidebook/chapters/05-sub-agents.md
+## Sub-Agents Are One Context Technique, Not the Only One
 
-**Context strategies:** /course/guidebook/chapters/07-context-management.md
+A sub-agent is the agent's own lever on context. Yours are upstream of it, and they are cheaper:
+
+- **Scope the request.** A prompt that names the files and states what is out of scope reads less than one
+  that asks the agent to find out.
+  See @.claude/orchestration/core/playbook/prompt-creation.md § What makes prompts work.
+- **Break the task down.** Several small, separately verifiable tasks each start clean; one large task
+  accumulates.
+- **Hand off before you run out.** When the session is already heavy, a handoff file transfers the
+  conclusions instead of the transcript.
+  See @.claude/orchestration/core/playbook/session-continuity.md § When to Create Handoff.
+
+Reach for a sub-agent when the context cost is unavoidable -- the exploration genuinely has to happen and
+you do not want its output in the main thread.
