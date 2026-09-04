@@ -15,11 +15,16 @@ full spec — copy it directly into your prompt, there's no separate file to loo
 **Evidence Base:** All agent types tested through actual parallel execution with documented results and methodology
 learnings.
 
+**Seven roles, one spec shape.** Every specification below has the same sections — Primary Objectives, Technical
+Requirements, Quality Standards, Deliverables, and (for the high-coordination four) COORDINATION REQUIREMENTS —
+and every stack-specific line is a `{slot}`. The roles and the shape are the portable part; the fills are not. A
+complete set of filled-in specs is in `examples/<stack>/agent-specs-library-examples.md`.
+
 ## Infrastructure-Independent Agent Specifications ( Proven Low-Risk)
 
 ### 1. Database Setup Agent
 
-**Task Scope:** PostgreSQL + Sequelize setup with complete schema implementation
+**Task Scope:** Database engine + data-access layer setup with complete schema implementation
 **Coordination Requirements:** Minimal - basic naming conventions only
 **Quality Standards:** Production-ready database configuration + comprehensive migrations
 **Evidence:** Proven success - seamlessly integrated with other agents
@@ -30,14 +35,14 @@ learnings.
 ## Database Setup Agent Task
 
 ### Primary Objectives:
-- Set up PostgreSQL database with production-ready configuration
-- Implement Sequelize ORM with complete schema definition
+- Set up the {database engine} with production-ready configuration
+- Implement the {data-access layer} with complete schema definition
 - Create all necessary migrations for data model
 - Ensure type-safe database access throughout application
 
 ### Technical Requirements:
-- PostgreSQL database (version 14+)
-- Sequelize ORM with TypeScript integration
+- {database engine} at {minimum version}
+- {data-access layer} integrated with the project's type system
 - Database migrations in version control
 - Seed data for development and testing
 - Connection pooling and error handling
@@ -50,7 +55,7 @@ learnings.
 - Documentation for schema decisions and relationships
 
 ### Deliverables:
-- Sequelize models with complete data model
+- Models with complete data model
 - Database migration files
 - Seed scripts for development data
 - Database configuration and connection setup
@@ -65,14 +70,14 @@ learnings.
 
 **Coordination Integration Points:**
 
-- Schema naming conventions (camelCase recommended)
+- Schema naming conventions (pick one case convention and name it)
 - Primary key patterns (UUID vs integer)
-- Timestamp field standards (createdAt, updatedAt)
+- Timestamp field standards (the created/updated field names, spelled exactly)
 - Enum definitions shared with other agents
 
 ### 2. API Scaffolding Agent
 
-**Task Scope:** NestJS modular REST API setup with type-safe foundations
+**Task Scope:** Backend framework API setup with type-safe foundations
 **Coordination Requirements:** Minimal - API contract definitions only
 **Quality Standards:** Professional API structure + comprehensive error handling
 **Evidence:** Proven success - provided stable foundation for other agents
@@ -83,16 +88,16 @@ learnings.
 ## API Scaffolding Agent Task
 
 ### Primary Objectives:
-- Set up NestJS backend with modular architecture
-- Implement a modular REST API (feature modules + controllers)
-- Create type-safe API foundations with TypeScript
+- Set up the {backend framework} with modular architecture
+- Implement a modular API (the framework's module + handler structure)
+- Create type-safe API foundations
 - Establish error handling and logging patterns
 
 ### Technical Requirements:
-- NestJS 11.x with module-based architecture
-- REST controllers (`@nestjs/platform-express`) with a global `ValidationPipe`
-- TypeScript integration throughout API layer
-- Comprehensive error handling (exception filters)
+- {backend framework} at {exact version} with module-based architecture
+- Request handlers registered through the framework's HTTP adapter, with validation applied at the boundary
+- The project's type discipline enforced throughout the API layer
+- Comprehensive error handling (the framework's error translation layer)
 - Request logging and performance monitoring
 
 ### Quality Standards:
@@ -100,26 +105,26 @@ learnings.
 - Consistent error response patterns (real HTTP status codes)
 - Security best practices (CORS, rate limiting)
 - Performance monitoring and optimization
-- Integration testing setup for API endpoints (Supertest)
+- Integration testing setup for API endpoints, at the HTTP level
 
 ### Deliverables:
-- NestJS module structure
-- Root REST setup (global prefix/versioning, `ValidationPipe`)
-- Error handling middleware (exception filters)
+- {backend framework} module structure
+- Root API setup (global prefix/versioning, request validation)
+- Error handling middleware
 - API documentation and type definitions
 - Security configuration and middleware
 ```
 
 **Coordination Integration Points:**
 
-- REST route naming conventions
+- Route naming conventions
 - Error response format standards
 - Authentication middleware interfaces
 - Shared DTO/type extension points
 
 ### 3. UI Foundation Agent
 
-**Task Scope:** Angular app structure + component library + routing setup
+**Task Scope:** Frontend app structure + component library + routing setup
 **Coordination Requirements:** Minimal - design system + routing conventions only
 **Quality Standards:** Professional UI architecture + accessibility standards
 **Evidence:** Proven success - enabled parallel component development
@@ -130,17 +135,17 @@ learnings.
 ## UI Foundation Agent Task
 
 ### Primary Objectives:
-- Set up Angular application structure with modern tooling
-- Implement component library (Angular Material) with customization
-- Create routing structure with Angular Router
+- Set up the {frontend framework} application structure with modern tooling
+- Implement the {component library} with customization
+- Create routing structure with the {router}
 - Establish design system and styling conventions
 
 ### Technical Requirements:
-- Angular with TypeScript and modern build tools
-- Angular Material component library implementation
-- Tailwind CSS with custom design tokens
+- {frontend framework} with the project's language and build tools
+- {component library} implementation
+- {styling system} with custom design tokens
 - Responsive design patterns and accessibility standards
-- Angular Router for navigation and routing
+- {router} for navigation and routing
 
 ### Quality Standards:
 - All UI components accessible (WCAG 2.1 AA)
@@ -150,7 +155,7 @@ learnings.
 - SEO optimization and meta tag management
 
 ### Deliverables:
-- Angular application structure and configuration
+- Application structure and configuration
 - Component library setup and customization
 - Design system with tokens and variables
 - Navigation components and routing setup
@@ -177,16 +182,16 @@ learnings.
 ## Deployment Configuration Agent Task
 
 ### Primary Objectives:
-- Set up production deployment configuration for Vercel
+- Set up production deployment configuration for the {deployment platform}
 - Implement environment management for development/staging/production
 - Create CI/CD pipeline with quality checks
 - Establish monitoring and error tracking
 
 ### Technical Requirements:
-- Vercel deployment configuration
+- {deployment platform} configuration
 - Environment variable management
-- Database hosting setup (external PostgreSQL)
-- CI/CD pipeline with testing and linting
+- Database hosting setup (managed instance of the {database engine})
+- CI/CD pipeline running the project's gates
 - Error monitoring and performance tracking
 
 ### Quality Standards:
@@ -197,7 +202,7 @@ learnings.
 - Security scanning and vulnerability checking
 
 ### Deliverables:
-- Vercel deployment configuration
+- {deployment platform} configuration
 - Environment management setup
 - CI/CD pipeline configuration
 - Monitoring and error tracking setup
@@ -215,7 +220,7 @@ learnings.
 
 ### 5. API Types Agent (with Coordination Mechanisms)
 
-**Task Scope:** Complete shared TypeScript DTO/interface types + REST route map
+**Task Scope:** Complete shared contract types + route map
 **Coordination Requirements:** HIGH - Contract-first approach with cross-agent validation required
 **Quality Standards:** Type-safe contract + comprehensive API design
 **Evidence:** Coordination challenges identified, systematic solutions developed
@@ -226,33 +231,33 @@ learnings.
 ## API Types Agent Task (Coordination-Enhanced)
 
 ### Primary Objectives:
-- Define complete DTO/interface types for all resources and operations
+- Define complete request/response types for all resources and operations
 - Implement a contract-first development approach
 - Create comprehensive API documentation (route map)
 - Establish type safety contracts for other agents
 
 ### Technical Requirements:
-- Shared TypeScript type definitions with full coverage (request DTOs + response interfaces)
-- `class-validator` decorators on request DTOs; `PartialType` for updates
+- Shared type definitions with full coverage (request DTOs + response types)
+- {validation library} rules attached to request DTOs; a derived partial form for updates
 - A route map (method + path + request/response type) for all operations
-- Type safety integration with TypeScript
+- Type safety integration with the project's type system
 - Documentation for every type/route
 
 ### COORDINATION REQUIREMENTS (Critical):
-- **Field Naming Convention Lock:** Use camelCase throughout (leadId, budgetMin, budgetMax)
-- **Cross-Agent Validation:** Provide the shared types module for controller and UI agents
-- **Type Definition Sharing:** Export DTO/interface types for cross-agent use
+- **Field Naming Convention Lock:** {the one case convention, with three real field names}
+- **Cross-Agent Validation:** Provide the shared types module for the handler and UI agents
+- **Type Definition Sharing:** Export the contract types for cross-agent use
 - **Contract Review Protocol:** Other agents must validate against the actual types, not assumptions
 
 ### Quality Standards:
 - All operations fully typed (request + response)
-- Types follow REST/DTO best practices
+- Types follow the project's API and contract best practices
 - Comprehensive documentation for all types
 - Performance considerations for payload shapes
 - Security considerations for data exposure
 
 ### Deliverables:
-- Complete shared types module (`api-types.ts`)
+- Complete shared types module
 - Request DTOs with validation rules
 - Route map documentation
 - Type safety integration setup
@@ -262,50 +267,50 @@ learnings.
 **Mandatory Coordination Integration:**
 
 - Shared types module export for other agents to import
-- DTO/interface types that other agents inherit
+- Contract types that other agents inherit
 - Field naming convention documentation
 - Contract evolution and versioning protocols
 
 ### 6. REST Controllers Agent (Contract-Dependent)
 
-**Task Scope:** REST controllers + service implementation + data access patterns
+**Task Scope:** Request handlers + service implementation + data access patterns
 **Coordination Requirements:** HIGH - Must reference actual DTOs from the Types Agent
-**Quality Standards:** Type-safe controllers + optimal query patterns
+**Quality Standards:** Type-safe handlers + optimal query patterns
 **Evidence:** Field naming mismatch challenges, systematic coordination solution designed
 
 **Enhanced Specification Template:**
 
 ```
-## REST Controllers Agent Task (Contract-Coordination Required)
+## API Handlers Agent Task (Contract-Coordination Required)
 
 ### Primary Objectives:
-- Implement REST controllers for all routes in the route map
-- Create efficient database query patterns with Sequelize
+- Implement request handlers for all routes in the route map
+- Create efficient database query patterns through the data-access layer
 - Establish data access and caching strategies
 - Implement authentication and authorization logic
 
 ### Technical Requirements:
-- NestJS controllers (`@Controller`/`@Get`/`@Post`/`@Patch`/`@Delete`) + services
-- Sequelize integration for database operations
+- {backend framework} handlers (one per route in the map) + services
+- {data-access layer} integration for database operations
 - Query optimization and N+1 problem prevention
 - Authentication guards and request context setup
-- Error handling for database operations (exception filters, real status codes)
+- Error handling for database operations (framework error translation, real status codes)
 
 ### COORDINATION REQUIREMENTS (Critical):
 - **Types Import Mandatory:** Must import and reference the actual DTOs from the Types Agent
-- **Field Name Validation:** All controller request/response field names must match the DTOs exactly
+- **Field Name Validation:** All handler request/response field names must match the DTOs exactly
 - **Type Inheritance:** Use the shared types from the Types Agent, never duplicate
 - **Cross-Validation Protocol:** Verify field compatibility before implementation
 
 ### Quality Standards:
-- All controllers fully type-safe with the shared DTOs
+- All handlers fully type-safe with the shared DTOs
 - Optimal database query patterns (no N+1 problems)
 - Comprehensive error handling and logging
 - Authentication and authorization throughout
 - Performance monitoring for query optimization
 
 ### Deliverables:
-- Complete REST controller + service implementation
+- Complete handler + service implementation
 - Database query optimization
 - Authentication and authorization logic
 - Error handling and logging setup
@@ -314,15 +319,15 @@ learnings.
 
 **Mandatory Coordination Requirements:**
 
-- Import DTO/interface types from the Types Agent (not recreate)
+- Import contract types from the Types Agent (not recreate)
 - Use exact field names from the DTOs (automated validation recommended)
-- Inherit TypeScript types from the shared types module
+- Inherit types from the shared types module
 - Cross-agent field compatibility verification
 
 ### 7. UI Component Agent (Data-Layer Dependent)
 
-**Task Scope:** Angular components + services + REST data integration
-**Coordination Requirements:** HIGH - Must use the actual REST endpoints and shared types
+**Task Scope:** Frontend components + services + API data integration
+**Coordination Requirements:** HIGH - Must use the actual endpoints and shared types
 **Quality Standards:** Professional UI + type-safe data integration
 **Evidence:** Data structure assumption challenges, coordination solutions identified
 
@@ -332,22 +337,22 @@ learnings.
 ## UI Component Agent Task (Data-Coordination Required)
 
 ### Primary Objectives:
-- Implement Angular components for all application features
-- Create data services (HttpClient) for data management and state
-- Integrate with the REST endpoints for data fetching
+- Implement {frontend framework} components for all application features
+- Create data services on top of the project's HTTP client for data management and state
+- Integrate with the documented endpoints for data fetching
 - Establish UI patterns and component composition
 
 ### Technical Requirements:
-- Angular components with TypeScript integration
-- HttpClient data services for fetching and state management (signals)
-- `HttpClient` calls to the documented REST routes
+- {frontend framework} components with the project's type integration
+- Data services for fetching and state management, using the framework's reactivity primitive
+- HTTP client calls to the documented routes
 - Component composition and reusability patterns
 - Responsive design and accessibility standards
 
 ### COORDINATION REQUIREMENTS (Critical):
-- **Endpoint Reuse:** Must call the actual REST routes from the Controllers Agent's route map
-- **Type Inheritance:** Use the shared types from the Types Agent for all props
-- **Library Version Alignment:** Use `HttpClient` service patterns consistently
+- **Endpoint Reuse:** Must call the actual routes from the Handlers Agent's route map
+- **Type Inheritance:** Use the shared types from the Types Agent for all component inputs
+- **Library Version Alignment:** Use the HTTP client service patterns consistently
 - **Data Structure Validation:** Verify component data expectations match the actual DTOs
 
 ### Quality Standards:
@@ -358,18 +363,18 @@ learnings.
 - Professional UI patterns and user experience
 
 ### Deliverables:
-- Complete Angular component implementation
-- HttpClient data services for data management
-- `provideHttpClient()` wiring and base-URL configuration
+- Complete component implementation
+- Data services for data management
+- HTTP client registration and base-URL configuration
 - Component documentation and usage examples
 - Accessibility and responsive design validation
 ```
 
 **Mandatory Coordination Requirements:**
 
-- Call the actual REST endpoints (not invent new paths)
-- Use the shared TypeScript types from the Types Agent
-- `HttpClient` pattern consistency
+- Call the actual endpoints (not invent new paths)
+- Use the shared types from the Types Agent
+- HTTP client pattern consistency
 - Data structure expectation validation against the actual DTOs
 
 ## Agent Specification Usage Guidelines
@@ -390,7 +395,8 @@ learnings.
 
 ### Quality Standards for All Specifications
 
-- **Professional Development Practices:** ESLint, TypeScript, testing throughout
+- **Professional Development Practices:** the project's lint, type and test discipline throughout
+  (@.claude/orchestration/core/methodology/validation-gates.md)
 - **A/A+ Code Quality:** Professional standards maintained across all parallel agents
 - **Documentation Requirements:** Clear documentation for coordination and maintenance
 - **Integration Readiness:** All agents deliver integration-ready code, not just functional code

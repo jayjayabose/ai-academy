@@ -7,6 +7,12 @@
 **Evidence Base:** Created after authentication bugfix agent introduced new bugs while fixing old ones (lacked
 validation requirements).
 
+**Commands and file extensions are per-project.** The template below is stack-neutral: every place a concrete
+command or path would go is a `{slot}`. A filled-in version is in `examples/<stack>/bugfix-prompt-template-examples.md`.
+
+**Validation gates:** @.claude/orchestration/core/methodology/validation-gates.md — the template references them
+rather than restating them, so there is one definition of "did it pass".
+
 ---
 
 ## Template Structure
@@ -24,18 +30,21 @@ validation requirements).
 
 ## Current State (BEFORE FIX)
 
-**TypeScript:** {/} {X errors}
-**ESLint:** {/} {X warnings}
-**Tests:** {/} {X failing / Y passing}
-**Resource Cleanup:** {/} {status}
+**Gate 1 — Type / Compile Check:** {/} {X errors}
+**Gate 2 — Lint:** {/} {X warnings}
+**Gate 3 — Tests:** {/} {X failing / Y passing}
+**Gate 4 — Process Cleanup (Resource Check):** {/} {status}
 
 **Your job:** Fix {specific bugs} AND maintain or improve all validation metrics.
+
+A baseline is not optional decoration. Without it the agent cannot tell "I fixed it" from "I made it worse in a
+different place", and neither can you.
 
 ---
 
 ## Bug #1: {Description}
 
-**File:** \`path/to/file.ts\`
+**File:** \`path/to/file\`
 **Line:** {line number if applicable}
 
 **Symptom:**
@@ -47,12 +56,12 @@ validation requirements).
 {Why this bug exists - what assumption was wrong, what was missed}
 
 **Current Code:**
-\`\`\`typescript
+\`\`\`{language}
 {Show problematic code}
 \`\`\`
 
 **Fix Required:**
-\`\`\`typescript
+\`\`\`{language}
 {Show corrected code or approach}
 \`\`\`
 
@@ -71,7 +80,7 @@ validation requirements).
 
 ## PRE-TESTING SETUP (MANDATORY)
 
-**CRITICAL:** Before you can test your fix in browser, you MUST ensure development environment is ready.
+**CRITICAL:** Before you can test your fix by hand, you MUST ensure the development environment is ready.
 
 ### 1. Verify Development Database Schema
 
@@ -79,41 +88,32 @@ validation requirements).
 
 **Check if schema applied to development database:**
 \`\`\`bash
-
-# Try starting dev server:
-
-npm run dev
-
-# Check for database connection errors
-
+{command that starts the development server}
+{watch for database connection errors}
 \`\`\`
 
-**If database errors or features don't work in browser:**
+**If database errors or features don't work when you use the app:**
 \`\`\`bash
-
-# Apply migrations to development database:
-
-npm run db:migrate
-
-# Seed with test data:
-
-npm run db:seed
+{command that applies migrations to the development database}
+{command that seeds it with test data}
 \`\`\`
 
-**Why:** Integration tests use separate test database (\`new_crm_test\`). Your browser testing uses development database (\`new_crm\`). They can be out of sync.
+**Why:** Integration tests use a separate test database. Your manual testing uses the development database. They
+can be out of sync.
 
-**Example:** Tests passed with test database, but registration failed in browser because development database had no schema.
+**Example:** Tests passed against the test database, but registration failed in the browser because the
+development database had no schema.
 
 **Verify schema applied:**
 
 - Development database should have all required tables
-- Browser testing should work without database errors
+- Manual testing should work without database errors
 - Don't skip this step - it catches issues tests miss
 
 ### 2. Start Development Server
 
 \`\`\`bash
-npm run dev
+{command that starts the development server}
 \`\`\`
 
 **Verify:**
@@ -122,7 +122,7 @@ npm run dev
 - Database connection successful
 - No schema/migration errors
 
-**Wait for "Ready" message** before browser testing.
+**Wait for the server's ready signal** before testing.
 
 ---
 
@@ -130,14 +130,12 @@ npm run dev
 
 **CRITICAL:** Bug fixes must NOT introduce new bugs.
 
-Before claiming "COMPLETE", run ALL validation steps:
+Run all five gates before claiming "COMPLETE". The gates and their pass conditions are defined once, in
+\`core/methodology/validation-gates.md\`; what this template adds is that **every gate is judged against the
+baseline, not in isolation**. A gate that was already failing may not fail worse.
 
-### 1. TypeScript Compilation (BLOCKING)
+### 1. Type / Compile Check (BLOCKING)
 
-\`\`\`bash
-npm run type-check
-\`\`\`
-**REQUIRED:** \`✔ No TypeScript errors\` (0 errors)
 **BEFORE FIX:** {X errors}
 **AFTER FIX:** Must be ≤ BEFORE (ideally 0)
 
@@ -145,12 +143,8 @@ npm run type-check
 
 ---
 
-### 2. ESLint (BLOCKING)
+### 2. Lint (BLOCKING)
 
-\`\`\`bash
-npm run lint
-\`\`\`
-**REQUIRED:** \`✔ No ESLint warnings or errors\` (0 warnings)
 **BEFORE FIX:** {X warnings}
 **AFTER FIX:** Must be ≤ BEFORE (ideally 0)
 
@@ -160,14 +154,10 @@ npm run lint
 
 ### 3. Full Test Suite (BLOCKING)
 
-\`\`\`bash
-npm test
-\`\`\`
-**REQUIRED:** All tests passing
 **BEFORE FIX:** {X failing / Y passing}
 **AFTER FIX:** Must be ≤ BEFORE failing (ideally 0 failing)
 
-**CRITICAL:** Run FULL test suite, not just affected tests.
+**CRITICAL:** Run the FULL test suite, not just affected tests.
 
 **IF MORE FAILURES:** Your fix broke other tests. Revert and try different approach.
 
@@ -179,21 +169,10 @@ npm test
 
 ### 4. Resource Cleanup Check
 
-\`\`\`bash
-# Check for any lingering node processes if dev server was killed improperly
-lsof -i :3000 | grep LISTEN || echo "Port 3000 available "
-\`\`\`
-**REQUIRED:** "Port 3000 available "
+**BEFORE FIX:** {status}
+**AFTER FIX:** development ports free, no processes left behind by a dev server you killed improperly
 
-**If port is still in use:**
-\`\`\`bash
-# Find and kill the process using the port
-lsof -t -i:3000 | xargs kill -9
-echo "Cleaned up lingering dev server process"
-
-# Re-run check to verify cleanup
-lsof -i :3000 | grep LISTEN || echo "Cleanup successful "
-\`\`\`
+If a port is still held, identify the process holding it and stop it, then re-run the check.
 
 ---
 
@@ -206,34 +185,27 @@ lsof -i :3000 | grep LISTEN || echo "Cleanup successful "
 
 ### Baseline (Before Fix)
 
-- TypeScript: {X errors}
-- ESLint: {X warnings}
-- Tests: {X failing / Y passing}
-- Resources: {status}
+- Gate 1 (type / compile): {X errors}
+- Gate 2 (lint): {X warnings}
+- Gate 3 (tests): {X failing / Y passing}
+- Gate 4 (resources): {status}
 
 ### After Fix
 
-[Paste npm run type-check output]
-✔ No TypeScript errors (0 errors) ← MUST show this
-
-[Paste npm run lint output]
-✔ No ESLint warnings or errors
-
-[Paste npm test summary]
-✔ Tests: {Y+X}/{Y+X} passing ← ALL must pass
-
-[Paste lsof -i :3000 output]
-Port 3000 available 
+[Paste each gate's command and its output]
 
 ### Comparison
 
-- TypeScript: {X} → 0 
-- ESLint: {X} → 0 
-- Tests: {X failing} → 0 failing 
-- Resources: Clean 
+- Gate 1: {X} → 0 
+- Gate 2: {X} → 0 
+- Gate 3: {X failing} → 0 failing 
+- Gate 4: Clean 
 
 **ALL VALIDATIONS PASSED**
 \`\`\`
+
+The comparison table is the deliverable. Raw "after" output on its own does not show whether the fix was a
+net improvement.
 
 ---
 
@@ -241,17 +213,17 @@ Port 3000 available
 
 **DO NOT claim "COMPLETE"**
 
-### If TypeScript Errors Remain or Increase:
+### If Type / Compile Errors Remain or Increase:
 
 -  Your fix introduced new type issues
 -  REVERT your changes
--  Try different approach (e.g., type guards vs type assertions)
+-  Try different approach (e.g., narrowing the type rather than asserting it)
 -  Re-validate until 0 errors
 
-### If ESLint Warnings Appear:
+### If Lint Warnings Appear:
 
 -  Your fix violated code quality standards
--  REVERT or fix ESLint issues
+-  REVERT or fix the lint issues
 -  Re-validate until 0 warnings
 
 ### If Tests Still Fail or New Failures:
@@ -272,10 +244,11 @@ Port 3000 available
 
 **You are NOT COMPLETE until:**
 
-- TypeScript: 0 errors (or ≤ BEFORE)
-- ESLint: 0 warnings (or ≤ BEFORE)
-- Tests: All passing (or ≤ BEFORE failing)
-- Resources: All ports available
+- Gate 1: 0 errors (or ≤ BEFORE)
+- Gate 2: 0 warnings (or ≤ BEFORE)
+- Gate 3: All passing (or ≤ BEFORE failing)
+- Gate 4: All ports available
+- Gate 5: The fixed behaviour verified by hand, not only by the test that covers it
 - Validation output pasted in session log
 
 ---
@@ -284,30 +257,13 @@ Port 3000 available
 
 ### Fix is Complete When ALL Pass:
 
-**TypeScript:**
-\`\`\`bash
-$ npm run type-check
-✔ No TypeScript errors
-\`\`\`
-
-**ESLint:**
-\`\`\`bash
-$ npm run lint
-✔ No ESLint warnings or errors
-\`\`\`
-
-**Tests:**
-\`\`\`bash
-$ npm test
-Test Files {N} passed ({N})
-Tests {M} passed ({M})
-\`\`\`
-
-**Resources:**
-\`\`\`bash
-$ lsof -i :3000 | grep LISTEN
-Port 3000 available 
-\`\`\`
+| Gate | Required | Before | After |
+| --- | --- | --- | --- |
+| 1. Type / Compile Check | 0 errors | {X} | {X} |
+| 2. Lint | 0 warnings | {X} | {X} |
+| 3. Tests | all passing | {X failing} | {X failing} |
+| 4. Process Cleanup | ports free | {status} | {status} |
+| 5. Manual Testing | the reported symptom is gone |  |  |
 
 **Session Log:**
 
@@ -337,7 +293,7 @@ Port 3000 available
 
 **During Implementation:**
 
-- [ ] TypeScript errors increase instead of decrease
+- [ ] Compile errors increase instead of decrease
 - [ ] Need to modify many unrelated files
 - [ ] Multiple approaches tried without success
 - [ ] Tempted to skip validation steps
@@ -345,8 +301,8 @@ Port 3000 available
 
 **During Validation:**
 
-- [ ] \`npm run type-check\` shows MORE errors than before
-- [ ] \`npm test\` shows MORE failures than before
+- [ ] Gate 1 shows MORE errors than before
+- [ ] Gate 3 shows MORE failures than before
 - [ ] Different tests now failing (broke something else)
 - [ ] Need to modify production code extensively for a "bug fix"
 
@@ -372,7 +328,7 @@ Port 3000 available
 
 **Stay focused on:** Fixing the specific bugs listed. Nothing more.
 
-**Validate completely:** All 4 validation steps MUST pass before claiming complete.
+**Validate completely:** All five gates MUST pass before claiming complete.
 
 ---
 
@@ -389,10 +345,10 @@ Port 3000 available
 ### When Creating Bug Fix Prompts:
 
 1. **Copy template structure** above
-2. **Fill in all {placeholders}** with specific bug details
+2. **Fill in all {placeholders}** with specific bug details, including the project's own commands
 3. **Ensure validation section included** (copy verbatim, adjust metrics)
 4. **Add "CRITICAL: Do not introduce new bugs" warning** at top
-5. **Document baseline state** (TypeScript/ESLint/Tests before fix)
+5. **Document baseline state** (all five gates, measured before the fix)
 6. **Require before/after comparison** in session log
 
 ### What Makes a Good Bug Fix Prompt:
@@ -400,7 +356,7 @@ Port 3000 available
 ** Clear bug descriptions** with file/line references
 ** Root cause analysis** (why bug exists)
 ** Specific fix instructions** (what code to change)
-** Complete validation requirements** (TypeScript, ESLint, tests, processes)
+** Complete validation requirements** (all five gates, by reference)
 ** Before/after metrics** (so agent knows success criteria)
 ** "Do not introduce new bugs" warning** (explicit constraint)
 
@@ -418,7 +374,7 @@ Port 3000 available
 
 ### This Template Enforces:
 
-- **TypeScript Pre-Completion Validation Gate** (proven pattern)
+- **Gate 1 (Type / Compile Check) as a pre-completion blocker** (proven pattern)
 - **Process Cleanup Requirements** (proven pattern)
 - **Session Logging Standards** (all features)
 - **Quality Standards Maintenance** (all features)
