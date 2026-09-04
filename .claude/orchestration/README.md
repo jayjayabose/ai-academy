@@ -40,6 +40,12 @@ mission and its profile -- and the runtime output of `/handoff` land in `meta/`,
 token; every instance that was removed from a core file is present in the matching pack. Both are verifiable with
 a grep, and the commits that created the split record the results.
 
+**What the grep does not cover** is set out in
+examples/README.md § What is enforced mechanically, and what is not.
+In short: it proves `core/` names no stack. It does not prove `core/` is free of *this* project — links into
+this repository, naming conventions written in plain words, and per-project content are all invisible to it, and
+all three have got through.
+
 ## How It Works
 
 When you run `/orchestration`, the partner loads all assets from this directory to:
