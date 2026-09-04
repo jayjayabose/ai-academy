@@ -40,6 +40,14 @@ proceeding with initialization.
 - **Content:** Full specifications, all examples, all scenarios
 - **Think:** Technical manual (complete reference)
 
+### `.claude/orchestration/examples/<stack>/` - Worked Instances
+
+- **Purpose:** What a rule looked like filled in, for one technology stack
+- **You read:** When the project matches the stack and you want the concrete form
+- **Content:** Commands, config, filled-in prompt templates, real field names
+- **Think:** Answer key (core is the question)
+- **You do NOT copy these into a project on a different stack.** A pack is one project's answer, not a default.
+
 ### `course/guidebook/chapters/` - Sequential Learning Material
 
 - **Purpose:** Educational content (theory + practice)
@@ -50,13 +58,16 @@ proceeding with initialization.
 **Key relationship:**
 
 - Playbook summarizes → Methodology defines completely
+- Core states the rule → Examples show one instance of it
 - You use playbook workflows → Reference methodology for complete specs
 - You NEVER reference guidebook/chapters (that's for human learning)
 
 **When creating content:**
 
-- **Add to orchestration/playbook/** if creating operational checklist (brief workflow)
-- **Add to orchestration/methodology/** if creating authoritative specification (complete technical details)
+- **Add to orchestration/core/playbook/** if creating operational checklist (brief workflow)
+- **Add to orchestration/core/methodology/** if creating authoritative specification (complete technical details)
+- **Add to orchestration/examples/<stack>/** if the content names a framework, a command, or a config file.
+  Nothing under `core/` may do so.
 - **NEVER add to course/guidebook/chapters/** (that's for human curriculum development only)
 
 ---

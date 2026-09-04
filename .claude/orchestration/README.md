@@ -29,6 +29,10 @@ This directory houses the knowledge base that powers the orchestration partner p
     - **`core/meta/`** - Project context and conventions
 - **`examples/`** - Worked instances of the method in a specific stack, one directory per stack
 
+**The seam between them is checkable, not aspirational.** No file under `core/` contains a technology-stack
+token; every instance that was removed from a core file is present in the matching pack. Both are verifiable with
+a grep, and the commits that created the split record the results.
+
 ## How It Works
 
 When you run `/orchestration`, the partner loads all assets from this directory to:
@@ -62,7 +66,14 @@ orchestration/
 │   ├── templates/      Agent prompt templates
 │   └── meta/           Project conventions and context
 └── examples/           Worked instances, one directory per stack
+    └── node/           NestJS + Angular + Sequelize + Jest
 ```
+
+**Which do you need?**
+
+- Reading the method, or installing it into a project of any stack → `core/`
+- Learning by example, or working in Node/NestJS/Angular → both
+- Adapting to another stack → `core/`, plus `examples/README.md` for how to contribute a pack
 
 ---
 

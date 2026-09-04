@@ -50,6 +50,18 @@ The orchestration partner automatically loads patterns, templates, and methodolo
 2. Understand the success criteria
 3. Apply the principles in your implementation
 
+## Examples
+
+**Location:** [.claude/orchestration/examples/](examples/)
+
+**How to use:**
+
+1. Find the pack for your stack; if there is none, use `core/` alone
+2. Read the pack beside the core file it companions — the section headings match
+3. Copy commands and config from the pack, rules from core
+
+**Do not** copy a pack's contents into a project on a different stack. A pack is one project's answer.
+
 ## Meta Context Files
 
 **Location:** [.claude/orchestration/core/meta/](core/meta/)

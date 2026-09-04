@@ -31,6 +31,16 @@
 
 ---
 
+## Relationship to Examples
+
+**Methodology = the rule, for any stack**
+**`examples/<stack>/<file>-examples.md` = one worked instance of it**
+
+Section headings match, so the pair can be read side by side. No file here names a framework, a command or a
+config file; those live in a pack.
+
+---
+
 ## Relationship to Playbook
 
 **Methodology = Complete specification**
