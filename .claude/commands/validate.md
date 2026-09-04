@@ -18,6 +18,14 @@ REQUIRED ARGUMENT:
 VALIDATION MISSION:
 Do NOT trust tactical agent claims of completion. Verify everything systematically. Agents can be overconfident and miss critical bugs, especially integration issues hidden by mocking strategies.
 
+WHERE THE COMMANDS COME FROM:
+This file names gates, never commands. Every command below is read from
+`.claude/orchestration/meta/project-profile.md`, which is the project's own record of its gate
+commands, ports, database and layout. The gates are defined in
+@.claude/orchestration/core/methodology/validation-gates.md. If the profile does not exist yet,
+ask the engineer for the commands and record them there -- do not guess one, because a
+plausible command that does not exist in this project reports a false pass.
+
 YOUR ROLE:
 - Strategic validator (orchestration partner reviewing tactical work)
 - Quality assurance (systematic bug finding)
@@ -61,18 +69,17 @@ ls .claude/workspace/{feature-id}/agent-logs/
 
 ### Step 2: Check Basic Compilation & Linting
 
-**Run in parallel:**
+**Run in parallel** — Gate 1 and Gate 2 as `meta/project-profile.md` records them, plus:
 
 ```bash
-npm run type-check 2>&1
-npm run lint 2>&1
 git status --short
 ```
 
 **Verify:**
 
-- [ ] TypeScript: 0 errors (MANDATORY)
-- [ ] ESLint: 0 warnings (MANDATORY)
+- [ ] Gate 1, type / compile check: 0 errors (MANDATORY). If this project has no static
+      check, record that rather than reporting a pass.
+- [ ] Gate 2, lint: 0 warnings, 0 errors (MANDATORY)
 - [ ] Modified files list matches expectations
 
 **If failures found:**
@@ -84,25 +91,22 @@ git status --short
 
 ### Step 3: Run Full Test Suite
 
-**Execute tests:**
-
-```bash
-npm test 2>&1
-```
+**Execute tests:** Gate 3, as `meta/project-profile.md` records it. Capture stderr as well as
+stdout — the whole point of this step is what the runner did not treat as a failure.
 
 **Analyze results:**
 
 - [ ] All tests passing? (Check count: X/X)
 - [ ] Any stderr output? (warnings, errors logged but not failing tests)
-- [ ] Any "MOCK" or "vi.mock" in failing test output? (indicates mock issues)
+- [ ] Any mocking indicator in failing test output? (indicates mock issues)
 
 **Critical Analysis:**
 Look for these red flags in test output:
 
-- `[Service] Failed to create...` - Silent failures logged
-- `TypeError: Cannot read properties of undefined` - Type mismatches
-- `invalid input syntax for type uuid` - Constraint violations
-- `error: ...` in stderr while tests pass - Caught errors not failing tests
+- A logged failure from application code - silent failure, swallowed by a caught error
+- A null/undefined or wrong-type access error - type mismatch between layers
+- A database constraint or type-format rejection - a value the code never validated
+- Anything on stderr while the run reports green - caught errors not failing tests
 
 **If tests pass but stderr has errors:**
 🚨 CRITICAL: Tests are hiding bugs! Proceed to deep validation.
@@ -113,49 +117,26 @@ Look for these red flags in test output:
 
 **Search for problematic patterns:**
 
-**Pattern 1: Type Assumptions**
+Take the source and test directories, and the file extension to filter on, from
+`meta/project-profile.md`. The four patterns are the portable part; the greps that find them
+are a per-project detail.
 
-```bash
-# Find database queries with RETURNING clause
-grep -r "RETURNING" lib/ --include="*.ts"
+**Pattern 1: Type assumptions at the database boundary.** Find the places that read values
+straight out of a query result and then treat them as a richer type than the driver returns --
+dates, decimals, JSON columns. A driver that hands back strings will pass every mocked test.
 
-# Check if code assumes Date objects from DB
-grep -r "\.toISOString()" lib/ --include="*.ts"
+**Pattern 2: Silent failures.** Find catch blocks whose only action is to log. An error that
+is logged and not re-raised looks identical to success from the caller and from the test
+suite.
 
-# PostgreSQL returns ISO strings, not Date objects!
-```
+**Pattern 3: Identifier formats never validated.** Find literals assigned to fields the
+database constrains -- an identifier column with a format, an enum, a foreign key. Sentinel
+strings like `'system'` or `'admin'` are the usual offender and only fail against a real
+schema.
 
-**Pattern 2: Silent Failures**
-
-```bash
-# Find try-catch blocks that only log
-grep -A 5 "catch" lib/ --include="*.ts" | grep -B 5 "console.error"
-
-# Check if errors are surfaced or just logged
-# Silent failures hide bugs in production
-```
-
-**Pattern 3: Invalid UUIDs**
-
-```bash
-# Find userId assignments
-grep -r "userId:" lib/ --include="*.ts"
-
-# Check for string literals that aren't valid UUIDs
-# Example: userId: 'system' or userId: 'admin'
-```
-
-**Pattern 4: Mock-Heavy Tests**
-
-```bash
-# Count mocks in test files
-grep -r "vi.mock" tests/ --include="*.ts" | wc -l
-
-# Count integration tests (should NOT have mocks)
-find tests/integration -name "*.test.ts" 2>/dev/null | wc -l
-
-# If mocks > integration tests * 10, RED FLAG
-```
+**Pattern 4: Mock-heavy tests.** Count mock declarations in the test tree, and count the
+integration tests that are supposed to have none. A large ratio between them means the suite
+is testing the mocks.
 
 **Document findings:**
 
@@ -164,7 +145,7 @@ find tests/integration -name "*.test.ts" 2>/dev/null | wc -l
 
 ### Potential Bug #1: {Description}
 
-- **File:** `path/to/file.ts:line`
+- **File:** `{path/to/file}:{line}`
 - **Pattern:** {Which pattern matched}
 - **Issue:** {What's wrong}
 - **Evidence:** {Code snippet or grep output}
@@ -179,18 +160,22 @@ find tests/integration -name "*.test.ts" 2>/dev/null | wc -l
 
 **Test real flows (NO MOCKS):**
 
-**For database-dependent features:**
+**For database-dependent features:** start the project's development server with the command
+in `meta/project-profile.md`, in the background; wait for it to come up; check that the ports
+the profile lists are listening; then stop it again.
 
 ```bash
-# Start servers
-npm run dev &
+# Fill both from meta/project-profile.md before running this. Left empty, the block fails
+# loudly, which is the intended behaviour -- a guessed dev-server command reports a false pass.
+DEV_CMD=          # this project's "start the dev server" command
+DEV_PORTS=        # space-separated ports it should end up listening on
+
+$DEV_CMD &
 DEVPID=$!
 sleep 10
 
-# Check both servers running
-lsof -i :3000 -i :3001 2>/dev/null
+for p in $DEV_PORTS; do lsof -i :"$p" 2>/dev/null; done
 
-# Kill after verification
 kill $DEVPID 2>/dev/null
 ```
 
@@ -200,15 +185,10 @@ kill $DEVPID 2>/dev/null
 - [ ] No error logs during startup
 - [ ] All expected ports listening
 
-**For features with database writes:**
-
-```bash
-# Check if records actually created
-psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM {new_table};"
-
-# Check constraint names match code expectations
-psql "$DATABASE_URL" -c "\d {table_name}"
-```
+**For features with database writes:** using the database client and connection the profile
+records, count the rows the feature claims to have written, and inspect the table's real
+constraints. Do this against the database, not through the code under test — the point is to
+find out whether the write happened and whether the schema agrees with what the code assumes.
 
 **Document:**
 
@@ -294,11 +274,11 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 
 ## Bug #1: {Description}
 
-**File:** `path/to/file.ts`
+**File:** `{path/to/file}`
 **Line:** {line number}
 
 **Current Code:**
-\`\`\`typescript
+\`\`\`{language}
 {current broken code}
 \`\`\`
 
@@ -306,13 +286,13 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 {Explain what's wrong and why}
 
 **Fix Required:**
-\`\`\`typescript
+\`\`\`{language}
 {exact code to replace with}
 \`\`\`
 
 **Validation:**
 
-1. Run tests: `npm test path/to/test.ts`
+1. Run the project's test command, narrowed to {path/to/test}
 2. Verify: {specific check}
 
 ---
@@ -323,9 +303,9 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 
 ## New Integration Test Required
 
-**File:** `tests/integration/{feature}-integration.test.ts` (NEW)
+**File:** `{the project's integration-test directory}/{feature}-integration.{ext}` (NEW)
 
-\`\`\`typescript
+\`\`\`{language}
 {full test code that would have caught the bug}
 \`\`\`
 
@@ -337,7 +317,7 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 - [ ] Bug #2 fixed
 - [ ] Integration test added
 - [ ] All tests passing
-- [ ] TypeScript: 0 errors
+- [ ] Gate 1, type / compile check: 0 errors
 - [ ] Manual validation: {specific steps}
 
 **Estimated Time:** {realistic estimate}
@@ -411,11 +391,11 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 
 ## Validation Results
 
-### TypeScript Compilation: {/}
+### Gate 1 — Type / Compile Check: {/}
 
-{Details}
+{Details, or "this project has no static check" — never a blank pass}
 
-### ESLint: {/}
+### Gate 2 — Lint: {/}
 
 {Details}
 

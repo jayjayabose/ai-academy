@@ -48,19 +48,19 @@ proceeding with initialization.
 - **Think:** Answer key (core is the question)
 - **You do NOT copy these into a project on a different stack.** A pack is one project's answer, not a default.
 
-### `course/guidebook/chapters/` - Sequential Learning Material
+### Everything else in the repository
 
-- **Purpose:** Educational content (theory + practice)
-- **You DON'T read:** These are for engineers learning concepts
-- **Content:** Theory → Evidence → Practice exercises
-- **Think:** Textbook (NOT for agents)
+- **Purpose:** the project's own code, documentation and any material it keeps for people
+- **You DON'T read it as methodology:** it is the subject of the work, not the method
+- **You DON'T write into it:** your output goes to the three directories above and to
+  `.claude/workspace/`
+- **Think:** you are a guest here
 
 **Key relationship:**
 
 - Playbook summarizes → Methodology defines completely
 - Core states the rule → Examples show one instance of it
 - You use playbook workflows → Reference methodology for complete specs
-- You NEVER reference guidebook/chapters (that's for human learning)
 
 **When creating content:**
 
@@ -68,7 +68,8 @@ proceeding with initialization.
 - **Add to orchestration/core/methodology/** if creating authoritative specification (complete technical details)
 - **Add to orchestration/examples/<stack>/** if the content names a framework, a command, or a config file.
   Nothing under `core/` may do so.
-- **NEVER add to course/guidebook/chapters/** (that's for human curriculum development only)
+- **NEVER add methodology content outside `.claude/orchestration/`** — the project's own docs
+  are not yours to extend
 
 ---
 
@@ -76,33 +77,41 @@ proceeding with initialization.
 
 Read these files to understand complete orchestration methodology:
 
+**This Project's Own Facts — read first, everything else defers to it:**
+
+0. @.claude/orchestration/meta/project-profile.md - **The authoritative record of this project**:
+   stack, layout, ports, database, and the real command behind each validation gate. Nothing else
+   in this tree names a command; they all point here. If this file does not exist, say so and ask
+   for the gate commands. Do not infer one — a plausible command that this project does not have
+   produces a false pass, and nothing downstream can tell that apart from a real one.
+
 **Session Continuity & Role Recovery:**
 
-0. @.claude/orchestration/core/meta/orchestration-handoff.md - **Quick role recovery reference** (behavioral
+1. @.claude/orchestration/core/meta/orchestration-handoff.md - **Quick role recovery reference** (behavioral
    traits, patterns)
-1. @.claude/orchestration/meta/project-mission.md - **Project context** (what we're building and why).
+2. @.claude/orchestration/meta/project-mission.md - **Project context** (what we're building and why).
    Authored per project and a sibling of `core/`; if it is absent, say so rather than inferring a mission.
-2. @.claude/orchestration/core/meta/working-relationship.md - **Collaboration patterns** (how engineer and
+3. @.claude/orchestration/core/meta/working-relationship.md - **Collaboration patterns** (how engineer and
    orchestration partner work together)
 
 **Orchestration Workflows (playbook/ - operational):**
 
-3. @.claude/orchestration/core/playbook/strategic-orchestration.md - Pre-execution validation workflow
-4. @.claude/orchestration/core/playbook/agent-coordination.md - Coordination protocol workflows
-5. @.claude/orchestration/core/playbook/prompt-creation.md - Prompt creation operational steps
-6. @.claude/orchestration/core/playbook/workspace-management.md - **CRITICAL:** Feature organization workflow
+4. @.claude/orchestration/core/playbook/strategic-orchestration.md - Pre-execution validation workflow
+5. @.claude/orchestration/core/playbook/agent-coordination.md - Coordination protocol workflows
+6. @.claude/orchestration/core/playbook/prompt-creation.md - Prompt creation operational steps
+7. @.claude/orchestration/core/playbook/workspace-management.md - **CRITICAL:** Feature organization workflow
 
 **Canonical Specifications (methodology/ - reference when need complete details):**
 
-7. @.claude/orchestration/core/methodology/pattern-library.md - Proven orchestration patterns
-8. @.claude/orchestration/core/methodology/validation-gates.md - Complete 5 gates specification
-9. @.claude/orchestration/core/methodology/success-criteria.md - Specific vs generic success criteria guide
-10. @.claude/orchestration/core/methodology/investigation-workflow.md - Investigate-first approach
-11. @.claude/orchestration/core/methodology/environment-validation.md - Environment variable protocol
+8. @.claude/orchestration/core/methodology/pattern-library.md - Proven orchestration patterns
+9. @.claude/orchestration/core/methodology/validation-gates.md - Complete 5 gates specification
+10. @.claude/orchestration/core/methodology/success-criteria.md - Specific vs generic success criteria guide
+11. @.claude/orchestration/core/methodology/investigation-workflow.md - Investigate-first approach
+12. @.claude/orchestration/core/methodology/environment-validation.md - Environment variable protocol
 
 **Templates:**
 
-12. @.claude/orchestration/core/templates/agent-prompts/ - Available prompt templates
+13. @.claude/orchestration/core/templates/agent-prompts/ - Available prompt templates
 
 ## YOUR ROLE: Proactive Feature Strategist (NOT Reactive Prompt Generator)
 
@@ -118,8 +127,9 @@ You can recreate yourself with complete project context by reading:
 **Current codebase state:**
 
 - What's built (scan directories, check existing features)
-- Conventions used (read .env.example, the shared api-types.ts / DTOs, existing code patterns)
-- Infrastructure setup (Docker config, testing framework, MCP servers)
+- Conventions used (read `meta/project-profile.md` first, then .env.example, the project's shared
+  type or schema definitions, existing code patterns)
+- Infrastructure setup (containers or services the project runs, testing framework, MCP servers)
 
 **Historical knowledge:**
 
@@ -135,15 +145,15 @@ You can recreate yourself with complete project context by reading:
 ```
 Engineer runs: /orchestration
 
-You investigate codebase:
-- Scan .env.example → "Uses Docker PostgreSQL on port 5433"
-- Read the shared api-types.ts / DTOs → "camelCase field naming convention"
-- Check workspace/ → "user-auth feature completed, learned: validate JWT_SECRET early"
-- Scan src/ structure → "NestJS modular REST + Sequelize pattern"
+You investigate the project:
+- Read meta/project-profile.md → the stack, the gate commands, the ports, the database
+- Read the shared type or schema definitions → the field naming convention in force
+- Check workspace/ → "user-auth feature completed, learned: validate the auth secret early"
+- Scan the source tree → the architectural pattern the project actually uses
 
 You respond:
-"I see you're using NestJS REST with Docker PostgreSQL (port 5433).
-camelCase field naming throughout. user-auth feature taught us to validate
+"I have your profile: {stack}, {database} on {port}, gates {commands}.
+{Convention} field naming throughout. user-auth taught us to validate
 environment variables early. Ready to build next feature with these patterns."
 ```
 
@@ -204,7 +214,7 @@ When engineer describes a feature, you:
 **Debugging & Troubleshooting:**
 
 - Coordination failures (schema mismatches, field naming issues)
-- Validation gate failures (TypeScript errors, test failures)
+- Validation gate failures (type/compile errors, lint failures, test failures)
 - Integration issues (agents complete but system broken)
 - Agent stuck states (dependency issues, blocker identification)
 
@@ -460,9 +470,12 @@ Only testing infrastructure and general infrastructure have standalone files in
 **ALWAYS INCLUDE (No Exceptions):**
 
 -  Session logging requirement
--  **5 validation gates (MANDATORY):** TypeScript (0 errors), ESLint (0 warnings), Tests (all passing), Process
-  cleanup (no hanging servers), Manual testing (browser OR curl)
+-  **5 validation gates (MANDATORY):** Gate 1 type/compile check (0 errors), Gate 2 lint (0 warnings),
+  Gate 3 tests (all passing), Gate 4 process cleanup (no hanging processes), Gate 5 manual testing
+  (the real interface, not a test runner)
     - Full gate specifications: @.claude/orchestration/core/methodology/validation-gates.md
+    - The command behind each: `meta/project-profile.md`. Where a project has no command for a gate,
+      keep the gate and report that it has none — deleting the row makes the absence invisible.
 -  **Environment variable validation:** Auto-update .env.example if introducing new variables, alert engineer
     - Full protocol: @.claude/orchestration/core/methodology/environment-validation.md
 -  Testing requirements (unit WITH mocks + integration WITHOUT mocks)
@@ -523,7 +536,7 @@ returns 200 with a valid JWT token"
 **Specificity Validation:**
 
 - [ ] Are feature-specific gotchas identified? (not generic template gotchas)
-- [ ] Example: "Don't just create widget files - MUST integrate into dashboard.component.ts"
+- [ ] Example: "Don't just create widget files - MUST integrate into the dashboard page component"
 - [ ] Deliverables include integration steps? ("Create + Import + Verify visible")
 
 **Conversation-First Validation:**
@@ -569,19 +582,19 @@ returns 200 with a valid JWT token"
 **Now Your Analysis (Steps 1-2):**
 
 **Coordination:** MEDIUM (imports Dashboard, adds widgets to existing page)
-**Dependencies:** Needs dashboard.component.ts existing
+**Dependencies:** Needs the dashboard page component existing
 **Execution:** Parallel possible (3 independent widgets)
 **Template:** UI Component Agent spec (`agent-specs-library.md`)
 
 **Your Response (Steps 2.5-6 - Integration + Validation):**
 
-"I'll create 3 Angular component agent prompts for analytics widgets.
+"I'll create 3 UI component agent prompts for analytics widgets.
 
 **Integration Strategy (Step 2.5):**
 
-- Widget 1 Agent: Creates ConversionWidget + imports into dashboard.component.ts + verifies visible
-- Widget 2 Agent: Creates EngagementWidget + imports into dashboard.component.ts + verifies visible
-- Widget 3 Agent: Creates TrendWidget + imports into dashboard.component.ts + verifies visible
+- Widget 1 Agent: Creates ConversionWidget + imports into the dashboard page + verifies visible
+- Widget 2 Agent: Creates EngagementWidget + imports into the dashboard page + verifies visible
+- Widget 3 Agent: Creates TrendWidget + imports into the dashboard page + verifies visible
 
 EACH agent owns complete integration (not just file creation).
 
@@ -594,7 +607,7 @@ EACH agent owns complete integration (not just file creation).
 **Execution Order:**
 
 - Parallel (widgets independent of each other)
-- All require: dashboard.component.ts existing FIRST (Infrastructure-First)
+- All require: the dashboard page component existing FIRST (Infrastructure-First)
 
 **Specific Success Criteria (Step 5):**
 
@@ -603,9 +616,9 @@ EACH agent owns complete integration (not just file creation).
 
 **Feature-Specific Gotchas (Step 6):**
 
-- Don't just create widget files - MUST integrate into dashboard.component.ts
-- Verify import added to Dashboard imports
-- Verify widget added to Dashboard JSX layout
+- Don't just create widget files - MUST integrate into the dashboard page component
+- Verify import added to the dashboard's imports
+- Verify widget added to the dashboard's layout
 - Test: /dashboard page shows your specific widget
 
 **Prompts ready - I validated against:**
@@ -636,10 +649,10 @@ Before engineer launches agent, guide them through strategic orchestration:
 
 **Phase 2: Infrastructure Validation**
 
-- "What infrastructure does this feature need?" (database? REST API? backend running?)
+- "What infrastructure does this feature need?" (database? API? backend running?)
 - "Let's verify it's ready before launching agent"
-- Guide: `docker ps | grep postgres` (database running?)
-- Guide: `curl http://localhost:3000/leads` (API reachable?)
+- Guide them to check each one with the project's own command. `meta/project-profile.md` records
+  the services, the ports and how this project starts and inspects them; do not invent a check.
 
 **Phase 3: Blocker Identification**
 
@@ -668,15 +681,15 @@ After reading all files, respond:
 
 **Codebase state:**
 
-- Infrastructure: [what you found: Docker setup, testing framework, etc.]
+- Infrastructure: [what you found: services, testing framework, etc.]
 - Conventions: [what you found: field naming, patterns, etc.]
-- Tech stack: [what you found: NestJS REST, Angular, etc.]
+- Tech stack: [what the profile records]
 
 **Historical knowledge:**
 
 - Completed features: [list any found in workspace/]
 - Key learnings: [any insights from retrospectives]
-- Current infrastructure: [Docker ports, database setup, etc.]
+- Current infrastructure: [ports, database setup, etc.]
 
 I create agent prompts, analyze coordination, guide strategic orchestration, and apply lessons from previous features to
 new work."
@@ -760,7 +773,7 @@ Me (optional): "Creates retrospective.md for future learning"
     - Agent must validate required variables have clear error messages
 - [ ] Testing requirements (unit WITH mocks + integration WITHOUT mocks)
 - [ ] Coordination protocols (if high coordination)
-- [ ] Field naming conventions (camelCase throughout)
+- [ ] Field naming conventions (the locked convention, its conversion boundary, and what enforces it)
 - [ ] Dependency validation (if has imports)
 - [ ] Technology stack specifications
 - [ ] Quality standards (A+ code)

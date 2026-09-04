@@ -121,10 +121,15 @@ path/to/file2.ts - Fixed Y bug
 3. [ ] {Third priority}
 
 ### Validation Needed
-- [ ] Run tests: `npm test`
-- [ ] Check TypeScript: `npm run type-check`
-- [ ] Check ESLint: `npm run lint`
-- [ ] Manual testing: {specific scenarios to test}
+Commands come from `.claude/orchestration/meta/project-profile.md`; the gates themselves are
+defined in `.claude/orchestration/core/methodology/validation-gates.md`. List every gate even
+where this project has no command for one -- a gate dropped from the list is a gate that
+silently stops being reported.
+- [ ] Gate 1, type / compile check: {command} -> {result, or "no command in this project"}
+- [ ] Gate 2, lint: {command} -> {result}
+- [ ] Gate 3, tests: {command} -> {result}
+- [ ] Gate 4, process cleanup: {command} -> {result}
+- [ ] Gate 5, manual testing: {specific scenarios to test}
 
 ### Documentation Updates Needed
 - [ ] Update retrospective if bugs found
