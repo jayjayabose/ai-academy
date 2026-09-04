@@ -6,6 +6,10 @@
 
 **Pattern:** Every feature needs specific success criteria for frontend AND backend
 
+**The criteria are portable; the commands that satisfy them are not.** Each section below states what a criterion must
+assert and what counts as observable evidence. A worked set — real URLs, real commands, real expected output — is in
+`examples/<stack>/success-criteria-examples.md`.
+
 ---
 
 ## The Problem with Generic Success Criteria
@@ -46,30 +50,33 @@
 
 ###  SPECIFIC (Always Use)
 
+A specific criterion names an **action** and the **observable outcome** of that action. If you cannot tell from
+reading the criterion whether it passed, it is still generic.
+
 **Frontend Examples:**
 
-- "Opening /dashboard displays ConversionWidget with live data"
+- "Opening the dashboard route displays the conversion widget with live data"
 - "Widget appears in grid layout at expected position (top-left of 3-column grid)"
 - "Clicking widget refresh button triggers data reload and shows loading state"
-- "Browser console shows 0 errors when /dashboard loads"
+- "Browser console shows 0 errors when the dashboard route loads"
 
 **Backend Examples:**
 
-- "curl POST to /auth/login returns 200 with a valid JWT token in the response body's `token` field"
-- "GET /users/me returns email, firstName, lastName fields with correct values"
-- "POST /api/auth/login with valid credentials returns 200 + sets httpOnly cookie named 'session'"
-- "Protected endpoint /api/users returns 401 when called without valid token"
+- "A login request with valid credentials returns 200 with a valid auth token in the response body's `token` field"
+- "The current-user endpoint returns email, firstName, lastName fields with correct values"
+- "A login request with valid credentials returns 200 and sets the session cookie the contract names"
+- "The protected users endpoint returns 401 when called without a valid token"
 
 **Infrastructure Examples:**
 
-- "Fresh clone → docker-compose up -d → npm install → npm run setup → npm run dev results in server running
-  on http://localhost:3000 in under 5 minutes, works on machine with NO local PostgreSQL"
-- "docker ps shows postgres container running with correct version (PostgreSQL 18)"
-- "Running npm test immediately after setup executes test suite (not 'framework not configured' error)"
-- "Database migrations apply successfully: npm run db:migrate shows '5 migrations applied' with 0 errors"
-- "tsconfig.json compiles project: npm run type-check returns 0 errors on fresh setup"
-- "Opening http://localhost:3000 after npm run dev displays landing page (not connection refused)"
-- "docker-compose down → docker ps shows no project containers (clean teardown)"
+- "Fresh clone → start services → install dependencies → run setup → start dev server results in the app serving on
+  its documented port in under 5 minutes, on a machine with NO locally installed database"
+- "The container listing shows the database container running at the version the project pins"
+- "Running the test command immediately after setup executes the suite (not a 'framework not configured' error)"
+- "Database migrations apply successfully: the migration command reports '5 migrations applied' with 0 errors"
+- "The project compiles: the type/compile check returns 0 errors on fresh setup"
+- "Opening the app URL after starting the dev server displays the landing page (not connection refused)"
+- "Tearing the environment down leaves no project services running (clean teardown)"
 
 **Why these work:**
 
@@ -82,7 +89,8 @@
 
 ## Success Criteria Template Pattern
 
-Use this pattern in ALL agent prompts:
+Use this pattern in ALL agent prompts. Substitute the project's own commands for the bracketed slots — a filled-in
+copy is in `examples/<stack>/success-criteria-examples.md`.
 
 ```markdown
 ## SUCCESS CRITERIA (SPECIFIC VERIFICATION)
@@ -90,22 +98,22 @@ Use this pattern in ALL agent prompts:
 ### Manual Testing Validation
 
 INFRASTRUCTURE (for setup/config tasks):
-1. Fresh clone test: git clone → docker-compose up -d (if using Docker) → npm install → npm run setup
-2. Verify Docker services running: docker ps shows all required containers (if using Docker)
+1. Fresh clone test: clone → start containerised services (if used) → install dependencies → run setup
+2. Verify services running: the service listing shows all required containers (if using containers)
 3. Verify setup completes: 0 errors, creates database, runs migrations, seeds data
-4. Verify dev server starts: npm run dev → server accessible on expected port
-5. Verify TypeScript compiles: npm run type-check → 0 errors
-6. Verify tests run immediately: npm test → framework configured, test DB ready
-7. Verify works on clean machine: No local PostgreSQL/Redis/etc required (if using Docker)
+4. Verify dev server starts: run the dev command → server accessible on expected port
+5. Verify the project compiles: run the type/compile check → 0 errors
+6. Verify tests run immediately: run the test command → framework configured, test DB ready
+7. Verify works on clean machine: no locally installed database/cache required (if using containers)
 
-FRONTEND (use Playwright MCP for browser verification):
+FRONTEND (use a browser-automation MCP for browser verification):
 1. Open browser to {SPECIFIC_URL}
 2. Verify {SPECIFIC_ELEMENT} displays {SPECIFIC_BEHAVIOR}
 3. Test {SPECIFIC_INTERACTION} results in {SPECIFIC_OUTCOME}
 4. Check browser console: 0 errors
 
-BACKEND (use curl/API testing):
-1. curl -X POST {API_ENDPOINT} -d '{REQUEST_BODY}'
+BACKEND (issue real requests against the running service):
+1. Send {HTTP_METHOD} {API_ENDPOINT} with {REQUEST_BODY}
 2. Verify response status: {EXPECTED_STATUS}
 3. Verify response body contains: {EXPECTED_FIELDS}
 4. Test authentication: login returns valid token/session
@@ -125,99 +133,69 @@ BACKEND (use curl/API testing):
 NOT "feature works" - but:
 - Frontend: "user sees X when they do Y"
 - Backend: "API returns X when called with Y"
-- Infrastructure: "fresh clone → docker-compose up → setup → dev = working app in under 5 minutes on ANY machine"
+- Infrastructure: "fresh clone → start services → setup → dev = working app in under 5 minutes on ANY machine"
 ```
 
 ---
 
 ## Infrastructure Success Criteria Examples
 
-### Example 1: Database Setup (Docker-Based - Recommended)
+Infrastructure criteria are the ones most often written generically, because "it worked on my machine" feels like
+evidence. It is not. Every infrastructure criterion below is stated as *fresh clone → observable end state*.
+
+The commands for each are in `examples/<stack>/success-criteria-examples.md`, under matching headings.
+
+### Example 1: Database Setup (Containerised - Recommended)
 
 **Generic (Bad):**
 
 - "Database configured"
 
-**Specific (Good) - Docker Approach:**
+**Specific (Good) - Containerised Approach:**
 
-```bash
-# Test fresh clone scenario (simulates ANY engineer's machine)
-git clone <repo> temp-test
-cd temp-test
-npm install
+The verification runs a fresh clone as if on any engineer's machine, and checks, in order:
 
-# 1. Docker Compose starts database
-docker-compose up -d  # Starts PostgreSQL in container
-
-# 2. Verify database container running
-docker ps | grep postgres  # Shows postgres container running
-
-# 3. Setup script runs against containerized database
-npm run setup  # Creates database, runs migrations, seeds data
-
-# 4. Verify database operations (inside Docker)
-docker exec -it <postgres-container> psql -U postgres -l | grep new_crm  # Database exists
-docker exec -it <postgres-container> psql -U postgres -d new_crm -c "SELECT COUNT(*) FROM users;"  # Shows seeded users
-
-# 5. App connects to containerized database
-npm run dev  # Server starts, connects to Docker database on localhost:5432
-
-# 6. Verify no local PostgreSQL conflicts
-# Works even if engineer has PostgreSQL installed locally (uses Docker port mapping)
-```
+1. The container runtime starts the database from the project's service definition
+2. The service listing shows the database container running
+3. The setup script runs against the containerised database — creates the database, runs migrations, seeds data
+4. Database operations succeed against the container: the database exists, and seeded rows can be counted
+5. The app starts and connects to the containerised database
+6. No conflict with a locally installed database of the same kind
 
 **Success criteria:**
 
-- "Fresh clone → docker-compose up -d → npm install → npm run setup completes in under 2 minutes with 0 errors,
-  creates containerized database with 5 migrations applied and 3 seeded users, npm run dev connects to Docker database
-  without 'connection refused' errors"
+- "Fresh clone → start services → install dependencies → run setup completes in under 2 minutes with 0 errors,
+  creates a containerised database with 5 migrations applied and 3 seeded users, and the dev command connects to the
+  containerised database without 'connection refused' errors"
 
-**Why Docker matters:**
+**Why containers matter:**
 
 -  Works on ANY engineer's machine (Mac, Linux, Windows)
 -  No conflicts with locally installed databases
--  Consistent PostgreSQL version across all developers
--  Clean teardown (docker-compose down removes everything)
+-  Consistent database version across all developers
+-  Clean teardown (bringing the services down removes everything)
 -  No "works on my machine" issues
 
-### Example 1B: Database Setup (Local PostgreSQL - Alternative)
+### Example 1B: Database Setup (Host-Installed Database - Alternative)
 
-**If not using Docker:**
+**If not using containers,** the same fresh-clone verification applies, run against the host's database:
 
-```bash
-# Test fresh clone scenario
-git clone <repo> temp-test
-cd temp-test
-npm install
-npm run setup
-
-# Verify database operations:
-# 1. Database created
-psql -l | grep new_crm  # Shows new_crm database exists
-
-# 2. Migrations applied
-npm run db:migrate:status  # Shows "5 migrations up, 0 down"
-
-# 3. Seed data loaded
-psql -d new_crm -c "SELECT COUNT(*) FROM users;"  # Shows "3" (seeded users)
-
-# 4. Models load without error
-npm run type-check  # TypeScript compiles successfully with Sequelize models
-
-# 5. Can run app
-npm run dev  # Server starts on port 3000 without database connection errors
-```
+1. Database created
+2. Migrations applied — the migration status command reports all migrations up, 0 down
+3. Seed data loaded — counting rows in a seeded table returns the expected number
+4. Models load without error — the type/compile check succeeds
+5. The app runs — the dev server starts without database connection errors
 
 **Success criteria:**
 
-- "Running npm run setup on fresh clone creates new_crm database, applies 5 migrations, seeds 3 test users, all in
+- "Running setup on a fresh clone creates the project database, applies 5 migrations, seeds 3 test users, all in
   under 2 minutes with 0 errors"
 
-**Why Docker is preferred:**
+**Why containers are preferred:**
 
-- Local PostgreSQL requires engineer to install PostgreSQL
-- Version mismatches possible (engineer has PostgreSQL 13, project needs 14)
-- Port conflicts possible (engineer already using port 5432)
+- A host-installed database requires the engineer to install it
+- Version mismatches possible (engineer has one major version, project needs another)
+- Port conflicts possible (engineer already using the default port)
 - Permission issues possible (different user setups)
 
 ### Example 2: Testing Framework Setup
@@ -228,28 +206,17 @@ npm run dev  # Server starts on port 3000 without database connection errors
 
 **Specific (Good):**
 
-```bash
-# Test on fresh clone
-npm install
+On a fresh clone, after installing dependencies only:
 
-# 1. Test command works immediately (no additional setup)
-npm test  # Runs (doesn't error "jest not found")
-
-# 2. Test database configured
-# Tests use new_crm_test database (not production database)
-npm test  # Shows "Using test database: new_crm_test"
-
-# 3. Sample test passes
-npm test  # Shows at least 1 passing test (not "0 tests found")
-
-# 4. Watch mode works
-npm run test:watch  # Starts in watch mode for development
-```
+1. The test command works immediately, with no additional setup (it does not error "test runner not found")
+2. The test database is configured — the run reports it is using the *test* database, not the development one
+3. A sample test passes — at least 1 passing test, not "0 tests found"
+4. Watch mode works
 
 **Success criteria:**
 
-- "Running npm test immediately after npm install executes test suite against new_crm_test database with at least 1
-  passing example test, 0 errors"
+- "Running the test command immediately after installing dependencies executes the suite against the dedicated test
+  database with at least 1 passing example test, 0 errors"
 
 ### Example 3: Development Server Setup
 
@@ -259,64 +226,37 @@ npm run test:watch  # Starts in watch mode for development
 
 **Specific (Good):**
 
-```bash
-# Test on fresh clone
-npm install
-npm run setup
+On a fresh clone, after install and setup:
 
-# 1. Backend starts
-npm run dev:backend  # Server starts on http://localhost:3000
-
-# 2. Backend responds
-curl http://localhost:3000/health  # Returns { "status": "ok" }
-
-# 3. REST endpoint accessible
-curl http://localhost:3000/leads  # Returns 200 + JSON array (not 404)
-
-# 4. Frontend starts
-npm run dev:frontend  # Server starts on http://localhost:3001
-
-# 5. Frontend loads
-curl http://localhost:3001  # Returns HTML (not connection refused)
-
-# 6. Full stack runs
-npm run dev  # Starts both backend + frontend concurrently
-```
+1. Backend starts on its documented port
+2. Backend responds — the health endpoint returns an OK body
+3. A real resource endpoint is reachable — returns 200 and a JSON array, not 404
+4. Frontend starts on its documented port
+5. Frontend loads — returns HTML, not connection refused
+6. The full stack runs — one command starts backend and frontend together
 
 **Success criteria:**
 
-- "Running npm run dev starts backend on :3000 and frontend on :3001, curl http://localhost:3000/health returns 200 status,
-  curl http://localhost:3001 returns Angular app HTML"
+- "The dev command starts backend and frontend on their documented ports, the backend health endpoint returns 200,
+  and requesting the frontend port returns the application's HTML"
 
-### Example 4: TypeScript Configuration
+### Example 4: Type / Compile Configuration
 
 **Generic (Bad):**
 
-- "TypeScript configured"
+- "Static typing configured"
 
 **Specific (Good):**
 
-```bash
-# Test compilation works
-npm run type-check  # Returns 0 errors
-
-# Test strict mode enabled
-cat tsconfig.json | grep strict  # Shows "strict": true
-
-# Test path aliases work
-# Create test file that imports using @ alias
-echo 'import { User } from "@/models/user"' > test-import.ts
-npm run type-check  # Resolves @ alias correctly (not "cannot find module")
-
-# Test editor integration
-# Open VSCode → TypeScript errors show inline
-# Hover over types → shows full type information
-```
+1. Compilation works — the type/compile check returns 0 errors
+2. Strict mode is enabled — the configuration file shows it
+3. Path aliases resolve — a file importing through an alias compiles (not "cannot find module")
+4. Editor integration works — errors show inline, hovering a symbol shows full type information
 
 **Success criteria:**
 
-- "tsconfig.json has strict mode enabled, path aliases (@/models, @/services) resolve correctly, npm run type-check returns
-  0 errors on fresh clone"
+- "The compiler configuration has strict mode enabled, the project's path aliases resolve correctly, and the
+  type/compile check returns 0 errors on a fresh clone"
 
 ### Example 5: Environment Configuration
 
@@ -326,130 +266,74 @@ npm run type-check  # Resolves @ alias correctly (not "cannot find module")
 
 **Specific (Good):**
 
-```bash
-# 1. Example file exists
-ls .env.example  # File exists with all required variables
-
-# 2. Setup script creates .env
-npm run setup  # Creates .env from .env.example
-
-# 3. App reads environment variables
-# Backend starts and reads DATABASE_URL
-npm run dev  # No "DATABASE_URL is not defined" error
-
-# 4. All required variables documented
-cat .env.example  # Shows:
-# DATABASE_URL=postgresql://...
-# JWT_SECRET=...
-# PORT=3000
-```
+1. An example environment file exists, listing every required variable
+2. The setup script creates the real environment file from the example
+3. The app reads the variables — the backend starts with no "variable is not defined" error
+4. All required variables are documented in the example file
 
 **Success criteria:**
 
-- ".env.example contains all required variables (DATABASE_URL, JWT_SECRET, PORT), npm run setup copies to .env, npm
-  dev starts without 'environment variable undefined' errors"
+- "The example environment file contains all required variables (database URL, auth secret, port), setup copies it
+  into place, and the dev command starts without 'environment variable undefined' errors"
 
-### Example 6: Complete Docker Infrastructure
+### Example 6: Complete Containerised Infrastructure
 
 **Generic (Bad):**
 
-- "Docker configured"
+- "Containers configured"
 
 **Specific (Good):**
 
-```bash
-# Test fresh clone scenario (simulates completely clean machine)
-git clone <repo> temp-test
-cd temp-test
+Fresh clone on a completely clean machine:
 
-# 1. Docker Compose file exists
-ls docker-compose.yml  # File exists with database, Redis, etc.
-
-# 2. Start all infrastructure
-docker-compose up -d  # Starts all services (database, Redis, etc.)
-
-# 3. Verify all containers running
-docker ps  # Shows postgres container, redis container (if applicable)
-# Expected: 2 containers running (postgres + app services)
-
-# 4. Verify database accessible
-docker exec -it <postgres-container> psql -U postgres -c "SELECT version();"
-# Returns PostgreSQL version (confirms database accessible)
-
-# 5. Install dependencies and setup
-npm install
-npm run setup  # Creates database, runs migrations, seeds (all in Docker)
-
-# 6. App starts and connects to containerized services
-npm run dev  # Backend connects to Docker postgres on localhost:5432
-
-# 7. Verify no local installation required
-# Works even if engineer has NO PostgreSQL installed locally
-# Works even if engineer has DIFFERENT PostgreSQL version locally
-
-# 8. Clean teardown
-docker-compose down  # Removes all containers, clean state
-```
+1. The service definition file exists, covering database, cache, and anything else the app needs
+2. Starting the services brings all of them up
+3. The service listing shows every expected container running, and the count matches
+4. The database is reachable inside its container and reports its version
+5. Dependencies install and setup runs — creating the database inside the container
+6. The app starts and connects to the containerised services
+7. No local installation is required — it works with none of those services installed on the host, and with a
+   *different* version installed on the host
+8. Clean teardown — bringing the services down removes all containers
 
 **Success criteria:**
 
-- "Fresh clone → docker-compose up -d starts PostgreSQL container, docker ps shows postgres running, npm install → npm
-  run setup completes with 0 errors creating database in Docker, npm run dev connects to containerized database on
-  localhost:5432, works on machine with NO local PostgreSQL installation"
+- "Fresh clone → starting the services brings up the database container, the service listing shows it running,
+  install → setup completes with 0 errors creating the database inside the container, the dev command connects to the
+  containerised database on its mapped port, and all of this works on a machine with NO locally installed database"
 
-**Critical Docker benefits to verify:**
+**Critical container benefits to verify:**
 
-- [ ] Works without local PostgreSQL installation
-- [ ] Consistent database version across all engineers (specified in docker-compose.yml)
-- [ ] No port conflicts with local PostgreSQL (use different port like 5433)
-- [ ] Clean teardown (docker-compose down removes everything)
-- [ ] .env.example has DATABASE_URL pointing to Docker port (postgresql://postgres:password@localhost:5433/new_crm)
+- [ ] Works without a locally installed database
+- [ ] Consistent database version across all engineers (pinned in the service definition)
+- [ ] No port conflicts with a host-installed database (map to a non-default external port)
+- [ ] Clean teardown (bringing services down removes everything)
+- [ ] The example environment file points at the mapped port, not the default one
 
-**Handling Port Conflicts (If Engineer Has Local PostgreSQL on 5432):**
+**Handling Port Conflicts (If the Engineer Already Runs That Service Locally):**
 
-```yaml
-# docker-compose.yml - Map to different port
-services:
-  postgres:
-    image: postgres:18
-    ports:
-      - "5433:5432"  # External port 5433 to avoid conflict with local PostgreSQL on 5432
-    environment:
-      POSTGRES_PASSWORD: password
-```
+Map the container's port to a *different* external port in the service definition, and point the example environment
+file at that mapped port. Then verify:
 
-```bash
-# .env.example - Point to Docker port
-DATABASE_URL=postgresql://postgres:password@localhost:5433/new_crm
-```
-
-**Verification:**
-
-```bash
-# Engineer has local PostgreSQL on 5432
-lsof -i :5432  # Shows local PostgreSQL running
-
-# Docker uses 5433 instead
-docker-compose up -d
-lsof -i :5433  # Shows Docker PostgreSQL running
-
-# No conflict - both can run simultaneously
-npm run dev  # App connects to Docker database on 5433, not local 5432
-```
+1. The host service is running on the default port
+2. Starting the containers puts the project's service on the mapped port
+3. Both run simultaneously with no conflict
+4. The app connects to the container's mapped port, not the host's default one
 
 **Success criteria must include:**
 
-- "docker-compose.yml maps PostgreSQL to port 5433 (not 5432) to avoid conflicts with local installations"
-- "npm run dev connects to Docker database on localhost:5433 even when local PostgreSQL running on localhost:5432"
-- "Engineer can keep local PostgreSQL running without interference"
+- "The service definition maps the database to a non-default external port to avoid conflicts with host installations"
+- "The dev command connects to the containerised database on the mapped port even when a host database is running on
+  the default port"
+- "Engineer can keep their host database running without interference"
 
 **Documentation must include:**
 
-- `docker-compose.yml` with PostgreSQL service using port 5433:5432
-- `.env.example` with DATABASE_URL=postgresql://...@localhost:5433/...
-- README: "Docker PostgreSQL uses port 5433 to avoid conflicts"
-- README: "Prerequisites: Docker Desktop installed"
-- README: Quick start instructions mentioning docker-compose
+- The service definition, with the database service using the non-default external port mapping
+- The example environment file, with the connection URL pointing at the mapped port
+- README: which port the containerised database uses, and why it is not the default
+- README: prerequisites, naming the container runtime
+- README: quick start instructions that mention bringing the services up
 
 ---
 
@@ -463,10 +347,10 @@ npm run dev  # App connects to Docker database on 5433, not local 5432
 
 **Specific (Good):**
 
-- "Opening http://localhost:3000/dashboard displays ConversionWidget in top-left grid position"
-- "Widget shows 'Conversion Rate: 23.4%' with data from GET /analytics"
+- "Opening the dashboard route displays ConversionWidget in top-left grid position"
+- "Widget shows 'Conversion Rate: 23.4%' with data from the analytics endpoint"
 - "Clicking 'Refresh' button triggers loading state → updates data"
-- "Browser console: 0 errors on /dashboard page load"
+- "Browser console: 0 errors on dashboard page load"
 
 ### Example 2: User Registration Form
 
@@ -499,7 +383,12 @@ npm run dev  # App connects to Docker database on 5433, not local 5432
 
 ## Backend Success Criteria Examples
 
-### Example 1: Login Endpoint (`POST /auth/login`)
+A backend criterion is specific when it names the request, the status, and the fields. Both the success case and the
+failure case must be stated — an endpoint that never returns an error is an endpoint whose errors were never tested.
+
+The actual requests are in `examples/<stack>/success-criteria-examples.md`.
+
+### Example 1: Login Endpoint
 
 **Generic (Bad):**
 
@@ -507,28 +396,12 @@ npm run dev  # App connects to Docker database on 5433, not local 5432
 
 **Specific (Good):**
 
-```bash
-# Test valid credentials
-curl -i -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "password123"}'
+- Valid credentials → status 200, response body contains a `token` and a `user` object carrying the caller's email
+  and name; the token decodes as a valid auth token
+- Invalid credentials → status 401 (real HTTP status codes, not 200-with-an-error-body), response body contains the
+  status code and an "Invalid credentials" message
 
-# Verify response:
-# - Status: 200
-# - Response body contains: { "token": "eyJ...", "user": { "email": "test@example.com", "firstName": "Test" } }
-# - Token is valid JWT (can decode)
-
-# Test invalid credentials
-curl -i -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "wrong"}'
-
-# Verify response:
-# - Status: 401 Unauthorized (REST uses real status codes — not always 200)
-# - Response body contains: { "statusCode": 401, "message": "Invalid credentials" }
-```
-
-### Example 2: Protected Endpoint (`GET /users/me`)
+### Example 2: Protected Endpoint
 
 **Generic (Bad):**
 
@@ -536,23 +409,9 @@ curl -i -X POST http://localhost:3000/auth/login \
 
 **Specific (Good):**
 
-```bash
-# Test without authentication
-curl -i http://localhost:3000/users/me
-
-# Verify response:
-# - Status: 401 Unauthorized
-# - Response body contains: { "statusCode": 401, "message": "Unauthorized" }
-
-# Test with valid token
-curl -i http://localhost:3000/users/me \
-  -H "Authorization: Bearer eyJhbGc..."
-
-# Verify response:
-# - Status: 200
-# - Response contains: { "email": "...", "firstName": "...", "lastName": "..." }
-# - All fields present (no null values)
-```
+- Without authentication → status 401, response body contains the status code and an "Unauthorized" message
+- With a valid token → status 200, response contains email, firstName, lastName, all fields present with no null
+  values
 
 ### Example 3: REST API Endpoint
 
@@ -562,23 +421,10 @@ curl -i http://localhost:3000/users/me \
 
 **Specific (Good):**
 
-```bash
-# Test creating lead
-curl -X POST http://localhost:3000/api/leads \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJhbGc..." \
-  -d '{"email": "lead@example.com", "firstName": "John", "budget": 50000}'
-
-# Verify response:
-# - Status: 201
-# - Response body: { "id": "uuid", "email": "lead@example.com", "firstName": "John", "budget": 50000, "createdAt": "2025-01-15T..." }
-# - All fields use camelCase (not snake_case)
-
-# Verify in database
-psql -d new_crm -c "SELECT email, first_name FROM leads WHERE email = 'lead@example.com';"
-# - Record exists in database
-# - Field names match schema
-```
+- Creating a resource with a valid body and a valid token → status 201, response body echoes the submitted fields
+  plus the generated id and creation timestamp
+- All response fields use the API layer's naming convention, not the database's
+- The record is verifiable in the database directly, and its column names match the schema
 
 ---
 
@@ -594,10 +440,10 @@ psql -d new_crm -c "SELECT email, first_name FROM leads WHERE email = 'lead@exam
 
 **Specific (Good):**
 
-- "conversion-widget.component.ts file exists in src/components/widgets/"
-- "dashboard.component.ts imports ConversionWidget: `import { ConversionWidget } from '@/components/widgets/ConversionWidget'`"
-- "dashboard.component.ts renders ConversionWidget in template: `<app-conversion-widget />`"
-- "Opening /dashboard shows ConversionWidget displaying conversion rate data"
+- "The widget's source file exists at the path the project's conventions put components"
+- "The dashboard imports ConversionWidget, and the import resolves"
+- "The dashboard renders ConversionWidget in its template"
+- "Opening the dashboard route shows ConversionWidget displaying conversion rate data"
 
 ### Backend Integration
 
@@ -607,10 +453,10 @@ psql -d new_crm -c "SELECT email, first_name FROM leads WHERE email = 'lead@exam
 
 **Specific (Good):**
 
-- "auth/dto/login.dto.ts defines: `{ email: string (@IsEmail); password: string (@IsString) }` and `LoginResponse { token: string; user: UserDto }`"
-- "auth.controller.ts imports the DTOs: successfully compiles"
-- "auth.controller.ts implements `POST /auth/login`: handles valid/invalid credentials (200 vs 401)"
-- "curl POST to /auth/login returns 200 with the expected JWT token"
+- "The request and response types for login are defined, with validation declared on each field"
+- "The controller imports those types and compiles"
+- "The controller implements the login route and handles valid and invalid credentials distinctly (200 vs 401)"
+- "A real login request returns 200 with the expected auth token"
 
 ---
 
@@ -620,15 +466,15 @@ When creating agent prompts, verify success criteria include:
 
 **Infrastructure Tasks:**
 
-- [ ] Fresh clone test specified (git clone → docker-compose up -d → npm install → npm run setup)
-- [ ] Docker verification (if using Docker): docker ps shows all required containers running
+- [ ] Fresh clone test specified (clone → start services → install → setup)
+- [ ] Service verification (if containerised): the service listing shows all required containers running
 - [ ] Setup completion criteria (0 errors, database created, migrations applied)
-- [ ] Dev server start verification (npm run dev → accessible on expected port)
-- [ ] TypeScript compilation check (npm run type-check → 0 errors)
-- [ ] Test framework readiness (npm test → runs immediately, not "framework not configured")
-- [ ] Environment variables documented (.env.example with DATABASE_URL for Docker/local)
-- [ ] Works on clean machine: No local database installation required (if using Docker)
-- [ ] Clean teardown documented: docker-compose down removes all services
+- [ ] Dev server start verification (dev command → accessible on expected port)
+- [ ] Type/compile check (0 errors)
+- [ ] Test framework readiness (test command runs immediately, not "framework not configured")
+- [ ] Environment variables documented (example file with the connection URL for the chosen setup)
+- [ ] Works on clean machine: no local database installation required (if containerised)
+- [ ] Clean teardown documented: bringing the services down removes them all
 
 **Frontend Features:**
 
@@ -636,11 +482,11 @@ When creating agent prompts, verify success criteria include:
 - [ ] Specific element to verify (not just "check UI")
 - [ ] Specific interaction to test (not just "test feature")
 - [ ] Browser console verification (0 errors)
-- [ ] Playwright MCP testing steps
+- [ ] Browser-automation testing steps
 
 **Backend Features:**
 
-- [ ] Specific curl command to run (exact endpoint, request body)
+- [ ] Specific request to issue (exact endpoint, request body)
 - [ ] Expected HTTP status code
 - [ ] Expected response body fields (exact field names)
 - [ ] Authentication testing (with/without token)
@@ -657,19 +503,24 @@ When creating agent prompts, verify success criteria include:
 
 ## Why "Feature Works" Is Not Enough
 
+Each failure below has the same shape: every automated gate passed, and the feature was still broken. The specific
+criterion is what forced the check that caught it.
+
+**Validation gates:** @.claude/orchestration/core/methodology/validation-gates.md
+
 **Example scenario:**
 
 Agent claims: "Feature works" 
 
 **Reality:**
 
-- TypeScript compiles 
+- Type/compile check passes 
 - Tests pass 
 - **Browser:** "Cannot read property 'firstName' of undefined" 
 - **Root cause:** the API response returns `first_name` but UI expects `firstName`
 
 **With specific success criteria:**
-"Opening /dashboard displays user firstName in header"
+"Opening the dashboard displays user firstName in header"
 → Agent tests in browser
 → Catches field name mismatch
 → Fixes before claiming complete
@@ -680,17 +531,18 @@ Agent claims: "Database configured"
 
 **Reality:**
 
-- docker-compose.yml exists 
-- Docker starts successfully on agent's machine 
-- **Engineer B's machine:** docker-compose up -d → "ERROR: port 5432 is already allocated" 
-- **Root cause:** Engineer B has local PostgreSQL on port 5432, Docker can't bind to same port
+- The service definition file exists 
+- Services start successfully on the agent's machine 
+- **Engineer B's machine:** starting the services fails — "port is already allocated" 
+- **Root cause:** Engineer B runs that database locally on the default port, so the container cannot bind to it
 
 **With specific success criteria:**
-"docker-compose.yml maps PostgreSQL to port 5433 to avoid conflicts, docker-compose up -d starts successfully even when
-local PostgreSQL running on 5432, npm run dev connects to Docker database on localhost:5433"
+"The service definition maps the database to a non-default external port to avoid conflicts, the services start
+successfully even when a host database is running on the default port, and the dev command connects to the
+containerised database on the mapped port"
 → Agent verifies port mapping configuration
 → Tests with simulated port conflict scenario
-→ Uses non-conflicting port (5433) in docker-compose.yml
+→ Uses a non-conflicting external port in the service definition
 
 ### Example 2B: Infrastructure Setup Failure (Missing User)
 
@@ -700,12 +552,12 @@ Agent claims: "Database configured"
 
 - Database created 
 - Migrations exist 
-- **Fresh clone:** npm run setup → "ERROR: role 'new_crm_user' does not exist" 
-- **Root cause:** Setup script doesn't create database user, only works on original machine
+- **Fresh clone:** setup fails — "role does not exist" 
+- **Root cause:** Setup script doesn't create the database user, only works on the original machine
 
 **With specific success criteria:**
-"Fresh clone → docker-compose up -d → npm install → npm run setup completes in under 2 minutes with 0 errors, creates
-database, applies migrations, seeds test data"
+"Fresh clone → start services → install → setup completes in under 2 minutes with 0 errors, creates database,
+applies migrations, seeds test data"
 → Agent tests fresh clone scenario (or simulates it)
 → Catches missing user creation step
 → Fixes setup script before claiming complete
@@ -716,16 +568,16 @@ Agent claims: "Login API works"
 
 **Reality:**
 
-- TypeScript compiles 
-- Tests pass (with mocked auth service) 
-- **curl test:** curl POST /api/auth/login → "Internal Server Error" 
-- **Root cause:** JWT_SECRET not in .env, throws error at runtime
+- Type/compile check passes 
+- Tests pass (with the auth service mocked) 
+- **Real request:** login returns "Internal Server Error" 
+- **Root cause:** the auth signing secret is missing from the environment file, so it throws at runtime
 
 **With specific success criteria:**
-"curl POST http://localhost:3000/api/auth/login with valid credentials returns 200 + JWT token in response.token"
-→ Agent runs actual curl command
+"A login request with valid credentials returns 200 + an auth token in the response body's `token` field"
+→ Agent issues the actual request
 → Catches missing environment variable
-→ Adds JWT_SECRET to .env.example, updates setup script
+→ Adds the secret to the example environment file, updates setup script
 
 ---
 

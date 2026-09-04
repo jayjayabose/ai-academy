@@ -1,5 +1,9 @@
 # Testing Infrastructure Agent - Task Specification
 
+**This is a template, not a finished prompt.** Every bracketed slot below is filled from the project's own stack
+before the prompt is handed to an agent. A fully filled-in copy — real dependencies, real config files, real example
+tests, real CI workflow — is in `examples/<stack>/testing-infrastructure-agent-examples.md`.
+
 ## Agent Identity
 
 **Role:** Testing Infrastructure Setup Agent
@@ -14,7 +18,7 @@
 You are a senior DevOps/QA engineer specializing in testing infrastructure. Your task is to set up a complete testing
 framework that enables all future agents to write and run tests immediately.
 
-**Project Type:** Full-stack application with NestJS backend and Angular frontend
+**Project Type:** [the project's shape — e.g. full-stack application with a backend API and a browser frontend]
 **Current State:** No testing framework exists
 **Goal:** Complete testing infrastructure ready for parallel agent use
 
@@ -22,11 +26,11 @@ framework that enables all future agents to write and run tests immediately.
 
 ## Primary Objectives
 
-1. **Testing Framework Installation:** Jest + Testing Library for NestJS/Angular
+1. **Testing Framework Installation:** the runner(s) appropriate to each side of the stack
 2. **Configuration Setup:** Test runner, coverage, mocking capabilities
-3. **Script Integration:** package.json scripts for all testing workflows
+3. **Script Integration:** named task-runner scripts for all testing workflows
 4. **Example Tests:** Proof-of-concept tests demonstrating framework works
-5. **CI Integration:** GitHub Actions workflow for automated testing
+5. **CI Integration:** an automated test workflow on the project's CI provider
 6. **Documentation:** Clear testing guidelines in README
 
 ---
@@ -35,265 +39,89 @@ framework that enables all future agents to write and run tests immediately.
 
 ### Testing Stack Selection
 
-**For Full-Stack NestJS + Angular REST:**
+Name one tool per role. Do not leave a role unfilled and do not fill a role twice:
 
-- **Jest** - Standard testing framework for the NestJS backend
-- **Supertest** - HTTP assertions against REST controllers (e2e)
-- **Vitest** - Angular 22+ default frontend test runner (`ng test`)
-- **@angular/core/testing** (`TestBed`) - Component/service testing
-- **HttpTestingController** (`@angular/common/http/testing`) - HTTP request mocking
-- **MSW** - Mock Service Worker for API mocking (optional, cross-cutting)
-- Angular CLI `--coverage` (Vitest V8 provider) - Coverage reporting
+- **Backend unit runner** — the one standard for the backend framework; take the framework's default unless there is
+  a stated reason not to
+- **HTTP-level assertion library** — for exercising real routes end to end
+- **Frontend runner** — the one the frontend framework's own CLI defaults to; do not fight the toolchain
+- **Component harness** — the framework's own API for mounting a component and asserting on rendered output
+- **HTTP mocking for the client** — the framework's testing module for its HTTP layer
+- **Cross-cutting API mocking** (optional) — a network-level mock, if both sides need to share fixtures
+- **Coverage reporting** — on both sides, ideally through the tooling already present
 
-**Installation:**
-
-```bash
-# Backend (NestJS) — Jest is included with the Nest scaffold
-npm install -D jest @types/jest ts-jest supertest
-
-# Frontend (Angular) — Vitest is wired up by the Angular 22 CLI for `ng test`.
-# HttpClient testing (provideHttpClientTesting / HttpTestingController) ships with Angular —
-# no extra dependency needed.
-```
+**Installation:** the dependencies each of the above needs, noting which ones the project's scaffold already
+installed. A scaffold that already ships a runner does not need a second one.
 
 ### Configuration Files
 
-#### 1. Jest Configuration (Backend — NestJS)
+#### 1. Test Runner Configuration (Backend)
 
-> The Angular frontend uses `ng test` (Vitest) and needs no hand-written config.
-> This Jest config is for the NestJS backend.
+> Where the frontend toolchain generates and owns its own test configuration, do not hand-write a second one. This
+> config is for the side of the stack that needs one.
 
-**File:** `jest.config.js`
+Must pin:
 
-```javascript
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  roots: ['<rootDir>/src', '<rootDir>/test'],
-  moduleNameMapper: {
-    '^src/(.*)$': '<rootDir>/src/$1',
-  },
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/**/*.module.ts',
-    '!src/main.ts',
-  ],
-  coverageThreshold: {
-    global: {
-      lines: 80,
-      functions: 80,
-      branches: 75,
-      statements: 80,
-    },
-  },
-  testMatch: ['**/?(*.)+(spec|e2e-spec).ts'],
-};
-```
+- the preset or transform, if the language needs a build step
+- the test environment
+- a setup file to run before each test file
+- the roots searched for tests, and the filename patterns that count as a test
+- module path aliases, matching the ones the application itself uses
+- which files count toward coverage, and which are excluded (type declarations, module wiring, entrypoints)
+- coverage thresholds per metric: lines, functions, branches, statements
 
 #### 2. Test Setup File (Backend)
 
-**File:** `jest.setup.ts`
+One file establishing what every backend test assumes: the test database connection string, and safe placeholder
+values for every external credential the code reads at import time.
 
-```typescript
-// Mock environment variables for backend testing
-process.env.DATABASE_URL =
-  process.env.TEST_DATABASE_URL ||
-  'postgresql://test:test@localhost:5432/new_crm_test';
-process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'test-openai-key';
-process.env.LANGFUSE_PUBLIC_KEY =
-  process.env.LANGFUSE_PUBLIC_KEY || 'test-langfuse-public';
-process.env.LANGFUSE_SECRET_KEY =
-  process.env.LANGFUSE_SECRET_KEY || 'test-langfuse-secret';
-```
+> Frontend test values come from the framework's own configuration or provider-override mechanism, not the process
+> environment. Note also that a headless DOM implementation will not implement every browser API — if a component
+> under test uses one that is missing, stub it in the test setup.
 
-> Frontend test values come from Angular's `environment.ts` or `TestBed` provider overrides.
-> Note: Vitest runs on jsdom, which does **not** implement `window.matchMedia` — if a
-> component under test uses it, add a small stub in the test setup (`vi.stubGlobal('matchMedia', …)`).
+#### 3. Test Scripts in the Task-Runner Manifest
 
-#### 3. Package.json Scripts
+Named entry points, defined on **both** sides of the stack, with the same names on each side so no agent has to
+remember which project it is in:
 
-**Frontend (`crm-frontend/`):**
-
-```json
-{
-  "scripts": {
-    "test": "ng test --no-watch",
-    "test:watch": "ng test",
-    "test:coverage": "ng test --no-watch --coverage",
-    "test:ci": "ng test --no-watch --coverage"
-  }
-}
-```
-
-**Backend (`crm-backend/`):**
-
-```json
-{
-  "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
-  }
-}
-```
+- run the whole suite once
+- run in watch mode
+- run with coverage
+- run in CI mode
+- run the end-to-end tier
 
 ### Example Tests (Proof Framework Works)
 
+Three examples, one per capability. They must genuinely pass — a placeholder that fails trains every later agent to
+ignore a red suite.
+
 #### 4. Basic Unit Test Example
 
-**File:** `lib/__tests__/example.test.ts`
-
-```typescript
-describe('Testing Framework Validation', () => {
-  it('should run basic assertions', () => {
-    expect(1 + 1).toBe(2);
-  });
-
-  it('should handle async operations', async () => {
-    const result = await Promise.resolve('success');
-    expect(result).toBe('success');
-  });
-
-  it('should handle errors', () => {
-    expect(() => {
-      throw new Error('Test error');
-    }).toThrow('Test error');
-  });
-});
-```
+A synchronous assertion, an async assertion, and a thrown-error assertion. Proves the runner, the transform and the
+assertion library are wired up.
 
 #### 5. Component Test Example
 
-**File:** `src/app/components/example/example.component.spec.ts`
-
-```typescript
-import { Component, input } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
-
-@Component({
-  standalone: true,
-  selector: 'app-example',
-  template: '<div data-testid="message">{{ message() }}</div>',
-})
-class ExampleComponent {
-  readonly message = input.required<string>();
-}
-
-describe('Component Testing Validation', () => {
-  it('should render components', () => {
-    const fixture = TestBed.createComponent(ExampleComponent);
-    fixture.componentRef.setInput('message', 'Testing Framework Works');
-    fixture.detectChanges();
-    const el = fixture.nativeElement.querySelector('[data-testid="message"]');
-    expect(el.textContent).toContain('Testing Framework Works');
-  });
-
-  it('should handle inputs correctly', () => {
-    const fixture = TestBed.createComponent(ExampleComponent);
-    fixture.componentRef.setInput('message', 'Custom Message');
-    fixture.detectChanges();
-    const el = fixture.nativeElement.querySelector('[data-testid="message"]');
-    expect(el.textContent).toContain('Custom Message');
-  });
-});
-```
+Declare a trivial component with one input, mount it, set the input, render, and assert on the rendered text.
+Proves the component harness and the DOM environment work, including input binding.
 
 #### 6. HTTP Mocking Example
 
-**File:** `src/app/api/leads.service.spec.ts`
-
-```typescript
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { LeadsService } from './leads.service';
-
-describe('LeadsService (HttpClient) Validation', () => {
-  let service: LeadsService;
-  let controller: HttpTestingController;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [LeadsService, provideHttpClient(), provideHttpClientTesting()],
-    });
-    service = TestBed.inject(LeadsService);
-    controller = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => controller.verify());
-
-  it('should fetch leads from GET /leads', () => {
-    service.getLeads().subscribe((leads) => {
-      expect(leads).toEqual([{ id: 1, name: 'Mocked Lead' }]);
-    });
-
-    const req = controller.expectOne('http://localhost:3000/leads');
-    expect(req.request.method).toBe('GET');
-    req.flush([{ id: 1, name: 'Mocked Lead' }]);
-  });
-});
-```
+Call a client service method, intercept the outgoing request, assert on its method and URL, flush a canned
+response, and verify at teardown that no request went unmatched. Proves the data layer is testable without a running
+server.
 
 ### CI/CD Integration
 
-#### 7. GitHub Actions Workflow
+#### 7. CI Workflow
 
-**File:** `.github/workflows/test.yml`
+Runs on pull requests and on pushes to the long-lived branches, and:
 
-```yaml
-name: Tests
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: new_crm_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '24'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm run test:ci
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/new_crm_test
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-```
+- checks out the code and installs dependencies from the lockfile, with a dependency cache
+- provisions any service the integration tier needs — a database, with a health check, so the suite does not start
+  before it is ready
+- runs the suite in CI mode with coverage, passing the test database URL and any required secrets as environment
+- uploads the coverage report
 
 ### Documentation
 
@@ -306,57 +134,25 @@ jobs:
 
 ### Running Tests
 
-```bash
-# Run all tests once
-npm test
-
-# Run tests in watch mode (during development)
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-```
+[the project's three test commands: once, watch mode, coverage]
 ````
 
 ### Writing Tests
 
 #### Test Organization
 
-- **Unit Tests:** `src/app/**/*.spec.ts` (frontend) / `src/**/*.spec.ts` (backend)
-- **Component Tests:** `src/app/**/*.component.spec.ts`
-- **Integration/E2E:** backend `test/**/*.e2e-spec.ts`; frontend Playwright `e2e/`
+State where each kind of test lives, using the project's own path conventions:
+
+- **Unit Tests** (frontend and backend)
+- **Component Tests**
+- **Integration/E2E**
 
 #### Test Examples
 
-**Service Unit Test:**
+Two short examples in the README, so a reader does not have to open the test suite to see the shape:
 
-```typescript
-import { MyService } from '../my-service';
-
-describe('MyService', () => {
-  it('should perform operation successfully', async () => {
-    const service = new MyService();
-    const result = await service.doSomething();
-    expect(result).toBeDefined();
-  });
-});
-```
-
-**Component Test:**
-
-```typescript
-import { TestBed } from '@angular/core/testing';
-import { MyComponent } from './my.component';
-
-describe('MyComponent', () => {
-  it('should render correctly', () => {
-    const fixture = TestBed.createComponent(MyComponent);
-    fixture.componentRef.setInput('title', 'Test');
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Test');
-  });
-});
-```
+- **Service Unit Test:** construct the service, call a method, assert on the result
+- **Component Test:** mount the component, set an input, assert on the rendered output
 
 #### Coverage Guideline
 
@@ -369,10 +165,8 @@ describe('MyComponent', () => {
 Tests run automatically on:
 
 - All pull requests
-- Pushes to main/develop branches
-- Coverage reports uploaded to Codecov
-
-````
+- Pushes to the long-lived branches
+- Coverage reports uploaded to the coverage service
 
 ---
 
@@ -381,19 +175,23 @@ Tests run automatically on:
 You MUST maintain a detailed session log throughout your work.
 
 ### Log Setup
+
 1. **Create Log File:** `.claude/workspace/infrastructure/testing-framework-setup-session.md`
 2. **Use Template:** Infrastructure Agent Log template from `.claude/orchestration/core/templates/logging-templates.md`
 3. **Update Real-Time:** Log decisions, discoveries, and setup challenges
 
 ### Critical Logging Points
-- **Testing Stack Selection:** Why Jest (NestJS backend) + Vitest (Angular frontend)
+
+- **Testing Stack Selection:** why each runner, per side of the stack
 - **Configuration Decisions:** Coverage thresholds, test environment choices
 - **Integration Challenges:** Any issues setting up mocking or test runners
 - **Validation Results:** Proof that test scripts work and examples pass
 - **Methodology Insights:** What this teaches about infrastructure-first patterns
 
 ### Validation Requirement
+
 Before completing:
+
 - [ ] Session log created and maintained
 - [ ] All setup decisions documented with rationale
 - [ ] Example test results logged (prove framework works)
@@ -404,14 +202,14 @@ Before completing:
 
 ## Deliverables Checklist
 
-- [ ] Backend Jest + Angular CLI test tooling installed
-- [ ] `jest.config.js` configured for NestJS backend
-- [ ] `jest.setup.ts` with backend global mocks and setup
-- [ ] Package.json scripts: test, test:watch, test:coverage, test:ci (both projects)
-- [ ] Example unit test (`src/example.spec.ts`)
-- [ ] Example component test (`src/app/components/example/example.component.spec.ts`)
-- [ ] Example HttpClient test (`src/app/api/leads.service.spec.ts`)
-- [ ] GitHub Actions workflow (.github/workflows/test.yml)
+- [ ] Backend and frontend test tooling installed
+- [ ] Backend test runner configuration file
+- [ ] Backend test setup file with global mocks and environment
+- [ ] Task-runner scripts: test, test:watch, test:coverage, test:ci (both projects)
+- [ ] Example unit test
+- [ ] Example component test
+- [ ] Example HTTP-mocking test
+- [ ] CI workflow file
 - [ ] README testing section (documentation)
 - [ ] Session log complete with validation evidence
 
@@ -419,32 +217,27 @@ Before completing:
 
 ## Pre-Completion Validation (MANDATORY)
 
+**Validation gates:** @.claude/orchestration/core/methodology/validation-gates.md
+
+The four checks below are specific to *this* deliverable — they verify the testing infrastructure itself, which no
+gate can do because the gates assume it already exists. Run them in addition to the gates, not instead.
+
 ### 1. Test Scripts Functional
-```bash
-npm test
-# Required: All example tests pass
-````
+
+Run the suite. **Required:** All example tests pass.
 
 ### 2. Coverage Generation
 
-```bash
-npm run test:coverage
-# Required: Coverage report generates successfully
-```
+Run the coverage script. **Required:** Coverage report generates successfully.
 
 ### 3. Watch Mode
 
-```bash
-npm run test:watch
-# Required: Watch mode runs and detects changes
-```
+Start watch mode. **Required:** it runs and detects changes.
 
-### 4. TypeScript Integration
+### 4. Type / Compile Integration
 
-```bash
-npx tsc --noEmit
-# Required: Test files compile without errors
-```
+Run the project's type/compile check (Gate 1). **Required:** Test files compile without errors — test files are a
+common source of type errors that the application build never sees.
 
 ---
 
@@ -461,14 +254,14 @@ npx tsc --noEmit
 
 - Any agent can immediately write and run tests
 - Testing patterns documented with examples
-- Mocking capabilities available (MSW, Angular `HttpTestingController`)
+- Mocking capabilities available, both network-level and framework-level
 - No blockers for test-driven development
 
 ### Integration Ready
 
-- Frontend agents can test Angular components
-- Backend agents can test NestJS services and modules
-- REST calls can be tested with mocked HTTP providers
+- Frontend agents can test components
+- Backend agents can test services and modules
+- API calls can be tested with mocked HTTP providers
 - Coverage tracked and reportable
 
 ---
@@ -477,72 +270,42 @@ npx tsc --noEmit
 
 ### For Backend Agents (Services, Modules, Utils)
 
-**Test Location:** `lib/[module]/__tests__/[name].test.ts`
+**Test Location:** [the project's path convention for backend unit tests]
 
 **Available Capabilities:**
 
-- Unit testing with Jest
+- Unit testing with the backend runner
 - Async operation testing
 - Error scenario testing
-- Mock external APIs (fetch, database calls)
+- Mock external APIs (network calls, database calls)
 
-**Example:**
-
-```typescript
-describe('LeadService', () => {
-  it('should create lead successfully', async () => {
-    // Test implementation
-  });
-});
-```
+**Example:** a service suite with one case per behaviour — success, failure, and the boundary between them.
 
 ### For Frontend Agents (Components, Services, Pages)
 
-**Test Location:** `src/app/[feature]/[component].component.spec.ts`
+**Test Location:** [the project's path convention for component tests]
 
 **Available Capabilities:**
 
-- Component rendering tests (`TestBed` + `ComponentFixture`)
+- Component rendering tests via the framework's component harness
 - DOM interaction simulation
-- HTTP mocking (`HttpTestingController` / `provideHttpClientTesting`)
+- HTTP mocking through the framework's HTTP testing module
 - Accessibility testing
 
-**Example:**
-
-```typescript
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
-
-describe('SummaryCardComponent', () => {
-  it('should render summary data', () => {
-    // Test implementation with TestBed.createComponent(...)
-  });
-});
-```
+**Example:** mount the component, set its inputs, assert on rendered output.
 
 ### For REST API Agents (Controllers, Services)
 
-**Test Location:** backend `src/**/[name].controller.spec.ts` (+ Supertest e2e); client `src/app/api/[feature].service.spec.ts`
+**Test Location:** [the project's path conventions for controller tests, end-to-end tests, and client service tests]
 
 **Available Capabilities:**
 
 - Controller/service testing with mocked database
-- DTO validation testing
-- HTTP request/response integration testing (Supertest on the backend)
-- `HttpTestingController` for client-side request testing
+- Request-body validation testing
+- HTTP request/response integration testing against real routes
+- Client-side request interception
 
-**Example:**
-
-```typescript
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { LeadsService } from './leads.service';
-
-// In the test: call service.getLead(1), then
-//   controller.expectOne('http://localhost:3000/leads/1').flush({ id: 1, /* ... */ });
-```
+**Example:** call the client service, expect exactly one request to the resource URL, flush a canned response.
 
 ---
 
@@ -560,26 +323,13 @@ import { LeadsService } from './leads.service';
 
 ### Functional Validation
 
-```bash
-# 1. Install dependencies
-npm install
+In order, from a clean checkout:
 
-# 2. Run example tests
-npm test
-# Expected: 6+ passing tests across examples
-
-# 3. Generate coverage
-npm run test:coverage
-# Expected: Coverage report generated in ./coverage/
-
-# 4. Verify TypeScript
-npx tsc --noEmit
-# Expected: Test files compile without errors
-
-# 5. Test watch mode
-npm run test:watch
-# Expected: Watch mode starts, press 'q' to exit
-```
+1. Install dependencies
+2. Run the example tests — expected: 6+ passing tests across the examples
+3. Generate coverage — expected: a coverage report is written to the coverage directory
+4. Run the type/compile check — expected: test files compile without errors
+5. Start watch mode — expected: it starts, and can be exited cleanly
 
 ### Documentation Validation
 
@@ -593,20 +343,20 @@ npm run test:watch
 ## Deliverables
 
 1. **Configuration Files:**
-    - `jest.config.js`
-    - `jest.setup.ts`
+    - Backend test runner config
+    - Backend test setup file
 
 2. **Example Tests:**
-    - `src/example.spec.ts` (backend unit test)
-    - `src/app/components/example/example.component.spec.ts` (component test)
-    - `src/app/api/leads.service.spec.ts` (HttpClient mocking)
+    - Backend unit test
+    - Component test
+    - HTTP-mocking test
 
-3. **Package.json Updates:**
+3. **Task-Runner Manifest Updates:**
     - Test scripts added
     - Testing dependencies installed
 
 4. **CI/CD:**
-    - `.github/workflows/test.yml`
+    - CI workflow file
 
 5. **Documentation:**
     - README testing section
@@ -624,10 +374,10 @@ Create and maintain session log at:
 
 **Log Critical Decisions:**
 
-- Why Jest over other frameworks (NestJS/Angular standard)
-- Coverage threshold decisions (80% lines, 75% branches)
-- Mock strategy choices (MSW for APIs, jest.mock for modules)
-- CI configuration approach (GitHub Actions with PostgreSQL service)
+- Why this runner and not another, per side of the stack
+- Coverage threshold decisions, per metric
+- Mock strategy choices — network-level vs module-level, and where each applies
+- CI configuration approach, including how the integration tier gets its database
 
 **Log Setup Process:**
 
@@ -651,8 +401,8 @@ You can report completion ONLY when:
 
 1.  All testing dependencies installed
 2.  Configuration files created and working
-3.  `npm test` runs successfully with passing examples
-4.  `npm run test:coverage` generates coverage report
+3.  The test command runs successfully with passing examples
+4.  The coverage command generates a coverage report
 5.  Example tests demonstrate all testing capabilities
 6.  CI/CD workflow configured
 7.  README documentation complete
@@ -674,7 +424,7 @@ You can report completion ONLY when:
 After this infrastructure is complete, ALL future agents will:
 
 - Write tests as part of their implementation
-- Run `npm test` as pre-completion validation
+- Run the test suite as pre-completion validation
 - Meet this project's coverage guideline for their code (80% is a reasonable default, not a hard rule — adjust to
   the project)
 - Use consistent testing patterns and mocking strategies
