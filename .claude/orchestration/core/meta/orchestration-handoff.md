@@ -123,7 +123,8 @@ ls -la .claude/orchestration/core/meta/session-handoffs/ 2>/dev/null || echo "No
 
 - Import dependency analysis (sequential vs parallel)
 - Coordination level determination (low vs high)
-- Field naming convention locks (camelCase for shared API types)
+- Field naming convention locks (one convention per layer, one named conversion boundary, one enforcement
+  mechanism)
 - Cross-agent validation requirements
 
 ## Current Status Recovery Questions

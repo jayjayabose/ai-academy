@@ -37,9 +37,17 @@
 
 **Field Naming Convention (if HIGH coordination):**
 
-- All API fields (DTOs): camelCase (leadId, budgetMin, firstName)
-- Database layer: snake_case (mapped in the models/services)
-- Frontend code: camelCase ONLY (matching the shared API types exactly)
+The convention itself is a per-project fact; what this plan must record is that one was chosen, where it
+converts, and what fails when it is broken. See
+@.claude/orchestration/core/methodology/pattern-library.md § 3. Field Naming Convention Locks.
+
+- Convention per layer: {one convention per layer, written down before any parallel work starts}
+- Conversion boundary: {the single place a conversion may happen -- a convention converted in two places is
+  converted twice}
+- Enforcement: {what catches a violation -- a type checker, a linter rule, or a spec asserting a literal
+  payload. A convention nothing checks is a preference.}
+
+A worked instance is in `examples/<stack>/pattern-library-examples.md`.
 
 ---
 
@@ -280,7 +288,7 @@ For multi-component features, explicit integration responsibility:
 - [ ] Testing requirements (unit + integration, NO MOCKS for integration)
 - [ ] Dependency validation (if task has imports)
 - [ ] Coordination protocols (if high coordination)
-- [ ] Field naming conventions (camelCase for shared API types)
+- [ ] Field naming conventions (the locked convention, its conversion boundary, and what enforces it)
 - [ ] Technology stack specifications
 - [ ] Quality standards (A+ code)
 - [ ] Specific integration verification (not generic "works")

@@ -59,6 +59,11 @@ Import schema types and use them directly.
 boundary. What transfers is: one convention per layer, one named boundary, one enforcement
 mechanism.
 
+This table is also what filled the **Field Naming Convention** block of
+`core/templates/execution-plan-template.md` on every high-coordination feature here. That block
+used to carry these three rows inline, inside `core/`; it now asks for the three rows and points
+here for a filled-in one. There is one copy of the instance, and this is it.
+
 ## 5. Two-Tier Testing — mock vs real, in Jest + Sequelize
 
 ```typescript
