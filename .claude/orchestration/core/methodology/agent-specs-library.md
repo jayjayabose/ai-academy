@@ -65,7 +65,7 @@ complete set of filled-in specs is in `examples/<stack>/agent-specs-library-exam
 - Create: `.claude/workspace/[FEATURE]/agent-logs/database-agent-session.md`
 - Use: Infrastructure Agent Log template from `.claude/orchestration/core/templates/logging-templates.md`
 - Log: Technology decisions, database design choices, integration setup decisions
-- Purpose: Teaching material for database setup methodology and coordination patterns
+- Purpose: Retrospective record of database setup decisions and coordination patterns
 ```
 
 **Coordination Integration Points:**

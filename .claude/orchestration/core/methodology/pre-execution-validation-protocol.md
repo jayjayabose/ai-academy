@@ -329,46 +329,6 @@ reads is actually set. See @.claude/orchestration/core/methodology/environment-v
 - Validate new infrastructure before committing
 - Apply proactive blocker removal → smooth execution
 
----
-
-## Teaching This Protocol
-
-### Module: "Strategic Orchestration for 100% Success"
-
-**Week 1-2: Learn Strategic Thinking**
-
-- How to read session handoffs for context
-- How to identify blockers before execution
-- How to validate infrastructure requirements
-- How to make pragmatic trade-off decisions
-
-**Practice:**
-
-- Given session handoff → identify 3 blockers
-- Given research on a new tool → discover its true setup cost
-- Choose: the proven approach vs the theoretical improvement, priced honestly
-
-**Week 3-4: Apply Proactive Problem-Solving**
-
-- Fix import paths before agent execution
-- Configure connections proactively
-- Start services before agent needs them
-- Verify prerequisites working
-
-**Practice:**
-
-- Given feature requirements → create pre-execution checklist
-- Fix all blockers proactively
-- Launch agent with "X is FIXED" directive
-
-**Week 5-6: Master Strategic Orchestration**
-
-- Full workflow: Handoff → validate → fix → launch → success
-- Recognize when to think strategically vs delegate tactically
-- Systematic success through proactive orchestration
-
----
-
 ## The Core Teaching
 
 **"Engineers who master strategic orchestration deliver features systematically. Engineers who only delegate tactically
@@ -400,7 +360,7 @@ get stuck reactively."**
 **Protocol Status:** Proven through real-world success
 **Application:** Mandatory for all future feature agent execution
 **Documentation:** Complete with checklists and evidence
-**Teaching Ready:** Can be taught immediately in curriculum
+
 
 **Evidence Base:**
 

@@ -402,14 +402,14 @@ Engineer: "What did we learn from authentication feature?"
 
 ## Benefits of Workspace Management
 
-### For Engineers (During Course)
+### For You, Feature to Feature
 
 -  **Organized workflow:** Clear structure, no chaos
 -  **Debugging capability:** Agent logs reveal what went wrong
 -  **Session continuity:** Resume features across days
 -  **Learning capture:** Retrospectives build knowledge
 
-### For Teams (After Course - Company Repos)
+### For Teams Sharing a Repo
 
 -  **Knowledge sharing:** Retrospectives checked in, everyone benefits
 -  **Compound learning:** Each feature makes repo smarter
@@ -489,7 +489,7 @@ Engineer: "What did we learn from authentication feature?"
 
 **Applies To:**
 
-- Course (starter-repo) - Engineers learn workspace management
+- A single engineer learning the workflow
 - Production (company repos) - Same system scales to brownfield
 
 **Next Steps:**

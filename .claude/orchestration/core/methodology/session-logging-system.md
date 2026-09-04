@@ -5,7 +5,7 @@
 **For Methodology Analysis:** I need to see what actually happened during execution, not just the final results
 **For Failure Diagnosis:** Understanding where coordination broke down requires step-by-step agent decisions
 **For Pattern Recognition:** Identifying what works vs creates friction needs detailed execution data
-**For Curriculum Development:** Teaching requires showing the journey, not just destinations
+**For Retrospectives:** Improvement requires showing the journey, not just destinations
 
 ## Logging Structure for Feature Agents
 
@@ -120,7 +120,7 @@ With these logs, I can:
 - Identify coordination mechanisms that need reinforcement
 - Refine task specifications based on actual execution challenges
 
-### Build Systematic Curriculum
+### Build Systematic Practice
 
 - Turn real execution journeys into teaching narratives
 - Show both successful coordination and failure recovery
@@ -150,6 +150,6 @@ With these logs, I can:
 1. **Agent Prompts Updated:** Include logging requirements in all feature agent prompts
 2. **Coordination Protocols Enhanced:** Specify what coordination events must be logged
 3. **Results Analysis Enriched:** Methodology partner uses logs for deeper failure analysis
-4. **Curriculum Development:** Real execution data becomes teaching examples
+4. **Compound Learning:** Real execution data becomes the next feature's reference
 
 This transforms methodology development from "guessing what happened" to "systematic analysis of documented execution."

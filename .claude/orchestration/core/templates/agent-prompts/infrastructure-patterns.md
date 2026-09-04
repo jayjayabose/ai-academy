@@ -795,7 +795,7 @@ When adding new infrastructure prompts to this library:
 
 **3. Teaching:**
 
-- Prompts serve as curriculum material
+- Prompts serve as reference material
 - Show best practices
 - Document evolution of patterns
 
@@ -833,7 +833,7 @@ This library transforms infrastructure setup from **custom work every time** to 
 - More efficient project starts (known patterns)
 - Higher quality (battle-tested)
 - Consistent architecture across projects
-- Teaching material for curriculum
+- Reference material for future features
 
 **Next Steps:**
 

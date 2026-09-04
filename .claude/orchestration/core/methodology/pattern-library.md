@@ -436,12 +436,9 @@ git worktree remove ../myapp-experiment
 - Parallel work on different concerns
 - Professional practice for exploratory work in company repos
 
-**Course Timing:**
+**When to adopt:** single worktree until the fundamentals are routine; reach for this on
+long-running or high-risk work.
 
-- Days 1-4: Single worktree (learn fundamentals)
-- Day 5 (Bonus): Worktrees for advanced scenarios
-
-**See:** Guidebook Appendix A for complete workflows
 
 ---
 
@@ -514,12 +511,9 @@ git town sync
 - Maintains clean, understandable git history
 - Professional practice for complex team projects
 
-**Course Timing:**
+**When to adopt:** single-PR workflow until the fundamentals are routine; reach for this
+when a feature is too large to review in one piece.
 
-- Days 1-4: Single-PR workflow (learn fundamentals)
-- Day 5 (Bonus): Stacked PRs for company complexity
-
-**See:** Guidebook Appendix B for complete workflows
 
 ---
 

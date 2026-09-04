@@ -450,30 +450,6 @@ move a number.
 A fully written version of this specification, as an agent prompt, is at
 @.claude/orchestration/core/templates/agent-prompts/testing-infrastructure-agent.md
 
----
-
-## Curriculum Integration
-
-### Teaching Module: Testing as Infrastructure
-
-**Learning Objective:** Engineers understand testing framework setup enables parallel agent validation from start
-
-**Content:**
-
-1. **Infrastructure-First Pattern:** Testing like setup scripts - infrastructure before features
-2. **Early Detection:** Why waiting to set up tests creates technical debt
-3. **Agent Enablement:** How testing infrastructure enables all agents to validate their work
-4. **Coverage as Quality:** Test coverage as coordination mechanism (ensures completeness)
-
-**Evidence from the reference project:**
-
-- Early challenge: Backend Agent couldn't write tests (no framework) - technical debt created
-- Infrastructure setup: Testing framework in Task 0 - all agents could write tests immediately
-- Integration testing: Tests caught 2 production bugs before delivery
-- Pattern: Infrastructure-first prevents systematic gaps
-
----
-
 ## Status: Testing Methodology Systematized
 
 ** Root Cause Identified:** Testing framework not part of infrastructure-first pattern

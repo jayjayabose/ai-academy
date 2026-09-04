@@ -150,9 +150,9 @@ ALL agents MUST maintain detailed session logs during execution:
 **Purpose:** Session logs provide methodology partner with detailed execution data for:
 
 - Systematic failure analysis and pattern recognition
-- Curriculum development with real execution examples
+- Pattern recognition across features, from real execution examples
 - Coordination protocol refinement based on actual agent behavior
-- Teaching material creation from documented execution journeys
+- Onboarding material from documented execution journeys
 ```
 
 #### 2.2 Shared Context Management System
@@ -519,7 +519,7 @@ An engineer should NEVER have to:
 - Agents get complete, autonomous instructions
 - An engineer never has to remember protocol requirements
 - Code review efficient with atomic commits
-- Methodology insights captured for curriculum development
+- Methodology insights captured for reuse on the next feature
 - Integration failures prevented through systematic coordination
 
 ---

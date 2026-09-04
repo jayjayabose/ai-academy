@@ -36,7 +36,7 @@ You MUST maintain a detailed session log throughout your work. This is not optio
 
 ### Why This Matters
 
-Your session log becomes teaching material for the AI orchestration curriculum. The methodology partner uses your detailed execution data to:
+Your session log becomes the reference for the next feature. The orchestration partner uses your detailed execution data to:
 
 - Create systematic failure analysis and prevention guides
 - Build teaching examples from real agent coordination
@@ -147,7 +147,7 @@ Add to all frontend agent session logs:
 
 **Problem Pattern:** API integration issues between frontend and backend services
 **Root Cause:** Agents don't always coordinate on API contracts and error handling
-**Solution:** Explicit logging of API integration patterns creates accountability and teaching material
+**Solution:** Explicit logging of API integration patterns creates accountability and a reusable record
 
 **This logging helps:**
 
@@ -183,7 +183,7 @@ log)"
 
 ### Teaching-Quality Examples
 
-Real agent execution logs become curriculum examples showing:
+Real agent execution logs become reference examples showing:
 
 - How coordination actually works vs theory
 - Where agents struggle with cross-dependencies
