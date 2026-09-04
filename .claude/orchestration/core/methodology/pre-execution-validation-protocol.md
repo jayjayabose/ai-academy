@@ -94,10 +94,10 @@ Methodology partner validates → removes blockers → launches agent → smooth
   ```markdown
   Trade-off analysis:
 
-  - What's the proven approach? (Example: Lighthouse PWA audit + manual install test)
-  - What's the theoretical improvement? (Example: mobile-mcp autonomous)
-  - What's the cost difference? (built-in/2min vs 7GB/60min)
-  - What's the value difference? (manual vs autonomous)
+  - What's the proven approach?
+  - What's the theoretical improvement?
+  - What's the cost difference?
+  - What's the value difference?
   - Is improvement worth the cost? (pragmatic decision)
   ```
 
@@ -106,13 +106,10 @@ Methodology partner validates → removes blockers → launches agent → smooth
     - Theoretical improvement if validated AND accessible
     - Document decision and reasoning
 
-**Real Example:**
-
-- mobile-mcp research: "Autonomous testing like Playwright!"
-- mobile-mcp validation: Requires 7GB iOS simulator download (30-60 min setup)
-- Comparison: Lighthouse PWA audit (built-in, 2 min, proven approach)
-- Decision: Use Lighthouse + manual install test for current feature, test mobile-mcp later
-- **Result:** Avoided setup delays and unknown troubleshooting
+**Real Example:** a worked instance, with the actual download size and the actual minutes, is in
+`examples/<stack>/pre-execution-validation-protocol-examples.md`. The shape it demonstrates: a tool advertised as
+strictly better carried a setup cost three orders of magnitude larger than the built-in alternative, and the only
+way to find that out was to run its "what is available" command.
 
 ---
 
@@ -120,13 +117,8 @@ Methodology partner validates → removes blockers → launches agent → smooth
 
 **For each blocker identified in Phase 1:**
 
-- [ ] **Verify file paths:**
-
-  ```bash
-  # If agent needs to import from X, verify X exists:
-  ls path/to/file.ts
-  cat path/to/file.ts | head -20  # Verify exports expected
-  ```
+- [ ] **Verify file paths:** for every module the agent will import, confirm the file exists and exports what the
+  agent expects. Read the exports; do not infer them from the filename.
 
 - [ ] **Fix connection configurations:**
 
@@ -135,28 +127,12 @@ Methodology partner validates → removes blockers → launches agent → smooth
   # Example: localhost/proxy in dev, deployed HTTPS API origin in production
   ```
 
-- [ ] **Start required services:**
+- [ ] **Start required services:** probe each one the agent depends on, and start it if the probe fails. Backend,
+  database, queue, anything with a port.
 
-  ```bash
-  # Backend needed?
-  curl http://localhost:3000/leads || npm run dev
-
-  # Database needed?
-  docker ps | grep postgres || npm run db:start
-  ```
-
-- [ ] **Verify prerequisites:**
-
-  ```bash
-  # TypeScript compiling?
-  npm run type-check
-
-  # Tests passing?
-  npm test
-
-  # Dependencies installed?
-  ls node_modules/ || npm install
-  ```
+- [ ] **Verify prerequisites:** the project compiles, the test suite passes, and dependencies are installed --
+  before the agent starts, so a failure it did not cause cannot be attributed to it. Commands:
+  @.claude/orchestration/core/methodology/validation-gates.md.
 
 - [ ] **Update agent prompt with fixes:**
 
@@ -244,57 +220,38 @@ Follow the prompt exactly, including all validation gates.
 **Symptoms:** "Cannot find module", bundler failures
 **Proactive fix:** Verify all imported files exist before agent execution
 
-```bash
-# Agent will import from X? Verify X exists:
-ls src/app/api/leads.service.ts
-```
+List the file the agent will import from and read its exports before launching.
 
 ### Category 2: Connection Configuration
 
 **Symptoms:** "Disconnected", "Cannot connect", network errors
 **Proactive fix:** Verify configurations match environment
 
-```bash
-# Dev uses localhost/proxy; production uses the deployed HTTPS API origin
-# Check the HttpClient provider / API base URL, WebSocket connections
-```
+Development and production usually resolve the API to different origins. Check wherever the base URL is
+configured, and check any long-lived connections separately -- they often have their own configuration.
 
 ### Category 3: Service Dependencies
 
 **Symptoms:** "Connection refused", "Service not available"
 **Proactive fix:** Start all required services before agent execution
 
-```bash
-# Backend needed? Start it:
-npm run dev
-
-# Database needed? Start it:
-docker ps | grep postgres || npm run db:start
-```
+Start the backend and the database before the agent needs them, not when it discovers they are missing.
 
 ### Category 4: Infrastructure Requirements
 
 **Symptoms:** "Tool not found", "Command not available", hidden setup costs
 **Proactive fix:** Test infrastructure requirements, discover costs, make pragmatic decisions
 
-```bash
-# Don't assume - validate:
-xcrun simctl list devices  # iOS simulators available?
-# If empty: mobile-mcp won't work, need alternative
-```
+Run the tool's own "what is available" command before committing to it. An empty list is the answer, and it
+arrives in seconds rather than after a download.
 
 ### Category 5: Environment Mismatches
 
 **Symptoms:** "Works in test but not in dev", "Environment variable missing"
 **Proactive fix:** Verify environment matches agent's needs
 
-```bash
-# Development database has schema?
-npm run db:migrate:fresh
-
-# Environment variables set?
-cat .env.local | grep REQUIRED_VAR
-```
+Confirm the development database carries the current schema, and that every environment variable the feature
+reads is actually set. See @.claude/orchestration/core/methodology/environment-validation.md.
 
 ---
 
@@ -361,8 +318,8 @@ cat .env.local | grep REQUIRED_VAR
 **Protocol Applied:**
 
 - Read handoff → identified 3 blockers
-- Validated infrastructure → discovered mobile-mcp 7GB cost
-- Fixed blockers proactively → imports verified, backend configured, Lighthouse PWA audit chosen
+- Validated infrastructure → discovered the new tool's setup cost before adopting it
+- Fixed blockers proactively → imports verified, backend configured, the proven testing approach chosen
 - Launched agent → smooth execution, all gates passed, COMPLETE
   **Result:** Efficient completion vs blocked state
 
@@ -388,8 +345,8 @@ cat .env.local | grep REQUIRED_VAR
 **Practice:**
 
 - Given session handoff → identify 3 blockers
-- Given mobile-mcp research → discover 7GB cost
-- Choose: Lighthouse PWA audit (proven, 2 min) vs mobile-mcp (theoretical, 60 min)
+- Given research on a new tool → discover its true setup cost
+- Choose: the proven approach vs the theoretical improvement, priced honestly
 
 **Week 3-4: Apply Proactive Problem-Solving**
 

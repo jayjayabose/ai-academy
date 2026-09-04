@@ -123,8 +123,8 @@
 
 **Code Quality:**
 
-- TypeScript errors before validation: {count}
-- ESLint warnings before validation: {count}
+- Type / compile errors before validation: {count}
+- Lint warnings before validation: {count}
 - Test coverage: {percentage}
 - Integration tests: {count}
 

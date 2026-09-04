@@ -23,8 +23,16 @@
 **Quick References:**
 
 - `coordination-decision-tree.md` - Visual flowchart for coordination decisions
-- `nestjs-patterns.md` - Common code patterns and snippets
 - `gotcha-library.md` - Known issues with proven fixes
+
+Stack-specific snippets live in `examples/<stack>/`, not here.
+
+---
+
+## Relationship to Examples
+
+Checklists here are stack-neutral. The commands that satisfy them are in
+`examples/<stack>/<file>-examples.md`.
 
 ---
 

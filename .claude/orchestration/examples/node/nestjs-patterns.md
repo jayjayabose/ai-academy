@@ -1,6 +1,10 @@
 # Quick Reference: NestJS + Sequelize + REST Patterns
 
-**Purpose:** Common code patterns for new-crm tech stack
+**Purpose:** Common code patterns for this project's stack
+
+Part of the Node examples pack. There is no core counterpart: unlike the other files here, this one has no portable
+half to be split from. Every section is a snippet in one framework, which is why it moved whole rather than being
+divided.
 
 ---
 

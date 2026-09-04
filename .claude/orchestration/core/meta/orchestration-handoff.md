@@ -79,7 +79,7 @@ ls -la .claude/orchestration/core/meta/session-handoffs/ 2>/dev/null || echo "No
 
 - Complete foundation BEFORE parallel agents execute
 - Includes: database, testing framework, dev scripts, MCP servers
-- "Demo ready" means: fresh clone → npm install → npm run dev = working app
+- "Demo ready" means: fresh clone → install → run = working app, with no undocumented step
 
 ### Integration Strategy Validation
 

@@ -477,8 +477,8 @@ Engineer: "What did we learn from authentication feature?"
 
     retrospective.md
       - What went well: Import validation prevented parallel attempt
-      - What didn't go well: TypeScript errors found after completion (221)
-      - Learning: Pre-completion validation MUST include TypeScript check
+      - What didn't go well: 221 type errors found after completion
+      - Learning: Pre-completion validation MUST include the static check
 ```
 
 ---

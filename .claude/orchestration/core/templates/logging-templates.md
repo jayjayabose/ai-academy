@@ -19,7 +19,7 @@
 **Context:** Need to choose specific versions and tools for project foundation
 **Options Considered:**
 
-- NestJS versions, database tools, etc.
+- Framework versions, database tools, etc.
   **Decision Made:**
   **Assumptions:** Future agents will use these exact versions
   **Risk Assessment:** Version mismatches could break parallel agent work

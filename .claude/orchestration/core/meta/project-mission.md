@@ -22,7 +22,7 @@ efficiently while maintaining professional code standards.
 
 - Complete foundation BEFORE parallel agent execution
 - Setup scripts, testing framework, dev scripts as Task 0
-- "Demo ready" means: fresh clone → npm install → npm run dev = working app
+- "Demo ready" means: fresh clone → install → run = working app, with no undocumented step
 
 ### Quality Standards
 

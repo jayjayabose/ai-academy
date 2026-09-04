@@ -264,8 +264,8 @@ For multi-component features, explicit integration responsibility:
 
 **General Gotchas:**
 
-- {Hydration errors if Next.js frontend}
-- {TypeScript validation before claiming complete}
+- {Framework-specific rendering gotchas}
+- {Static check run before claiming complete}
 - {Manual browser/device testing required}
 - {Process cleanup after tests}
 
