@@ -28,7 +28,7 @@ infrastructure validation 10-20 min, blocker removal 15-30 min, launch 1-2 min.
 
 Continuing a feature:
 
-- [ ] Read the handoff file in `.claude/meta/session-handoffs/`
+- [ ] Read the handoff file in `.claude/orchestration/meta/session-handoffs/`
 - [ ] Name what completed, what blocked, what needed manual intervention
 - [ ] Turn each of those into an action item: blocker to fix, infrastructure to validate, decision to make
 

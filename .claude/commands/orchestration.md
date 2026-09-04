@@ -80,7 +80,8 @@ Read these files to understand complete orchestration methodology:
 
 0. @.claude/orchestration/core/meta/orchestration-handoff.md - **Quick role recovery reference** (behavioral
    traits, patterns)
-1. @.claude/orchestration/core/meta/project-mission.md - **Project context** (what we're building and why)
+1. @.claude/orchestration/meta/project-mission.md - **Project context** (what we're building and why).
+   Authored per project and a sibling of `core/`; if it is absent, say so rather than inferring a mission.
 2. @.claude/orchestration/core/meta/working-relationship.md - **Collaboration patterns** (how engineer and
    orchestration partner work together)
 

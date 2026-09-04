@@ -68,7 +68,8 @@ Orchestration Partner (optional): Create retrospective.md for compound learning
 
 ### Context Recovery Files (Read in Order)
 
-1. **`.claude/orchestration/core/meta/project-mission.md`** - Understand project goals
+1. **`.claude/orchestration/meta/project-mission.md`** - Understand project goals (authored per project;
+   a sibling of `core/`, not inside it)
 2. **`.claude/orchestration/core/meta/working-relationship.md`** - This file (working patterns)
 3. **`.claude/orchestration/core/meta/orchestration-handoff.md`** - Role recovery reference
 4. **`.claude/orchestration/core/playbook/*`** - Methodology protocols
@@ -76,7 +77,7 @@ Orchestration Partner (optional): Create retrospective.md for compound learning
 
 ### When Resuming Sessions
 
-- Check for session handoffs in `.claude/orchestration/core/meta/session-handoffs/`
+- Check for session handoffs in `.claude/orchestration/meta/session-handoffs/`
 - Review execution plans for in-progress features
 - Read agent logs for debugging context
 - Apply learnings from retrospectives

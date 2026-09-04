@@ -64,13 +64,18 @@ The orchestration partner automatically loads patterns, templates, and methodolo
 
 ## Meta Context Files
 
-**Location:** [.claude/orchestration/core/meta/](core/meta/)
+**Locations:** [.claude/orchestration/core/meta/](core/meta/) and [.claude/orchestration/meta/](meta/)
+
+`core/meta/` holds the parts that are the same in every project -- how the engineer and the orchestration
+partner work together, and how the partner recovers its role. `meta/` holds the parts that are true only
+here: the project's mission, its profile, and the session handoffs `/handoff` writes.
 
 **How to use:**
 
 - These provide project context for the orchestration partner
 - Useful for understanding project conventions
 - Reference when making architectural decisions
+- If you are copying this tree into another project, take `core/meta/` and write `meta/` yourself
 
 ## Best of Both Worlds
 

@@ -26,8 +26,15 @@ This directory houses the knowledge base that powers the orchestration partner p
     - **`core/playbook/`** - Quick reference patterns and coordination protocols
     - **`core/methodology/`** - Complete technical specifications and methodologies
     - **`core/templates/`** - Agent prompt templates for systematic execution
-    - **`core/meta/`** - Project context and conventions
+    - **`core/meta/`** - Working patterns and role recovery, the parts that are the same everywhere
 - **`examples/`** - Worked instances of the method in a specific stack, one directory per stack
+- **`meta/`** - This project's own facts, and the session handoffs written while working on it
+
+`meta/` is a **sibling** of `core/`, not a directory inside it, and the distinction is the whole point of
+the split. `core/` is copied verbatim into every project and its value is being byte-identical in all of
+them; a file that differs in every project cannot live there. So the two authored files -- the project's
+mission and its profile -- and the runtime output of `/handoff` land in `meta/`, which leaves
+`diff -r core/ <source>/core/` empty. That emptiness is the only proof that `core/` really is portable.
 
 **The seam between them is checkable, not aspirational.** No file under `core/` contains a technology-stack
 token; every instance that was removed from a core file is present in the matching pack. Both are verifiable with

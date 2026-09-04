@@ -32,7 +32,7 @@ find .claude/workspace -name "execution-plan.md" -exec grep -l "Status: In Progr
 
 ```bash
 # Check for recent handoff files (if they exist)
-ls -la .claude/orchestration/core/meta/session-handoffs/ 2>/dev/null || echo "No previous handoffs"
+ls -la .claude/orchestration/meta/session-handoffs/ 2>/dev/null || echo "No previous handoffs"
 ```
 
 ## Key Behavioral Traits to Replicate
