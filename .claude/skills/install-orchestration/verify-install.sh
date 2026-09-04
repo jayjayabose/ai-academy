@@ -33,8 +33,20 @@ ok()   { [ "$QUIET" -eq 1 ] || printf '  ok     %s\n' "$1"; }
 head2(){ printf '\n%s\n' "$1"; }
 
 # Files that are SUPPOSED to contain {{markers}} until filled per use.
-TEMPLATE_RE='templates/agent-prompts/|ADAPTATION-TODO.md'
+# An agent-prompt template is filled per USE, not per install, wherever it lives -- packs
+# ship them next to their examples rather than under templates/agent-prompts/.
+TEMPLATE_RE='templates/agent-prompts/|-agent\.md$|ADAPTATION-TODO.md'
 md() { find "$C/orchestration" "$C/commands" -name '*.md' 2>/dev/null | sort; }
+
+# The method tree moved under orchestration/core/ when the knowledge base was split into
+# a portable core and per-stack example packs. Resolve it rather than hardcoding either
+# layout: the checks below that name playbook/ or templates/agent-prompts/ silently
+# inspect NOTHING against the wrong root, and a check that quietly passes is worse than
+# one that is absent -- it reports "ok" about a directory it never looked in.
+KB="$C/orchestration"
+[ -d "$C/orchestration/core" ] && KB="$C/orchestration/core"
+PACKS=""
+[ -d "$C/orchestration/examples" ] && PACKS="$({ ls "$C/orchestration/examples" 2>/dev/null || true; } | grep -v '\.md$' | tr '\n' ' ')"
 
 echo "Verifying orchestration install: $P"
 
@@ -67,7 +79,15 @@ while IFS= read -r f; do
   rel="${f#"$C/"}"
   case "$rel" in *project-profile.md|*project-mission.md) continue ;; esac
   if printf '%s' "$rel" | grep -qE "$TEMPLATE_RE"; then continue; fi
-  n=$({ grep -oE '\{\{[^}]*\}\}|\$DB_NAME|\$TEST_DB_NAME' "$f" 2>/dev/null || true; } | wc -l | tr -d ' ')
+  # `{{ x }}` with padding inside the braces is not one of ours. Every placeholder this
+  # toolchain writes is unpadded (`{{PROJECT_NAME}}`); padded braces and `${{ ... }}` are
+  # Angular interpolation and GitHub Actions expressions sitting inside worked examples,
+  # i.e. correct source. Measured over the whole knowledge base: 2 padded occurrences,
+  # both foreign syntax, 0 unpadded false positives. Before this exclusion the examples
+  # pack failed the check permanently, and a check with no correct fix trains people to
+  # ignore the verifier.
+  n=$({ grep -oE '\$?\{\{[^}]*\}\}|\$DB_NAME|\$TEST_DB_NAME' "$f" 2>/dev/null || true; } \
+      | { grep -vE '^\$\{\{|^\{\{ | \}\}$' || true; } | wc -l | tr -d ' ')
   if [ "$n" != "0" ]; then
     err "$rel: $n marker(s) — reads as already filled in"
     found=1
@@ -91,6 +111,24 @@ while IFS= read -r ref; do
 done < <({ grep -rhoE '\.claude/orchestration/[A-Za-z0-9._/-]+\.md' "$C/orchestration" "$C/commands" --include='*.md' 2>/dev/null || true; } | sort -u)
 [ "$dead" -eq 0 ] && ok "every .claude/orchestration/*.md reference resolves"
 
+# ------------------------- 3b. absolute paths into the source repo
+head2 "3b. Root-absolute paths resolve in this project"
+# Principle 7 in reverse: the source repo plants links to ITS OWN tree. `/course/guidebook/
+# chapters/05-sub-agents.md` is a real file in ai-academy and nothing anywhere else, so an
+# agent told to read it finds nothing and, worse, learns the project has a curriculum.
+# §3 only follows .claude/orchestration/*.md refs and never saw these.
+dead2=0
+while IFS= read -r ref; do
+  [ -n "$ref" ] || continue
+  case "$ref" in *'<'*|*'*'*|*'{{'*) continue ;; esac
+  [ -e "$P$ref" ] && continue
+  err "points outside this project: $ref"
+  dead2=1
+done < <({ grep -rhoE '(^|[[:space:]]|\()/[a-zA-Z0-9._-]+/[A-Za-z0-9._/-]+\.[a-z]+' \
+            "$C/orchestration" "$C/commands" --include='*.md' 2>/dev/null || true; } \
+          | sed 's/^[^/]*//' | sort -u)
+[ "$dead2" -eq 0 ] && ok "every root-absolute path resolves here"
+
 # ------------------------------------- 4. named-but-missing prompt templates
 head2 "4. Named agent-prompt templates exist"
 # A named *-agent.md / *-patterns.md must exist SOMEWHERE under orchestration/ --
@@ -113,7 +151,7 @@ done < "$NAMED"
 rm -f "$NAMED"
 if [ "$missing" -eq 0 ]; then
   ok "every named template/patterns file resolves"
-  ok "agent-prompts shipped: $(ls "$C/orchestration/templates/agent-prompts/" 2>/dev/null | tr '\n' ' ')"
+  ok "agent-prompts shipped: $(ls "$KB/templates/agent-prompts/" 2>/dev/null | tr '\n' ' ')"
 fi
 
 # --------------------------------------------- 5. convention contradictions
@@ -189,10 +227,17 @@ fi
 # --------------------------------- 5b. gate COUNT agrees with the profile
 head2 "5b. Gate count agrees with the profile"
 if [ -f "$PROFILE" ]; then
-  # How many gates does the profile actually define? Count numbered gate-table rows.
-  # Count only RUNNABLE gates: a row explicitly marked N/A documents why a gate is
-  # absent (e.g. Ruby has no type checker) and deliberately stays in the table.
-  pg=$({ grep -E '^\| *[0-9]+\. ' "$PROFILE" || true; } | { grep -vciE 'N/A|not applicable' || true; })
+  # How many gates does the profile actually define? Count numbered gate-table rows,
+  # INCLUDING rows marked N/A. This used to exclude them, on the theory that a gate with
+  # no command is not a gate. That was right when each stack shipped its own rewritten
+  # validation-gates.md; it is wrong against a portable core, which fixes the gate LIST
+  # at five for every project and tells you to record the absence of a command rather
+  # than drop the gate. Excluding N/A rows made a correctly-filled Rails profile report
+  # 4 and put 9 core files in error for saying 5 -- flagging the correct state.
+  # What that exclusion was really protecting against -- a dropped gate coming back by
+  # name so an agent runs a tool this project lacks -- is §10's job, and §10 keys off the
+  # same N/A marker.
+  pg=$({ grep -cE '^\| *[0-9]+\. ' "$PROFILE" || true; })
   if [ "$pg" = "0" ]; then
     warn "could not find a numbered gate table in the profile"
   else
@@ -240,11 +285,27 @@ if [ -n "$FOREIGN" ]; then
     f="${line%%:*}"; n="${line##*:}"
     rel="${f#"$C/"}"
     case "$rel" in *ADAPTATION-TODO.md) continue ;; esac
+    # An examples pack is one stack's worked instances. It names that stack in every
+    # other line, on purpose. Flagging it produces ~400 warnings that have no correct
+    # fix. What IS worth flagging is a pack for the wrong stack, checked once below.
+    case "$rel" in orchestration/examples/*) continue ;; esac
     printf '  warn   %-58s %s hit(s)\n' "$rel" "$n"
     WARNS=$((WARNS+1)); total=$((total+n))
   done < <({ grep -rciE "$FOREIGN" "$C/orchestration" "$C/commands" --include='*.md' 2>/dev/null || true; } | grep -v ':0$' | sort -t: -k2 -rn)
-  [ "$total" -eq 0 ] && ok "no foreign-stack references"
+  [ "$total" -eq 0 ] && ok "no foreign-stack references outside examples/"
   [ "$total" -gt 0 ] && echo "         $total total. Commands may already be right; the surrounding EXAMPLES are not."
+  # Installed packs vs the stack this project actually is.
+  if [ -n "$PACKS" ]; then
+    for pk in $PACKS; do
+      # Packs are named for the framework (`rails`), $STACK for the language (`ruby`).
+      pk_stack="$pk"
+      case "$pk" in rails) pk_stack=ruby ;; django|flask) pk_stack=python ;; esac
+      if [ "$pk_stack" = "$STACK" ]; then ok "examples pack '$pk' matches the detected stack"
+      else warn "examples pack '$pk' is installed but this project is $STACK — 20-odd files of another stack's commands, which agents read as instructions. Remove it unless you put it there deliberately."; fi
+    done
+  else
+    ok "no examples pack installed (core/ is complete without one)"
+  fi
 fi
 
 # ---------------------------- 7. infrastructure referenced but not present
@@ -387,7 +448,7 @@ if [ -f "$PROFILE" ] && grep -qiE 'no (type|load)[^.]{0,20}gate|GATE 1 DOES NOT 
     [ -n "$f" ] || continue
     rel="${f#"$C/"}"
     # validation-gates.md may legitimately explain what the gate WAS upstream.
-    case "$rel" in *ADAPTATION-TODO*|*validation-gates.md) continue ;; esac
+    case "$rel" in *ADAPTATION-TODO*|*validation-gates*.md) continue ;; esac
     # Same trap as §5: prose stating the gate is ABSENT names the tool in order to
     # rule it out. Flagging that punishes the correct fix.
     # Word-anchored: an unanchored 'no' also matches --noEmit and swallows real hits.
@@ -413,7 +474,7 @@ fi
 
 # ------------------------------------ 11. claimed counts match reality
 head2 "11. Claimed counts match reality"
-ACTUAL_TPL=$({ ls "$C/orchestration/templates/agent-prompts/" 2>/dev/null || true; } | { grep -c '\.md$' || true; })
+ACTUAL_TPL=$({ ls "$KB/templates/agent-prompts/" 2>/dev/null || true; } | { grep -c '\.md$' || true; })
 TMP11="$(mktemp -t cnt11-XXXXXX)"
 while IFS= read -r f; do
   [ -n "$f" ] || continue
@@ -519,11 +580,11 @@ head2 "13. playbook/ files summarise rather than duplicate methodology/"
 # every fix has to be applied in both or it silently survives in the other.
 TMP13="$(mktemp -t dup13-XXXXXX)"
 uniq_lines() { sort -u "$1" | grep -c '[A-Za-z]'; }
-for a in "$C/orchestration/playbook"/*.md; do
+for a in "$KB/playbook"/*.md; do
   [ -f "$a" ] || continue
   la=$({ wc -l < "$a"; } | tr -d ' ')
   [ "$la" -ge 150 ] || continue
-  for b in "$C/orchestration/methodology"/*.md; do
+  for b in "$KB/methodology"/*.md; do
     [ -f "$b" ] || continue
     lb=$({ wc -l < "$b"; } | tr -d ' ')
     [ "$lb" -ge 150 ] || continue
@@ -536,9 +597,9 @@ for a in "$C/orchestration/playbook"/*.md; do
   done
 done
 # templates/ vs methodology/ duplicates of the same basename are always accidental.
-for a in "$C/orchestration/templates"/*.md; do
+for a in "$KB/templates"/*.md; do
   [ -f "$a" ] || continue
-  b="$C/orchestration/methodology/$(basename "$a")"
+  b="$KB/methodology/$(basename "$a")"
   [ -f "$b" ] || continue
   ua=$(uniq_lines "$a"); ub=$(uniq_lines "$b")
   small=$ua; [ "$ub" -lt "$ua" ] && small=$ub
