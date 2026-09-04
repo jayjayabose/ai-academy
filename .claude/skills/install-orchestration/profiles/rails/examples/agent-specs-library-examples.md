@@ -1,10 +1,13 @@
 # Agent Specs Library (Rails)
 
+Companions `core/methodology/agent-specs-library.md`, which states how to write a role
+spec. This is that method filled in for a Rails codebase.
+
 **Purpose:** Agent role definitions for a Rails codebase, with the coordination risk of each
 stated up front.
 
 Project commands and layout: @.claude/orchestration/meta/project-profile.md
-Rails conventions: @.claude/orchestration/playbook/rails-patterns.md
+Rails conventions: @.claude/orchestration/examples/rails/rails-patterns.md
 
 ---
 
@@ -45,7 +48,7 @@ Task 0 before parallel agents start, or assign exactly one owner.
 role is the single most common cause of a broken `schema.rb`.
 
 **Gates:** Gate 1 (load), Gate 2 (rubocop), plus `db:migrate:status` clean and a proven
-rollback. See @.claude/orchestration/methodology/database-migration-strategy.md.
+rollback. See @.claude/orchestration/core/methodology/database-migration-strategy.md.
 
 ---
 
@@ -176,7 +179,7 @@ write specs against columns that don't exist yet and burn the session debugging 
 
 - The exact gate commands from @.claude/orchestration/meta/project-profile.md
 - Which files it **exclusively owns**, and the named shared files it must not touch
-- Session logging requirement (@.claude/orchestration/methodology/session-logging-system.md)
+- Session logging requirement (@.claude/orchestration/core/methodology/session-logging-system.md)
 - Specific success criteria — "`GET /policies/:id` returns 200 with `status: \"active\"`",
   not "the endpoint works"
 - The integration step: who wires this in, and where. "Created but never routed" is the

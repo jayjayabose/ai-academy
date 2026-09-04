@@ -1,5 +1,8 @@
 # Database Migration Strategy (ActiveRecord)
 
+Companions `core/methodology/database-migration-strategy.md`, which states the rules.
+This is those rules as ActiveRecord commands.
+
 **Purpose:** Keep schema changes safe when several agents work in parallel and deploys are
 rolling.
 

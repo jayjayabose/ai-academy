@@ -1,12 +1,12 @@
-# Validation Gates (Mandatory for All Features)
+# Validation Gates — worked instance, Ruby / Rails
 
-**Purpose:** Define when a feature is truly "complete" vs "loads but broken"
+Companions `core/methodology/validation-gates.md`, which states what each gate has to
+establish and why. That file is the spec; this one is the commands one Rails project used
+to satisfy it, plus the reasoning for the gate Ruby cannot run at all.
 
-**Status:** MANDATORY - all gates must pass before claiming "COMPLETE"
-
-**Stack:** Ruby / Rails. Commands below are defaults; the authoritative per-project
-commands live in @.claude/orchestration/meta/project-profile.md. Where this file and the
-profile disagree, **the profile wins** — it was filled in from the project's own CI.
+**The authoritative commands for YOUR project are in
+@.claude/orchestration/meta/project-profile.md.** Where this file and the profile
+disagree, **the profile wins** — it was filled in from the project's own CI.
 
 ---
 

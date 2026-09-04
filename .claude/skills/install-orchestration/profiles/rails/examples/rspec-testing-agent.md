@@ -1,5 +1,8 @@
 # RSpec Testing Infrastructure Agent — Task Specification
 
+Companions `core/templates/agent-prompts/testing-infrastructure-agent.md`. This is that
+template rewritten for RSpec.
+
 > Template. Replace every `{{...}}` before handing this to an agent. Delete sections that
 > don't apply — a prompt describing infrastructure the project already has wastes a session.
 
@@ -98,7 +101,7 @@ substitute conventional-looking equivalents.
 4. Test-database setup command (and parallel-worker preparation if applicable)
 5. Coverage config, if in scope
 6. A short docs section: how to run one spec, the suite, and the suite in parallel
-7. Session log per @.claude/orchestration/methodology/session-logging-system.md
+7. Session log per @.claude/orchestration/core/methodology/session-logging-system.md
 
 ## Explicitly out of scope
 

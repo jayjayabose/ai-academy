@@ -1,3 +1,0 @@
-# Base files this profile supersedes under a different name. Removed from the target
-# after the overlay is applied, so two contradictory versions never coexist.
-orchestration/templates/agent-prompts/testing-infrastructure-agent.md

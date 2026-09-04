@@ -1,5 +1,8 @@
 # Rails Patterns
 
+The Rails half of `core/playbook/`: framework-specific operational patterns that have no
+portable statement. Nothing in core/ companions this file.
+
 Operational patterns for agents working in a Rails codebase. Project-specific facts
 (commands, layout, gates) live in @.claude/orchestration/meta/project-profile.md — this
 file is about Rails itself.

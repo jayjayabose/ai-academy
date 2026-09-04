@@ -1,51 +1,53 @@
 # Rails profile
 
-Pre-adapts the orchestration knowledge base for Ruby/Rails, so installing into a Rails
-project doesn't mean rewriting 35 files by hand every time.
+A profile is now two things and nothing else:
+
+1. **`project-profile.md` / `project-mission.md`** — stack-shaped versions of the two
+   files the installer cannot write for you, so you are filling in Rails-shaped blanks
+   instead of generic ones.
+2. **`examples/`** — a worked-instance pack, installed as
+   `.claude/orchestration/examples/rails/`.
 
 ```bash
 ./install.sh /path/to/rails-project --profile rails
 ```
 
-## What it does, in order
+## What it no longer does, and why
 
-1. **Base copy** — the normal install.
-2. **Mechanical substitutions** (`substitutions.sed`) applied to every `adapt` and
-   `adapt-light` file: `npm run lint` → `bin/rubocop`, `npm test` → `bin/rspec`, Jest → RSpec,
-   Sequelize → ActiveRecord, and so on. High-confidence literal swaps only.
-3. **Overlay** (`files/`) — six files fully rewritten for Rails, plus two Rails-shaped
-   templates.
-4. **Removal** (`remove.txt`) — deletes base files this profile supersedes under a different
-   name, so two contradictory versions never coexist.
-5. **Retiering** (`manifest-overrides.tsv`) — the generated `ADAPTATION-TODO.md` reflects what
-   the profile already handled.
+It used to also run `substitutions.sed` (115 literal swaps across 36 files) and overlay
+six rewritten copies of core files. Both existed because the knowledge base was written
+in Node prose and had to be translated on the way in. `core/` has no stack token in it,
+so there is nothing to translate — and with the translator gone, so is the defect class
+it produced: a half-rewritten sentence such as "tsconfig.json compiles project:
+`bin/rails zeitwerk:check` returns 0 errors", which reads as deliberate and is nonsense.
 
-## What it does NOT do
+The six overlay files were not deleted. They are the Rails pack, which is where
+stack-specific writing belongs now.
 
-**It does not know your project.** `meta/project-profile.md` and `meta/project-mission.md`
-arrive as Rails-shaped templates full of `{{placeholders}}`, and filling them is still
-priority 1. An unfilled placeholder that reaches an agent becomes a fabricated command,
-which is worse than an obviously-wrong Node one.
+## What it still does NOT do
 
-Substitutions swap *commands*, not *prose*. Files like `success-criteria.md` will have
-correct commands inside examples that still describe an Angular feature. That's why they
-stay on the worklist.
+**It does not know your project.** `meta/project-profile.md` arrives as a Rails-shaped
+template full of `{{placeholders}}`, and filling it is the whole of phase 2. An unfilled
+placeholder that reaches an agent becomes a fabricated command, which is worse than an
+obviously-wrong Node one.
 
 ## Design notes
 
-- **Gate 1 is not a type check.** Ruby has no static type gate. The profile's
-  `validation-gates.md` makes Gate 1 a zeitwerk/eager-load check and says explicitly that
-  substituting a plausible command is worse than running four honest gates.
+- **Gate 1 is not a type check.** Ruby has no static type gate. The pack's
+  `validation-gates-examples.md` makes it a zeitwerk/eager-load check and says explicitly
+  that substituting a plausible command is worse than running four honest gates.
 - **Lint gates are read-only.** `bin/linter --fix` and `rubocop -a` mutate the tree; a gate
   that edits code to pass isn't a gate.
 - **CI outranks scripts.** `lefthook.yml` and `.github/workflows/*` record what the project
-  actually enforces. The profile tells you to source gate commands from there first.
+  actually enforces. The profile template tells you to source gate commands from there.
 - **Rails' parallel-agent hazards are shared *files*, not shared types:** `db/schema.rb`,
-  `config/routes.rb`, `config/locales/*.yml`, `Gemfile`. The agent-specs library assigns
-  ownership of each.
+  `config/routes.rb`, `config/locales/*.yml`, `Gemfile`. `agent-specs-library-examples.md`
+  assigns ownership of each.
 
-## Extending
+## Adding a stack
 
-To add another stack, mirror this directory: `substitutions.sed`, `files/`, `remove.txt`,
-`manifest-overrides.tsv`, `README.md`. `install.sh --profile <name>` picks it up with no
-code change.
+Mirror this directory: `project-profile.md`, optionally `project-mission.md`, optionally
+`examples/`. `install.sh --profile <name>` picks it up with no code change. If you only
+have the worked examples and no profile template, contribute the pack upstream to
+`.claude/orchestration/examples/<stack>/` instead — the installer picks a pack up from
+there by detected stack, with no profile at all.

@@ -1,7 +1,10 @@
 # Testing Standards (RSpec / Rails)
 
+Companions `core/playbook/testing-standards.md`. This is that checklist with RSpec
+commands in it.
+
 Quick operational checklist. Full reasoning:
-@.claude/orchestration/methodology/testing-as-infrastructure.md
+@.claude/orchestration/core/methodology/testing-as-infrastructure.md
 Project commands: @.claude/orchestration/meta/project-profile.md
 
 ---

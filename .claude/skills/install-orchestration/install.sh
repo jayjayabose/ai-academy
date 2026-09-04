@@ -18,17 +18,21 @@ FORCE=0
 DRY_RUN=0
 PROFILE=""
 WITH_BACKUP=0
+EXAMPLES="auto"
 
 usage() {
   cat <<'USAGE'
-Usage: install.sh [TARGET_PROJECT] [--profile NAME] [--force] [--dry-run] [--with-backup]
+Usage: install.sh [TARGET_PROJECT] [--profile NAME] [--examples NAME|none]
+                  [--force] [--dry-run] [--with-backup]
 
 Copies the orchestration slash commands and their knowledge base into
 TARGET_PROJECT/.claude/ (defaults to the current directory).
 
-  --profile NAME  apply a stack profile from profiles/NAME/ after copying:
-                  mechanical command swaps + pre-adapted file overlay.
-                  Available: rails
+  --profile NAME  supply a stack-shaped meta/project-profile.md template, and the
+                  matching examples pack if the profile ships one. Available: rails
+  --examples NAME install the worked-example pack for NAME instead of the one the
+                  target's stack implies. `none` installs no pack: correct when the
+                  target's stack has no pack yet, which is the common case.
   --force         overwrite files that already exist in the target
   --dry-run       print what would happen, change nothing
   --with-backup   if TARGET_PROJECT/.claude is gitignored, set up a git-versioned
@@ -41,22 +45,27 @@ Override the source with AI_ACADEMY_CLAUDE=/path/to/ai-academy/.claude
 USAGE
 }
 
-expect_profile=0
+expect=""
 for arg in "$@"; do
-  if [ "$expect_profile" -eq 1 ]; then PROFILE="$arg"; expect_profile=0; continue; fi
+  if [ -n "$expect" ]; then
+    case "$expect" in profile) PROFILE="$arg" ;; examples) EXAMPLES="$arg" ;; esac
+    expect=""; continue
+  fi
   case "$arg" in
-    --force)      FORCE=1 ;;
-    --dry-run)    DRY_RUN=1 ;;
+    --force)       FORCE=1 ;;
+    --dry-run)     DRY_RUN=1 ;;
     --with-backup) WITH_BACKUP=1 ;;
-    --profile)    expect_profile=1 ;;
-    --profile=*)  PROFILE="${arg#--profile=}" ;;
-    -h|--help)    usage; exit 0 ;;
-    -*)           echo "unknown option: $arg" >&2; usage >&2; exit 2 ;;
-    *)            TARGET_PROJECT="$arg" ;;
+    --profile)     expect=profile ;;
+    --profile=*)   PROFILE="${arg#--profile=}" ;;
+    --examples)    expect=examples ;;
+    --examples=*)  EXAMPLES="${arg#--examples=}" ;;
+    -h|--help)     usage; exit 0 ;;
+    -*)            echo "unknown option: $arg" >&2; usage >&2; exit 2 ;;
+    *)             TARGET_PROJECT="$arg" ;;
   esac
 done
-if [ "$expect_profile" -eq 1 ]; then
-  echo "error: --profile needs a name" >&2; exit 2
+if [ -n "$expect" ]; then
+  echo "error: --$expect needs a value" >&2; exit 2
 fi
 
 PROFILE_DIR=""
@@ -69,12 +78,11 @@ if [ -n "$PROFILE" ]; then
   fi
 fi
 
+# manifest.tsv lists ONLY the residue: the files the installer cannot get right.
+# Everything else is copied verbatim, which after the core/examples split is nearly
+# all of it. There is no per-file classification pass any more because there is
+# nothing left to classify.
 MANIFEST="$SKILL_DIR/manifest.tsv"
-
-# tier_of <path-relative-to-.claude> -> generate|adapt|adapt-light|portable|unknown
-tier_of() {
-  awk -F'\t' -v want="$1" '!/^#/ && NF>1 && $3==want {print $1; found=1; exit} END{if(!found) print "unknown"}' "$MANIFEST"
-}
 
 # --- validate source ---
 if [ ! -f "$MANIFEST" ]; then
@@ -90,6 +98,15 @@ for required in commands/orchestration.md commands/handoff.md commands/validate.
     exit 1
   fi
 done
+# The whole design below assumes a portable core: a tree with no stack token in it,
+# so there is nothing to rewrite on the way in. Refuse to guess if it is absent.
+if [ ! -d "$SOURCE_CLAUDE/orchestration/core" ]; then
+  echo "error: $SOURCE_CLAUDE/orchestration has no core/ directory." >&2
+  echo "       This installer copies a portable core verbatim; it has no machinery for" >&2
+  echo "       rewriting a stack-specific knowledge base in place. Point it at a source" >&2
+  echo "       with orchestration/core/ and orchestration/examples/." >&2
+  exit 1
+fi
 
 # --- validate target ---
 if [ ! -d "$TARGET_PROJECT" ]; then
@@ -104,8 +121,59 @@ if [ "$TARGET_CLAUDE" = "$SOURCE_CLAUDE" ]; then
   exit 1
 fi
 
+# --- which examples pack, if any -----------------------------------------
+# A pack is one stack's worked instances. Installing the WRONG one is the failure
+# the core/examples split exists to prevent: 20 files of Node commands in a Rails
+# repo read as instructions, not as illustrations. So the pack is chosen from the
+# target's own stack, and "no pack" is a perfectly good answer -- core/ is complete
+# without one, which is the property examples/README.md exists to guarantee.
+detect_stack() {
+  [ -f "$TARGET_PROJECT/Gemfile" ]        && { echo rails; return; }
+  [ -f "$TARGET_PROJECT/package.json" ]   && { echo node; return; }
+  [ -f "$TARGET_PROJECT/pyproject.toml" ] && { echo python; return; }
+  [ -f "$TARGET_PROJECT/requirements.txt" ] && { echo python; return; }
+  [ -f "$TARGET_PROJECT/go.mod" ]         && { echo go; return; }
+  [ -f "$TARGET_PROJECT/Cargo.toml" ]     && { echo rust; return; }
+  echo unknown
+}
+pack_source() {  # pack_source <name> -> dir holding the pack, or empty
+  [ -n "$1" ] || return 0
+  if [ -n "$PROFILE_DIR" ] && [ -d "$PROFILE_DIR/examples" ] && [ "$1" = "$PROFILE" ]; then
+    printf '%s' "$PROFILE_DIR/examples"; return
+  fi
+  [ -d "$SOURCE_CLAUDE/orchestration/examples/$1" ] && printf '%s' "$SOURCE_CLAUDE/orchestration/examples/$1"
+  # An explicit `return 0`: without it the function's status is the last test's, and
+  # `PACK_SRC="$(pack_source ...)"` then aborts the whole script under `set -e` before
+  # the "no such pack" message can be printed. Exit 1, silently, on a typo'd --examples.
+  return 0
+}
+TARGET_STACK="$(detect_stack)"
+PACK=""
+PACK_SRC=""
+case "$EXAMPLES" in
+  none) PACK="" ;;
+  auto) PACK="${PROFILE:-$TARGET_STACK}" ;;
+  *)    PACK="$EXAMPLES" ;;
+esac
+if [ -n "$PACK" ]; then
+  PACK_SRC="$(pack_source "$PACK")"
+  if [ -z "$PACK_SRC" ]; then
+    if [ "$EXAMPLES" = "auto" ]; then
+      PACK=""   # no pack for this stack yet; that is a normal, documented state
+    else
+      echo "error: no examples pack named '$PACK'" >&2
+      echo "  in the source: $(ls "$SOURCE_CLAUDE/orchestration/examples" 2>/dev/null | grep -v '\.md$' | tr '\n' ' ')" >&2
+      echo "  in profiles (need --profile NAME too): $(cd "$SKILL_DIR/profiles" 2>/dev/null && ls -d */examples 2>/dev/null | cut -d/ -f1 | tr '\n' ' ')" >&2
+      exit 2
+    fi
+  fi
+fi
+
 echo "source: $SOURCE_CLAUDE"
 echo "target: $TARGET_CLAUDE"
+echo "stack:  $TARGET_STACK (detected)"
+if [ -n "$PACK" ]; then echo "pack:   examples/$PACK"
+else echo "pack:   none — core/ is complete without one"; fi
 [ "$DRY_RUN" -eq 1 ] && echo "mode:   DRY RUN (no changes)"
 [ "$FORCE" -eq 1 ] && echo "mode:   FORCE (existing files overwritten)"
 [ -n "$PROFILE" ] && echo "profile: $PROFILE ($PROFILE_DIR)"
@@ -121,12 +189,10 @@ register_cleanup() { CLEANUP_PATHS="$CLEANUP_PATHS $1"; }
 
 # --- build into a staging dir, reconcile afterwards -----------------------
 # Writing straight into the target means the only way to protect phase-2 work is a
-# per-file "does it exist" check -- and the profile overlay skipped that check, so a
-# plain re-run silently replaced meta/project-profile.md, the one file everything else
-# defers to. Building the complete expected install somewhere else first turns that
-# into a comparison we can reason about: for each file we know what a pristine install
-# WOULD produce, what is on disk, and what we last wrote. Nothing in the target is
-# touched until every phase has succeeded.
+# per-file "does it exist" check. Building the complete expected install somewhere
+# else first turns that into a comparison we can reason about: for each file we know
+# what a pristine install WOULD produce, what is on disk, and what we last wrote.
+# Nothing in the target is touched until every phase has succeeded.
 FINAL_CLAUDE="$TARGET_CLAUDE"
 MANIFEST_FILE="$FINAL_CLAUDE/orchestration/.install-manifest"
 if [ "$DRY_RUN" -eq 0 ]; then
@@ -150,44 +216,18 @@ recorded_hash() {
 
 copied=0
 skipped=0
-to_generate=0
-adapt_heavy=""
-adapt_light=""
-generate_list=""
+authored=0
+work_list=""
 
-# copy_one <relative-path-from-source>
-copy_one() {
-  local rel="$1"
-  local from="$SOURCE_CLAUDE/$rel"
+# copy_from <absolute-source-file> <relative-dest-path>
+copy_from() {
+  local from="$1" rel="$2"
   local to="$TARGET_CLAUDE/$rel"
-  local tier
-  tier="$(tier_of "$rel")"
-
-  # `generate` files are 100% source-project-specific: copying them would plant
-  # wrong facts in the target. They get authored fresh in phase 2 instead.
-  if [ "$tier" = "generate" ]; then
-    echo "  GEN     $rel (not copied — authored for this project in phase 2)"
-    to_generate=$((to_generate + 1))
-    generate_list="$generate_list$rel"$'\n'
-    return
-  fi
-
-  case "$tier" in
-    adapt)       adapt_heavy="$adapt_heavy$rel"$'\n' ;;
-    adapt-light) adapt_light="$adapt_light$rel"$'\n' ;;
-    unknown)     echo "  WARN    $rel is not in manifest.tsv — classify it" >&2 ;;
-  esac
-
   if [ -e "$to" ] && [ "$FORCE" -eq 0 ]; then
-    if cmp -s "$from" "$to"; then
-      echo "  same    $rel"
-    else
-      echo "  SKIP    $rel (exists — use --force to overwrite)"
-      skipped=$((skipped + 1))
-    fi
+    if cmp -s "$from" "$to"; then echo "  same    $rel"
+    else echo "  SKIP    $rel (exists — use --force to overwrite)"; skipped=$((skipped + 1)); fi
     return
   fi
-
   echo "  copy    $rel"
   copied=$((copied + 1))
   [ "$DRY_RUN" -eq 1 ] && return
@@ -203,97 +243,67 @@ while IFS= read -r f; do
   # project READMEs. Land the command docs under orchestration/ instead, which is already
   # covered by the common `.claude/*` rule.
   if [ "$base" = "README.md" ]; then
-    if [ -e "$TARGET_CLAUDE/orchestration/COMMANDS.md" ] && [ "$FORCE" -eq 0 ]; then
-      echo "  SKIP    orchestration/COMMANDS.md (exists)"
-      skipped=$((skipped + 1))
-    else
-      echo "  copy    orchestration/COMMANDS.md (was commands/README.md)"
-      copied=$((copied + 1))
-      if [ "$DRY_RUN" -eq 0 ]; then
-        mkdir -p "$TARGET_CLAUDE/orchestration"
-        cp "$f" "$TARGET_CLAUDE/orchestration/COMMANDS.md"
-      fi
-    fi
-    continue
+    copy_from "$f" "orchestration/COMMANDS.md"
+  else
+    copy_from "$f" "commands/$base"
   fi
-  copy_one "commands/$base"
 done < <(find "$SOURCE_CLAUDE/commands" -maxdepth 1 -name '*.md' | sort)
 
 echo
-echo "knowledge base:"
-# meta/session-handoffs/ is excluded for the same reason as workspace/ (see the comment
-# at the workspace step): those are the SOURCE project's own session notes -- its
-# blockers, its decisions, its file paths. Copying them plants another project's history
-# in this one, and their claims get read as facts about the target. The directory is
-# where the target writes ITS handoffs; it does not need the source's.
+echo "knowledge base (core/ — copied verbatim, nothing in it names a stack):"
+# session-handoffs/ is excluded for the same reason as workspace/ (see the comment at
+# the workspace step): those are the SOURCE project's own session notes -- its blockers,
+# its decisions, its file paths. Copying them plants another project's history in this
+# one, and their claims get read as facts about the target.
+#
+# meta/project-mission.md is excluded because it IS the source project's mission
+# statement. It is on the author list instead.
 while IFS= read -r f; do
   rel="orchestration/${f#"$SOURCE_CLAUDE/orchestration/"}"
-  case "$rel" in orchestration/meta/session-handoffs/*) continue ;; esac
-  copy_one "$rel"
+  case "$rel" in
+    */session-handoffs/*)                    continue ;;
+    orchestration/core/meta/project-mission.md) continue ;;
+    orchestration/examples/*/*)              continue ;;   # packs handled below
+  esac
+  copy_from "$f" "$rel"
 done < <(find "$SOURCE_CLAUDE/orchestration" -type f | sort)
 
-subbed=0
-overlaid=0
-removed=0
-
-if [ -n "$PROFILE" ]; then
-  echo
-  echo "profile: mechanical substitutions"
-  SED_FILE="$PROFILE_DIR/substitutions.sed"
-  if [ -f "$SED_FILE" ]; then
-    while IFS= read -r rel; do
-      [ -n "$rel" ] || continue
-      f="$TARGET_CLAUDE/$rel"
-      # dry run copied nothing, so preview against the source instead
-      [ "$DRY_RUN" -eq 1 ] && f="$SOURCE_CLAUDE/$rel"
-      [ -f "$f" ] || continue
-      if [ "$DRY_RUN" -eq 1 ]; then
-        # count would-be changes without writing
-        if ! sed -f "$SED_FILE" "$f" 2>/dev/null | cmp -s - "$f"; then
-          echo "  sub     $rel"
-          subbed=$((subbed + 1))
-        fi
-      else
-        tmp="$f.sedtmp"
-        if sed -f "$SED_FILE" "$f" > "$tmp" 2>/dev/null; then
-          if cmp -s "$tmp" "$f"; then rm -f "$tmp"; else
-            mv "$tmp" "$f"; echo "  sub     $rel"; subbed=$((subbed + 1))
-          fi
-        else
-          rm -f "$tmp"; echo "  WARN    sed failed on $rel" >&2
-        fi
-      fi
-    done < <(awk -F'\t' '!/^#/ && NF>1 && ($1=="adapt" || $1=="adapt-light") {print $3}' "$MANIFEST")
-  else
-    echo "  (no substitutions.sed in profile)"
-  fi
-
-  echo
-  echo "profile: pre-adapted file overlay"
-  if [ -d "$PROFILE_DIR/files" ]; then
-    while IFS= read -r src; do
-      rel="${src#"$PROFILE_DIR/files/"}"
-      echo "  overlay $rel"
-      overlaid=$((overlaid + 1))
-      [ "$DRY_RUN" -eq 1 ] && continue
-      mkdir -p "$(dirname "$TARGET_CLAUDE/$rel")"
-      cp "$src" "$TARGET_CLAUDE/$rel"
-    done < <(find "$PROFILE_DIR/files" -type f | sort)
-  fi
-
-  if [ -f "$PROFILE_DIR/remove.txt" ]; then
-    while IFS= read -r rel; do
-      case "$rel" in ''|\#*) continue ;; esac
-      probe="$TARGET_CLAUDE/$rel"
-      [ "$DRY_RUN" -eq 1 ] && probe="$SOURCE_CLAUDE/$rel"
-      if [ -f "$probe" ]; then
-        echo "  remove  $rel (superseded by this profile)"
-        removed=$((removed + 1))
-        [ "$DRY_RUN" -eq 0 ] && rm -f "$TARGET_CLAUDE/$rel"
-      fi
-    done < "$PROFILE_DIR/remove.txt"
-  fi
+echo
+echo "examples pack:"
+if [ -n "$PACK" ]; then
+  while IFS= read -r f; do
+    copy_from "$f" "orchestration/examples/$PACK/${f#"$PACK_SRC/"}"
+  done < <(find "$PACK_SRC" -type f | sort)
+elif [ "$EXAMPLES" = "none" ]; then
+  echo "  none    suppressed with --examples none."
+else
+  echo "  none    no pack for '$TARGET_STACK' yet — core/ stands alone by design."
+  echo "          examples/README.md explains how to write one for this stack."
 fi
+
+echo
+echo "authored files (templates only — filling them is the job):"
+# These two are per-project by definition. They are the reason phase 2 exists, and the
+# reason core/ must stay pristine: a file that differs in every project cannot live in
+# a tree whose whole value is being identical in every project.
+install_author() {
+  local rel="$1" from=""
+  [ -n "$PROFILE_DIR" ] && [ -f "$PROFILE_DIR/$(basename "$rel")" ] && from="$PROFILE_DIR/$(basename "$rel")"
+  [ -z "$from" ] && [ -f "$SKILL_DIR/templates/$(basename "$rel")" ] && from="$SKILL_DIR/templates/$(basename "$rel")"
+  if [ -z "$from" ]; then
+    echo "  WARN    no template for $rel — author it from scratch" >&2
+    return
+  fi
+  echo "  author  $rel (${from#"$SKILL_DIR/"})"
+  authored=$((authored + 1))
+  [ "$DRY_RUN" -eq 1 ] && return
+  mkdir -p "$(dirname "$TARGET_CLAUDE/$rel")"
+  cp "$from" "$TARGET_CLAUDE/$rel"
+}
+while IFS= read -r rel; do
+  [ -n "$rel" ] || continue
+  install_author "$rel"
+done < <(awk -F'\t' '!/^#/ && NF>1 && $1=="author" {print $2}' "$MANIFEST")
 
 # ------------------------------------------------------- reconcile + manifest
 # Three states per file, and only the middle one is a judgement call:
@@ -304,11 +314,12 @@ fi
 #                      version alongside as .new so the merge is your decision.
 # This is how dpkg and rpm treat config files, for the same reason: the installer
 # cannot tell an improvement from a regression in a file it did not write.
-n_new=0; n_same=0; n_updated=0; n_local=0; n_forced=0; n_dropped=0
+n_new=0; n_same=0; n_updated=0; n_local=0; n_forced=0
 if [ "$DRY_RUN" -eq 0 ]; then
   echo
   echo "reconcile:"
   NEWMAN="$(mktemp -t orchman-XXXXXX)"
+  register_cleanup "$NEWMAN"
   while IFS= read -r src; do
     rel="${src#"$STAGE/"}"
     final="$FINAL_CLAUDE/$rel"
@@ -340,28 +351,14 @@ if [ "$DRY_RUN" -eq 0 ]; then
     fi
   done < <(find "$STAGE" -type f | sort)
 
-  # A file the profile removes must also go from the target, and from the manifest.
-  if [ -n "$PROFILE" ] && [ -f "$PROFILE_DIR/remove.txt" ]; then
-    while IFS= read -r rel; do
-      case "$rel" in ''|\#*) continue ;; esac
-      if [ -e "$FINAL_CLAUDE/$rel" ]; then
-        rm -f "$FINAL_CLAUDE/$rel"; n_dropped=$((n_dropped + 1))
-        echo "  remove  $rel (superseded by this profile)"
-      fi
-    done < "$PROFILE_DIR/remove.txt"
-  fi
-
   mkdir -p "$(dirname "$MANIFEST_FILE")"
   { echo "# sha256 of each file as this installer last wrote it. Do not hand-edit:"
     echo "# a wrong hash here makes the installer overwrite work it should protect."
     sort -k2 "$NEWMAN"
   } > "$MANIFEST_FILE"
-  rm -f "$NEWMAN"
 
-  printf '  %s new, %s already current, %s updated, %s kept local, %s forced' \
+  printf '  %s new, %s already current, %s updated, %s kept local, %s forced\n' \
     "$n_new" "$n_same" "$n_updated" "$n_local" "$n_forced"
-  [ "$n_dropped" -gt 0 ] && printf ', %s removed' "$n_dropped"
-  echo
   if [ "$n_local" -gt 0 ]; then
     echo
     echo "  $n_local file(s) you had localised were left alone. Their new versions sit"
@@ -391,96 +388,61 @@ else
   fi
 fi
 
-echo
-echo "$copied copied, $skipped skipped, $to_generate to author from scratch."
-[ -n "$PROFILE" ] && echo "profile '$PROFILE': $subbed substituted, $overlaid overlaid, $removed removed."
+n_author=$(awk -F'\t' '!/^#/ && NF>1 && $1=="author"' "$MANIFEST" | wc -l | tr -d ' ')
+n_retarget=$(awk -F'\t' '!/^#/ && NF>1 && $1=="retarget"' "$MANIFEST" | wc -l | tr -d ' ')
 
-n_heavy=$(printf '%s' "$adapt_heavy" | grep -c . || true)
-n_light=$(printf '%s' "$adapt_light" | grep -c . || true)
-if [ -n "$PROFILE" ] && [ -f "$PROFILE_DIR/manifest-overrides.tsv" ]; then
-  n_heavy=$(awk -F'\t' '!/^#/ && NF>1 && $1=="adapt"' "$PROFILE_DIR/manifest-overrides.tsv" | wc -l | tr -d ' ')
-  n_light=$(awk -F'\t' '!/^#/ && NF>1 && $1=="adapt-light"' "$PROFILE_DIR/manifest-overrides.tsv" | wc -l | tr -d ' ')
-  to_generate=$(awk -F'\t' '!/^#/ && NF>1 && $1=="generate"' "$PROFILE_DIR/manifest-overrides.tsv" | wc -l | tr -d ' ')
-fi
+echo
+echo "$copied copied, $skipped skipped, $authored template(s) staged for authoring."
 
 echo
 echo "=============================================================="
 echo "PHASE 1 (copy) done. PHASE 2 (adapt) is NOT done."
 echo "=============================================================="
-echo "The knowledge base was written against this source project's stack."
-echo "Until phase 2 runs, agents in $TARGET_PROJECT will be told to run"
-echo "commands that may not exist here."
+echo "core/ is portable and arrived correct. What did NOT arrive correct:"
 echo
-echo "  $to_generate file(s) to author from scratch"
-echo "  $n_heavy file(s) needing example/command rewrites"
-echo "  $n_light file(s) needing light command + path fixes"
+echo "  $n_author file(s) that only you can write (project profile + mission)"
+echo "  $n_retarget file(s) that still name the source project's commands or paths"
 
 if [ "$DRY_RUN" -eq 0 ]; then
   TODO="$TARGET_CLAUDE/orchestration/ADAPTATION-TODO.md"
-
-  # Effective manifest = base rows, with profile rows replacing same-path rows.
-  EFF="$(mktemp -t effmanifest-XXXXXX)"
-  register_cleanup "$EFF"
-  OVR="$PROFILE_DIR/manifest-overrides.tsv"
-  if [ -n "$PROFILE" ] && [ -f "$OVR" ]; then
-    awk -F'\t' -v ovr="$OVR" '
-      BEGIN { while ((getline line < ovr) > 0) {
-                if (line ~ /^#/) continue
-                n = split(line, a, "\t"); if (n < 2) continue
-                seen[a[3]] = 1
-              } }
-      !/^#/ && NF>1 { if (!($3 in seen)) print }
-    ' "$MANIFEST" > "$EFF"
-    grep -v '^#' "$OVR" | awk -F'\t' 'NF>1' >> "$EFF"
-  else
-    grep -v '^#' "$MANIFEST" | awk -F'\t' 'NF>1' > "$EFF"
-  fi
   {
     echo "# Adaptation TODO"
     echo
-    echo "\`/install-orchestration\` copied the knowledge base into this project but has"
-    echo "not yet rewritten the project-specific parts. Work the list top-down; each"
-    echo "priority tier depends on the one above it. Delete this file when done."
+    echo "\`/install-orchestration\` copied the knowledge base into this project. The"
+    echo "portable half — \`orchestration/core/\` — needs nothing: no file in it names a"
+    echo "technology stack. This list is the rest. Work it top-down; delete this file"
+    echo "when it is empty."
     echo
-    echo "Run \`detect-stack.sh .\` from the skill directory for the project facts."
+    echo "Run \`detect-stack.sh .\` from the skill directory for the project facts, and"
+    echo "\`verify-install.sh .\` when you think you are done."
     echo
-    if [ -n "$PROFILE" ]; then
-      echo "Profile **$PROFILE** was applied: $subbed file(s) had commands substituted,"
-      echo "$overlaid file(s) were replaced with pre-adapted versions, $removed removed."
-      echo "The list below is what the profile could NOT do for you."
-      echo
-    fi
-    for pri in 1 2 3; do
-      label=""
-      case "$pri" in
-        1) label="Priority 1 — do first; everything else references these" ;;
-        2) label="Priority 2 — rewrite the worked examples and commands" ;;
-        3) label="Priority 3 — light command, path and framing fixes" ;;
-      esac
-      echo "## $label"
-      echo
-      awk -F'\t' -v p="$pri" '!/^#/ && NF>1 && $2==p {
-        printf "- [ ] **%s** — `%s`\n      %s\n", $1, $3, $4
-      }' "$EFF"
-      echo
-    done
-    if grep -q '^done	' "$EFF" 2>/dev/null; then
-      echo "## Already handled by the \`$PROFILE\` profile — verify, don't rewrite"
-      echo
-      awk -F'\t' '!/^#/ && NF>1 && $1=="done" { printf "- [x] `%s`\n      %s\n", $3, $4 }' "$EFF"
-      echo
-    fi
+    echo "## Write these — nobody else can"
+    echo
+    awk -F'\t' '!/^#/ && NF>1 && $1=="author" { printf "- [ ] \`%s\`\n      %s\n", $2, $3 }' "$MANIFEST"
+    echo
+    echo "## Retarget these — they name the source project"
+    echo
+    awk -F'\t' '!/^#/ && NF>1 && $1=="retarget" { printf "- [ ] \`%s\`\n      %s\n", $2, $3 }' "$MANIFEST"
+    echo
     echo "## Copied verbatim — no action needed"
     echo
-    awk -F'\t' '!/^#/ && NF>1 && $1=="portable" { printf "- `%s`\n", $3 }' "$EFF"
+    echo "- \`orchestration/core/\` — the method, $(find "$TARGET_CLAUDE/orchestration/core" -type f 2>/dev/null | wc -l | tr -d ' ') files, free of stack tokens by construction."
+    if [ -n "$PACK" ]; then
+      echo "- \`orchestration/examples/$PACK/\` — worked instances for this stack."
+    else
+      echo "- No examples pack was installed: there is none for \`$TARGET_STACK\` yet."
+      echo "  \`orchestration/examples/README.md\` says how to write one. Until then the"
+      echo "  \`examples/<stack>/...\` pointers in core/ have nothing to point at, which is"
+      echo "  a visible gap rather than a wrong answer."
+    fi
     echo
     echo "## Residue check"
     echo
     echo "Run this from the project root when you think phase 2 is finished:"
     echo
     echo '```bash'
-    echo "grep -rEin 'nestjs|sequelize|angular|npm run|new_crm|jest|vitest|tsconfig|typescript|\{\{' \\"
-    echo "  .claude/orchestration/ .claude/commands/ | grep -v 'Playwright MCP'"
+    echo "grep -rEin 'npm run|nestjs|angular|sequelize|course/|curriculum|\{\{' \\"
+    echo "  .claude/orchestration/ .claude/commands/ | grep -v orchestration/examples/"
     echo '```'
     echo
     echo "Every hit should be a deliberate reference to this project's own stack."
@@ -493,17 +455,26 @@ fi
 # Unfilled markers are the worst failure mode: they read as already-filled facts.
 # Report per FILE (not per marker text) so the output is actionable, and separate the
 # files that are SUPPOSED to hold markers until phase 2 fills them.
+#
+# `{{ x }}` with padding inside the braces is NOT one of ours: every placeholder this
+# tool writes is unpadded (`{{PROJECT_NAME}}`). Padded braces and `${{ ... }}` are
+# Angular interpolation and GitHub Actions expressions inside worked examples --
+# correct source that must not be "fixed". Measured across the whole knowledge base:
+# 2 padded occurrences, both foreign syntax; 0 unpadded false positives.
+markers_in() {
+  { grep -oE '\$?\{\{[^}]*\}\}|\$DB_NAME' "$1" 2>/dev/null || true; } \
+    | { grep -vE '^\$\{\{|^\{\{ | \}\}$' || true; }
+}
 if [ "$DRY_RUN" -eq 0 ]; then
   echo
   echo "unfilled markers ({{...}} / \$DB_NAME) by file:"
-  expected_re='meta/project-profile.md|meta/project-mission.md|templates/agent-prompts/|ADAPTATION-TODO.md'
+  # `-agent.md` anywhere, not just templates/agent-prompts/: an agent-prompt template is
+  # filled per USE, not per install, and packs ship them alongside their examples.
+  expected_re='meta/project-profile.md|meta/project-mission.md|templates/agent-prompts/|-agent\.md$|ADAPTATION-TODO.md'
   any=0
   while IFS= read -r f; do
     [ -n "$f" ] || continue
-    # -E: BSD grep does not support the GNU \| alternation in BRE.
-    # `|| true`: grep exits 1 on no match, which under `set -o pipefail` would fail
-    # the whole command substitution and abort the script.
-    n=$({ grep -oE '\{\{[^}]*\}\}|\$DB_NAME' "$f" 2>/dev/null || true; } | wc -l | tr -d ' ')
+    n=$(markers_in "$f" | wc -l | tr -d ' ')
     # NB: `[ cond ] && continue` would abort the script under `set -e` when cond is false.
     if [ "$n" = "0" ]; then continue; fi
     rel="${f#"$TARGET_CLAUDE/"}"
@@ -541,19 +512,28 @@ if [ "$DRY_RUN" -eq 0 ] && [ "$copied" -gt 0 ]; then
   if ! git -C "$TARGET_PROJECT" rev-parse --git-dir >/dev/null 2>&1; then
     echo "  not a git repo — nothing can leak."
   else
+    # Every path the installer wrote, not just the ones in the manifest. The manifest
+    # does not list itself, and a *.new file is by definition not in it; both used to be
+    # skipped. In a repo carrying `.claude/*` plus `!.claude/commands/` that omission is
+    # the difference between reporting "clean" and a stray .new turning up in a PR.
+    # (Built into a file rather than a process substitution: a `#` comment inside
+    # `<({ ... })` breaks bash's paren matching at RUN time, which `bash -n` does not
+    # catch.)
+    WROTE="$(mktemp -t orchwrote-XXXXXX)"
+    register_cleanup "$WROTE"
+    [ -f "$MANIFEST_FILE" ] && awk '!/^#/ && NF>1 {print $2}' "$MANIFEST_FILE" >> "$WROTE"
+    [ -f "$MANIFEST_FILE" ] && echo "orchestration/.install-manifest" >> "$WROTE"
+    find "$FINAL_CLAUDE" -name '*.new' 2>/dev/null | sed "s|^$FINAL_CLAUDE/||" >> "$WROTE"
+    # settings.local.json only exists if --with-backup wrote hooks into it
+    [ -f "$FINAL_CLAUDE/settings.local.json" ] && echo "settings.local.json" >> "$WROTE"
+
     exposed=""; n_checked=0
     while IFS= read -r rel; do
       [ -n "$rel" ] || continue
       n_checked=$((n_checked + 1))
       git -C "$TARGET_PROJECT" check-ignore -q -- ".claude/$rel" 2>/dev/null && continue
       exposed="$exposed .claude/$rel"
-    done < <({ [ -f "$MANIFEST_FILE" ] && awk '!/^#/ && NF>1 {print $2}' "$MANIFEST_FILE"; } 2>/dev/null)
-    # settings.local.json only exists if --with-backup wrote hooks into it
-    if [ -f "$FINAL_CLAUDE/settings.local.json" ]; then
-      n_checked=$((n_checked + 1))
-      git -C "$TARGET_PROJECT" check-ignore -q -- ".claude/settings.local.json" 2>/dev/null \
-        || exposed="$exposed .claude/settings.local.json"
-    fi
+    done < "$WROTE"
     if [ -z "$exposed" ]; then
       echo "  clean — none of the $n_checked installed path(s) are visible to git."
     else
