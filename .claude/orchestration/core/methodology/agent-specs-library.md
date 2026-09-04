@@ -6,7 +6,7 @@
 coordination experiments.
 
 **For Detailed Specifications:** Two agent types have standalone template files in
-`.claude/orchestration/templates/agent-prompts/` (`testing-infrastructure-agent.md`, `infrastructure-patterns.md`).
+`.claude/orchestration/core/templates/agent-prompts/` (`testing-infrastructure-agent.md`, `infrastructure-patterns.md`).
 For every other agent type below, the "Specification Template" / "Quick Overview" block in its section **is** the
 full spec — copy it directly into your prompt, there's no separate file to look up.
 
@@ -58,7 +58,7 @@ learnings.
 
 ### SESSION LOGGING REQUIREMENT (MANDATORY):
 - Create: `.claude/workspace/[FEATURE]/agent-logs/database-agent-session.md`
-- Use: Infrastructure Agent Log template from `.claude/orchestration/templates/logging-templates.md`
+- Use: Infrastructure Agent Log template from `.claude/orchestration/core/templates/logging-templates.md`
 - Log: Technology decisions, database design choices, integration setup decisions
 - Purpose: Teaching material for database setup methodology and coordination patterns
 ```
@@ -421,7 +421,7 @@ Use this file to:
 - **See proven patterns** from low/high coordination experiments
 - **Get quick overview** of agent capabilities
 
-### Detailed Specifications (`.claude/orchestration/templates/agent-prompts/` directory)
+### Detailed Specifications (`.claude/orchestration/core/templates/agent-prompts/` directory)
 
 Two agent types have a standalone file here, for when you want more than the inline "Quick Overview"/"Specification
 Template" blocks above:
@@ -433,7 +433,7 @@ Template" blocks above:
 Types, REST Controllers, UI Component) does not have a separate template file.** Its "Quick Overview" /
 "Specification Template" block above is the complete, copy-paste-ready spec — use it directly rather than looking
 for a file that doesn't exist. If a pattern repeats often enough to be worth extracting into its own file, add it to
-`.claude/orchestration/templates/agent-prompts/` and update this section.
+`.claude/orchestration/core/templates/agent-prompts/` and update this section.
 
 ---
 

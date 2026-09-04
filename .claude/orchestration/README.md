@@ -22,10 +22,12 @@ overhead, not by default for every change.
 
 This directory houses the knowledge base that powers the orchestration partner pattern:
 
-- **`playbook/`** - Quick reference patterns and coordination protocols
-- **`methodology/`** - Complete technical specifications and methodologies
-- **`templates/`** - Agent prompt templates for systematic execution
-- **`meta/`** - Project context and conventions
+- **`core/`** - The method, free of any particular technology stack
+    - **`core/playbook/`** - Quick reference patterns and coordination protocols
+    - **`core/methodology/`** - Complete technical specifications and methodologies
+    - **`core/templates/`** - Agent prompt templates for systematic execution
+    - **`core/meta/`** - Project context and conventions
+- **`examples/`** - Worked instances of the method in a specific stack, one directory per stack
 
 ## How It Works
 
@@ -54,10 +56,12 @@ on standalone usage.
 
 ```
 orchestration/
-├── playbook/           Quick reference checklists
-├── methodology/        Complete technical specs
-├── templates/          Agent prompt templates
-└── meta/               Project conventions and context
+├── core/               The portable method
+│   ├── playbook/       Quick reference checklists
+│   ├── methodology/    Complete technical specs
+│   ├── templates/      Agent prompt templates
+│   └── meta/           Project conventions and context
+└── examples/           Worked instances, one directory per stack
 ```
 
 ---

@@ -15,7 +15,7 @@ CRITICAL CONSTRAINT: This command creates ONLY a session handoff document. You M
 -  Modify any application code
 -  Run any code implementations
 -  Apply any bug fixes
--  Edit any files outside .claude/orchestration/meta/session-handoffs/
+-  Edit any files outside .claude/orchestration/core/meta/session-handoffs/
 
 Your ONLY task is to create a comprehensive session handoff markdown file documenting current state.
 
@@ -25,7 +25,7 @@ HANDOFF FILE PURPOSE:
 When the current session needs to close (token limits, long conversation, context refresh), this file enables seamless continuation in a new session without losing context or momentum.
 
 ARGUMENT (OPTIONAL):
-- Feature ID (e.g., "f04", "f05-auth") - determines filename: `.claude/orchestration/meta/session-handoffs/YYYY-MM-DD-{feature-id}-handoff.md`
+- Feature ID (e.g., "f04", "f05-auth") - determines filename: `.claude/orchestration/core/meta/session-handoffs/YYYY-MM-DD-{feature-id}-handoff.md`
 
 **If no argument provided, you MUST auto-detect the current context:**
 1. Analyze conversation history to determine what's being worked on
@@ -160,7 +160,7 @@ path/to/file2.ts - Fixed Y bug
 
 1. **Initialization:**
    ```bash
-   /orchestration .claude/orchestration/meta/session-handoffs/{this-file.md}
+   /orchestration .claude/orchestration/core/meta/session-handoffs/{this-file.md}
 ````
 
 2. **Immediate Review:**
@@ -237,9 +237,9 @@ HANDOFF FILE CREATION STEPS (DOCUMENTATION ONLY):
    - **Document what needs fixing - do not fix it**
 
 3. **Save File (ONLY File You Should Create):**
-   - Filename format: `.claude/orchestration/meta/session-handoffs/YYYY-MM-DD-{feature-id}-handoff.md`
+   - Filename format: `.claude/orchestration/core/meta/session-handoffs/YYYY-MM-DD-{feature-id}-handoff.md`
    - Use today's date in YYYY-MM-DD format
-   - Example: `.claude/orchestration/meta/session-handoffs/2025-10-01-f04-validation-complete.md`
+   - Example: `.claude/orchestration/core/meta/session-handoffs/2025-10-01-f04-validation-complete.md`
    - **This is the ONLY file you should create or modify**
 
 4. **Confirm Completeness:**
@@ -250,14 +250,14 @@ HANDOFF FILE CREATION STEPS (DOCUMENTATION ONLY):
 
 5. **Report for Code Review:**
    ```markdown
-    Session handoff file created: `.claude/orchestration/meta/session-handoffs/{filename}.md`
+    Session handoff file created: `.claude/orchestration/core/meta/session-handoffs/{filename}.md`
 
    **Current Status:** {brief summary}
    **Next Steps:** {top 3 priorities for NEXT SESSION to implement}
    **Blockers:** {any issues or decisions needed}
 
    **To Continue in New Session:**
-   Run: `/orchestration .claude/orchestration/meta/session-handoffs/{filename}.md`
+   Run: `/orchestration .claude/orchestration/core/meta/session-handoffs/{filename}.md`
 ````
 
 REMINDER: You are creating DOCUMENTATION of current state, not implementing changes. Leave all implementations for the
@@ -333,10 +333,10 @@ QUALITY CHECKLIST:
 ## Expected Output
 
 A comprehensive markdown handoff file at:
-`.claude/orchestration/meta/session-handoffs/YYYY-MM-DD-{feature-id}-handoff.md`
+`.claude/orchestration/core/meta/session-handoffs/YYYY-MM-DD-{feature-id}-handoff.md`
 
 That new session can use with:
-`/orchestration .claude/orchestration/meta/session-handoffs/{filename}.md`
+`/orchestration .claude/orchestration/core/meta/session-handoffs/{filename}.md`
 
 ---
 

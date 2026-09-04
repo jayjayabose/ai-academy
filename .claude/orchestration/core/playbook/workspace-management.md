@@ -92,7 +92,7 @@ mkdir -p .claude/workspace/{feature-slug}/agent-logs
 
 2. **Create `execution-plan.md`:**
 
-**Template Location:** `.claude/orchestration/templates/execution-plan-template.md`
+**Template Location:** `.claude/orchestration/core/templates/execution-plan-template.md`
 
 Copy template and customize:
 
@@ -229,7 +229,7 @@ NOT "feature works" - but "user sees X when they do Y"
 
 **Create:** `.claude/workspace/{feature-slug}/agent-logs/{task-name}-session.md`
 
-**Use template from:** `.claude/orchestration/templates/logging-templates.md`
+**Use template from:** `.claude/orchestration/core/templates/logging-templates.md`
 
 **Log throughout execution:**
 - Technology stack decisions affecting other agents
@@ -252,7 +252,7 @@ NOT "feature works" - but "user sees X when they do Y"
 **Orchestration partner can create:**
 `.claude/workspace/{feature-slug}/retrospective.md`
 
-**Template Location:** `.claude/orchestration/templates/retrospective-template.md`
+**Template Location:** `.claude/orchestration/core/templates/retrospective-template.md`
 
 **Purpose:**
 

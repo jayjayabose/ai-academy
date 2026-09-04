@@ -6,7 +6,7 @@
 
 **Think:** Cheat sheet (keep open while working)
 
-**Templates (copy-paste ready):** @.claude/orchestration/methodology/prompt-templates.md
+**Templates (copy-paste ready):** @.claude/orchestration/core/methodology/prompt-templates.md
 
 ---
 
@@ -16,9 +16,9 @@
 | ------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Infrastructure task, no shared contract (database, API scaffolding)  | prompt-templates.md § Infrastructure-Independent Agent Prompts   |
 | Contract-code integration (types → controllers → UI)                 | prompt-templates.md § Schema-Code Integration Prompts            |
-| Fixing a bug rather than building a feature                          | @.claude/orchestration/methodology/bugfix-prompt-template.md     |
+| Fixing a bug rather than building a feature                          | @.claude/orchestration/core/methodology/bugfix-prompt-template.md     |
 
-Unsure which agent the work needs at all: @.claude/orchestration/methodology/agent-specs-library.md
+Unsure which agent the work needs at all: @.claude/orchestration/core/methodology/agent-specs-library.md
 
 **Coordination level drives this choice.** Determine it first — `agent-coordination.md` step 1.
 
@@ -36,8 +36,8 @@ Every prompt, without exception:
 - [ ] **Success criteria** — specific and verifiable, never "feature works"
 
 **What each block must contain:** methodology/coordination-protocols.md § Quick Protocol Validation Checklist
-**Turning vague criteria into testable ones:** @.claude/orchestration/methodology/success-criteria.md
-**Logging templates:** @.claude/orchestration/templates/logging-templates.md
+**Turning vague criteria into testable ones:** @.claude/orchestration/core/methodology/success-criteria.md
+**Logging templates:** @.claude/orchestration/core/templates/logging-templates.md
 
 ---
 
@@ -47,7 +47,7 @@ Every prompt, without exception:
 - [ ] Manual verification, named for the surface: browser for frontend, request-level checks for backend
 - [ ] The instruction to paste gate output into the session log
 
-**Gate commands, required output and evidence format:** @.claude/orchestration/methodology/validation-gates.md
+**Gate commands, required output and evidence format:** @.claude/orchestration/core/methodology/validation-gates.md
 **Why manual verification is separate from the test suite:** validation-gates.md § Gate 5: Manual Testing
 
 Automated tests passing is not the same as the feature working. A suite can be green while the schema was never

@@ -7,10 +7,12 @@ This directory contains orchestration tooling for the AI Orchestration Mastery c
 ```
 .claude/
 ├── orchestration/    Partner knowledge base (introduced on Day 2)
-│   ├── playbook/             Quick reference patterns
-│   ├── methodology/          Complete technical specifications
-│   ├── templates/            Agent prompt templates
-│   └── meta/                 Project context and conventions
+│   ├── core/                 The portable method
+│   │   ├── playbook/         Quick reference patterns
+│   │   ├── methodology/      Complete technical specifications
+│   │   ├── templates/        Agent prompt templates
+│   │   └── meta/             Project context and conventions
+│   └── examples/             Worked instances, one directory per stack
 ├── commands/                 Custom slash commands
 └── workspace/                Feature execution tracking
 ```

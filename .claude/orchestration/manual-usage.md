@@ -21,7 +21,7 @@ The orchestration partner automatically loads patterns, templates, and methodolo
 
 ## Templates
 
-**Location:** [.claude/orchestration/templates/](/templates/)
+**Location:** [.claude/orchestration/core/templates/](core/templates/)
 
 **How to use:**
 
@@ -32,7 +32,7 @@ The orchestration partner automatically loads patterns, templates, and methodolo
 
 ## Playbook Patterns
 
-**Location:** [.claude/orchestration/playbook/](/playbook/)
+**Location:** [.claude/orchestration/core/playbook/](core/playbook/)
 
 **How to use:**
 
@@ -42,7 +42,7 @@ The orchestration partner automatically loads patterns, templates, and methodolo
 
 ## Methodology Specifications
 
-**Location:** [.claude/orchestration/methodology/](/methodology/)
+**Location:** [.claude/orchestration/core/methodology/](core/methodology/)
 
 **How to use:**
 
@@ -52,7 +52,7 @@ The orchestration partner automatically loads patterns, templates, and methodolo
 
 ## Meta Context Files
 
-**Location:** [.claude/orchestration/meta/](/meta/)
+**Location:** [.claude/orchestration/core/meta/](core/meta/)
 
 **How to use:**
 

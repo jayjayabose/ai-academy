@@ -163,10 +163,10 @@ cp .env.local.template .env.local
 
 **Orchestration tooling (introduced on Day 2):**
 
-- ⚡ **`.claude/orchestration/playbook/`** - Quick operational references
-- 🔧 **`.claude/orchestration/methodology/`** - Complete technical specifications
-- 📋 **`.claude/orchestration/templates/`** - Agent prompts and handoff templates
-- ⚙️ **`.claude/orchestration/meta/`** - Project context files
+- ⚡ **`.claude/orchestration/core/playbook/`** - Quick operational references
+- 🔧 **`.claude/orchestration/core/methodology/`** - Complete technical specifications
+- 📋 **`.claude/orchestration/core/templates/`** - Agent prompts and handoff templates
+- ⚙️ **`.claude/orchestration/core/meta/`** - Project context files
 - 🤖 **`.claude/commands/`** - Custom slash commands
 
 **→ See [.claude/README.md](.claude/README.md) for orchestration tooling guide**

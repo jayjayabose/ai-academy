@@ -12,7 +12,7 @@ You MUST maintain a detailed session log throughout your work. This is not optio
 ### Log Setup
 
 1. **Create Log File:** `.claude/workspace/[FEATURE]/agent-logs/[YOUR-AGENT-NAME]-session.md`
-2. **Use Template:** Copy appropriate template from `.claude/orchestration/templates/logging-templates.md`
+2. **Use Template:** Copy appropriate template from `.claude/orchestration/core/templates/logging-templates.md`
 3. **Update Real-Time:** Log decisions, discoveries, and coordination events as they happen
 
 ### Critical Logging Points (MUST LOG)
@@ -170,11 +170,11 @@ Add to all frontend agent session logs:
 
 ### For Existing Agent Specs:
 
-Update all agent specifications in `.claude/orchestration/methodology/agent-specs-library.md` to include the logging protocol.
+Update all agent specifications in `.claude/orchestration/core/methodology/agent-specs-library.md` to include the logging protocol.
 
 ### For Prompt Templates:
 
-Update all templates in `.claude/orchestration/methodology/prompt-templates.md` to include the standard logging block.
+Update all templates in `.claude/orchestration/core/methodology/prompt-templates.md` to include the standard logging block.
 
 ## Benefits of Systematic Logging
 

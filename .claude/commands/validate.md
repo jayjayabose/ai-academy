@@ -351,7 +351,7 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 `.claude/workspace/{feature-id}/retrospective.md`
 
 **If retrospective doesn't exist yet, create it using template:**
-`.claude/orchestration/templates/retrospective-template.md`
+`.claude/orchestration/core/templates/retrospective-template.md`
 
 **Add validation findings to retrospective sections:**
 

@@ -6,7 +6,7 @@
 
 **Think:** Cheat sheet (keep open while working)
 
-**Complete specification:** @.claude/orchestration/methodology/pre-execution-validation-protocol.md
+**Complete specification:** @.claude/orchestration/core/methodology/pre-execution-validation-protocol.md
 
 ---
 

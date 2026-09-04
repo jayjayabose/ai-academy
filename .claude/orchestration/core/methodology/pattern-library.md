@@ -195,7 +195,7 @@ Import schema types and use them directly.
 **Solution:** Validation checkpoint between parallel completion and final delivery
 
 **Mandatory Validation Steps:** the five gates, and the commands that run them, are defined once in
-@.claude/orchestration/methodology/validation-gates.md. Run them at this checkpoint as well as at
+@.claude/orchestration/core/methodology/validation-gates.md. Run them at this checkpoint as well as at
 individual agent completion. The point of this pattern is that every agent reporting green does not
 make the system green.
 
@@ -386,7 +386,7 @@ Task 0: Infrastructure
 
 **Problem:** Agents claim "complete" before validating all quality requirements
 
-**Solution:** every gate defined in @.claude/orchestration/methodology/validation-gates.md must pass
+**Solution:** every gate defined in @.claude/orchestration/core/methodology/validation-gates.md must pass
 before an agent may claim completion. That file is the single definition; this pattern is only the
 rule that the claim is not allowed without them.
 

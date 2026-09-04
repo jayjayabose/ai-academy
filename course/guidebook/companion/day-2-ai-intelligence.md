@@ -348,7 +348,7 @@ Use when:
 - Conventions discovered (patterns, port configs, field naming used in this feature)
 - Files modified (complete list with brief descriptions)
 
-**Location:** `.claude/orchestration/meta/session-handoffs/YYYY-MM-DD-{feature}-handoff.md`
+**Location:** `.claude/orchestration/core/meta/session-handoffs/YYYY-MM-DD-{feature}-handoff.md`
 
 **Next session (even weeks later):**
 

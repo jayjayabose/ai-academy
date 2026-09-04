@@ -6,7 +6,7 @@
 
 **Think:** Cheat sheet (keep open while working)
 
-**Complete specification:** @.claude/orchestration/methodology/coordination-protocols.md
+**Complete specification:** @.claude/orchestration/core/methodology/coordination-protocols.md
 
 ---
 
@@ -45,7 +45,7 @@ Coordination Planning
 - [ ] Decisions that affect another agent are broadcast, not just recorded
 - [ ] Every agent keeps a session log at `.claude/workspace/[feature]/agent-logs/[agent-name]-session.md`
 
-**Logging templates:** @.claude/orchestration/templates/logging-templates.md
+**Logging templates:** @.claude/orchestration/core/templates/logging-templates.md
 **Consultation process and documentation format:** methodology/coordination-protocols.md § 2.1 Cross-Agent
 Communication Protocol
 
@@ -74,7 +74,7 @@ Layer Protocol
 4. Process cleanup
 5. Manual testing
 
-**Commands, required output and evidence format:** @.claude/orchestration/methodology/validation-gates.md
+**Commands, required output and evidence format:** @.claude/orchestration/core/methodology/validation-gates.md
 
 Claiming "COMPLETE" without passing all five = incomplete task. Fix, then re-run every gate, not just the one that
 failed.

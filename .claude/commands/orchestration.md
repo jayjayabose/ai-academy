@@ -26,14 +26,14 @@ proceeding with initialization.
 
 **Before reading files, understand where content lives and WHY:**
 
-### `.claude/orchestration/playbook/` - Quick Operational Checklists
+### `.claude/orchestration/core/playbook/` - Quick Operational Checklists
 
 - **Purpose:** Fast lookup during work (checklists, workflows)
 - **You read:** For operational steps (what to include in prompts)
 - **Content:** Brief summaries + links to methodology
 - **Think:** Cheat sheet kept open during work
 
-### `.claude/orchestration/methodology/` - Canonical Technical Specifications
+### `.claude/orchestration/core/methodology/` - Canonical Technical Specifications
 
 - **Purpose:** Single source of truth (authoritative definitions)
 - **You read:** When need complete technical details
@@ -67,30 +67,30 @@ Read these files to understand complete orchestration methodology:
 
 **Session Continuity & Role Recovery:**
 
-0. @.claude/orchestration/meta/orchestration-handoff.md - **Quick role recovery reference** (behavioral
+0. @.claude/orchestration/core/meta/orchestration-handoff.md - **Quick role recovery reference** (behavioral
    traits, patterns)
-1. @.claude/orchestration/meta/project-mission.md - **Project context** (what we're building and why)
-2. @.claude/orchestration/meta/working-relationship.md - **Collaboration patterns** (how engineer and
+1. @.claude/orchestration/core/meta/project-mission.md - **Project context** (what we're building and why)
+2. @.claude/orchestration/core/meta/working-relationship.md - **Collaboration patterns** (how engineer and
    orchestration partner work together)
 
 **Orchestration Workflows (playbook/ - operational):**
 
-3. @.claude/orchestration/playbook/strategic-orchestration.md - Pre-execution validation workflow
-4. @.claude/orchestration/playbook/agent-coordination.md - Coordination protocol workflows
-5. @.claude/orchestration/playbook/prompt-creation.md - Prompt creation operational steps
-6. @.claude/orchestration/playbook/workspace-management.md - **CRITICAL:** Feature organization workflow
+3. @.claude/orchestration/core/playbook/strategic-orchestration.md - Pre-execution validation workflow
+4. @.claude/orchestration/core/playbook/agent-coordination.md - Coordination protocol workflows
+5. @.claude/orchestration/core/playbook/prompt-creation.md - Prompt creation operational steps
+6. @.claude/orchestration/core/playbook/workspace-management.md - **CRITICAL:** Feature organization workflow
 
 **Canonical Specifications (methodology/ - reference when need complete details):**
 
-7. @.claude/orchestration/methodology/pattern-library.md - Proven orchestration patterns
-8. @.claude/orchestration/methodology/validation-gates.md - Complete 5 gates specification
-9. @.claude/orchestration/methodology/success-criteria.md - Specific vs generic success criteria guide
-10. @.claude/orchestration/methodology/investigation-workflow.md - Investigate-first approach
-11. @.claude/orchestration/methodology/environment-validation.md - Environment variable protocol
+7. @.claude/orchestration/core/methodology/pattern-library.md - Proven orchestration patterns
+8. @.claude/orchestration/core/methodology/validation-gates.md - Complete 5 gates specification
+9. @.claude/orchestration/core/methodology/success-criteria.md - Specific vs generic success criteria guide
+10. @.claude/orchestration/core/methodology/investigation-workflow.md - Investigate-first approach
+11. @.claude/orchestration/core/methodology/environment-validation.md - Environment variable protocol
 
 **Templates:**
 
-12. @.claude/orchestration/templates/agent-prompts/ - Available prompt templates
+12. @.claude/orchestration/core/templates/agent-prompts/ - Available prompt templates
 
 ## YOUR ROLE: Proactive Feature Strategist (NOT Reactive Prompt Generator)
 
@@ -178,7 +178,7 @@ When engineer describes a feature, you:
 
 1. **Analyze coordination requirements** (low vs high coordination)
 2. **Analyze import dependencies** (sequential vs parallel execution)
-3. **Select appropriate template** from `.claude/orchestration/templates/agent-prompts/`
+3. **Select appropriate template** from `.claude/orchestration/core/templates/agent-prompts/`
 4. **Generate complete agent prompt** with all protocols included
 5. **Explain reasoning** (why this template? why sequential/parallel?)
 
@@ -294,8 +294,8 @@ When engineer says: "I need [feature description]"
 
 **Don't ask questions you can answer through codebase investigation. Don't ask questions to hit a quota.**
 
-**Full investigation workflow:** @.claude/orchestration/methodology/investigation-workflow.md
-**Environment validation protocol:** @.claude/orchestration/methodology/environment-validation.md
+**Full investigation workflow:** @.claude/orchestration/core/methodology/investigation-workflow.md
+**Environment validation protocol:** @.claude/orchestration/core/methodology/environment-validation.md
 
 **Example (Dashboard-Analytics-Widgets):**
 
@@ -431,7 +431,7 @@ NOT: Widget agents create files, separate agent integrates all.
 - Bug fix → `bugfix-prompt-template.md`
 
 Only testing infrastructure and general infrastructure have standalone files in
-`.claude/orchestration/templates/agent-prompts/`; every other agent type is specified inline in
+`.claude/orchestration/core/templates/agent-prompts/`; every other agent type is specified inline in
 `agent-specs-library.md` — copy its "Quick Overview" block directly.
 
 ### Step 4: Prompt Customization (5-10 minutes)
@@ -450,15 +450,15 @@ Only testing infrastructure and general infrastructure have standalone files in
 -  Session logging requirement
 -  **5 validation gates (MANDATORY):** TypeScript (0 errors), ESLint (0 warnings), Tests (all passing), Process
   cleanup (no hanging servers), Manual testing (browser OR curl)
-    - Full gate specifications: @.claude/orchestration/methodology/validation-gates.md
+    - Full gate specifications: @.claude/orchestration/core/methodology/validation-gates.md
 -  **Environment variable validation:** Auto-update .env.example if introducing new variables, alert engineer
-    - Full protocol: @.claude/orchestration/methodology/environment-validation.md
+    - Full protocol: @.claude/orchestration/core/methodology/environment-validation.md
 -  Testing requirements (unit WITH mocks + integration WITHOUT mocks)
 -  Dependency validation (if has imports)
 -  Coordination protocols (if high coordination)
 -  Quality standards (A+ code)
 -  **Specific success criteria** (not "feature works" - see
-  @.claude/orchestration/methodology/success-criteria.md)
+  @.claude/orchestration/core/methodology/success-criteria.md)
 -  Manual testing (frontend: Playwright browser verification; backend: curl/API testing)
 
 ### Step 4.5: Proven Pattern Application Checkpoint (2-3 minutes)
@@ -496,7 +496,7 @@ returns 200 with a valid JWT token"
 **Key principle:** NOT "feature works" - but "user sees X when they do Y" AND "API returns X when called with Y"
 
 **Full guide with frontend/backend examples & templates:**
-@.claude/orchestration/methodology/success-criteria.md
+@.claude/orchestration/core/methodology/success-criteria.md
 
 ### Step 6: Post-Prompt Self-Validation (1-2 minutes)
 
@@ -741,8 +741,8 @@ Me (optional): "Creates retrospective.md for future learning"
 **Every prompt you create MUST include:**
 
 - [ ] Session logging requirement
-- [ ] **5 validation gates (MANDATORY):** See @.claude/orchestration/methodology/validation-gates.md
-- [ ] **Environment variable validation:** See @.claude/orchestration/methodology/environment-validation.md
+- [ ] **5 validation gates (MANDATORY):** See @.claude/orchestration/core/methodology/validation-gates.md
+- [ ] **Environment variable validation:** See @.claude/orchestration/core/methodology/environment-validation.md
     - Agent must auto-update .env.example if introducing new variables
     - Agent must alert engineer about new variables in session log
     - Agent must validate required variables have clear error messages
@@ -752,7 +752,7 @@ Me (optional): "Creates retrospective.md for future learning"
 - [ ] Dependency validation (if has imports)
 - [ ] Technology stack specifications
 - [ ] Quality standards (A+ code)
-- [ ] **Specific success criteria:** See @.claude/orchestration/methodology/success-criteria.md
+- [ ] **Specific success criteria:** See @.claude/orchestration/core/methodology/success-criteria.md
 
 **If ANY missing → Prompt incomplete (go back and add)**
 
