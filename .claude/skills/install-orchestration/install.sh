@@ -41,7 +41,10 @@ TARGET_PROJECT/.claude/ (defaults to the current directory).
                   writing hooks changes runtime behaviour for every future session
                   in that repo, so it stays opt-in.
 
-Override the source with AI_ACADEMY_CLAUDE=/path/to/ai-academy/.claude
+Source: AI_ACADEMY_CLAUDE=/path/to/ai-academy/.claude, else ../../ relative to this
+script. Prefer a worktree so an unrelated 'git checkout' cannot change what installs:
+  git -C <ai-academy> worktree add /tmp/aia-src install-source/neutralised-core
+  AI_ACADEMY_CLAUDE=/tmp/aia-src/.claude install.sh <target>
 USAGE
 }
 
@@ -103,8 +106,14 @@ done
 if [ ! -d "$SOURCE_CLAUDE/orchestration/core" ]; then
   echo "error: $SOURCE_CLAUDE/orchestration has no core/ directory." >&2
   echo "       This installer copies a portable core verbatim; it has no machinery for" >&2
-  echo "       rewriting a stack-specific knowledge base in place. Point it at a source" >&2
-  echo "       with orchestration/core/ and orchestration/examples/." >&2
+  echo "       rewriting a stack-specific knowledge base in place." >&2
+  echo >&2
+  echo "       The split KB does not live on every branch. Do not fix this by checking" >&2
+  echo "       out another branch in a repo you work in -- then a later 'git checkout'" >&2
+  echo "       silently changes what gets installed. Use a detached worktree:" >&2
+  echo >&2
+  echo "         git -C <ai-academy> worktree add /tmp/aia-src install-source/neutralised-core" >&2
+  echo "         AI_ACADEMY_CLAUDE=/tmp/aia-src/.claude $0 <target>" >&2
   exit 1
 fi
 
@@ -170,6 +179,24 @@ if [ -n "$PACK" ]; then
 fi
 
 echo "source: $SOURCE_CLAUDE"
+# Provenance, not decoration: the copied bytes depend on the source's checked-out state,
+# so an install is only reproducible if that state is recorded. Print it, and say plainly
+# when the source is dirty -- untracked files under orchestration/ are how another
+# project's session notes get copied in the first place.
+if git -C "$SOURCE_CLAUDE" rev-parse --git-dir >/dev/null 2>&1; then
+  src_ref="$(git -C "$SOURCE_CLAUDE" rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  src_sha="$(git -C "$SOURCE_CLAUDE" rev-parse --short HEAD 2>/dev/null)"
+  echo "        at ${src_ref:-DETACHED} ${src_sha:-?}"
+  src_dirty="$(git -C "$SOURCE_CLAUDE" status --porcelain --untracked-files=all -- orchestration commands 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "${src_dirty:-0}" != "0" ]; then
+    echo "        WARNING: $src_dirty uncommitted/untracked path(s) under the source's"
+    echo "        orchestration/ or commands/. What you install is therefore not what"
+    echo "        $src_ref contains. Install from a clean worktree to make this reproducible:"
+    echo "          git -C <ai-academy> worktree add /tmp/aia-src install-source/neutralised-core"
+  fi
+else
+  echo "        (source is not a git checkout -- provenance unknown)"
+fi
 echo "target: $TARGET_CLAUDE"
 echo "stack:  $TARGET_STACK (detected)"
 if [ -n "$PACK" ]; then echo "pack:   examples/$PACK"

@@ -126,6 +126,29 @@ the verifier has to make the unfinished parts impossible to miss.
 
 ## Phase 1 — copy
 
+**Pin the source to a branch first.** The split KB is not on every branch, and by default
+the installer reads `../../` — whatever the ai-academy checkout happens to have right now.
+That makes the install depend on a `git checkout` in a repo someone is working in, and it
+is the same hazard that ruled out symlinking a shared `core/`: what gets installed must
+not be changeable by unrelated work. Use a worktree, which is cheap and cannot be moved by
+a checkout elsewhere:
+
+```bash
+cd /path/to/ai-academy
+git worktree add /tmp/aia-src install-source/neutralised-core
+export AI_ACADEMY_CLAUDE=/tmp/aia-src/.claude
+```
+
+`install-source/neutralised-core` is the install source: the core/examples split with the
+source project's course framing stripped out of `core/`. It is deliberately not the branch
+offered upstream — see § Profiles. Remove the worktree with
+`git worktree remove /tmp/aia-src` when you are done.
+
+The installer prints the source's branch and commit on every run, and warns when the
+source tree has uncommitted or untracked files under `orchestration/` or `commands/`
+(untracked files there are exactly how another project's session notes get copied in).
+If it cannot find `orchestration/core/` it refuses and prints the worktree commands.
+
 ```bash
 ./detect-stack.sh /path/to/target                    # read the project's real facts first
 ./install.sh /path/to/target --profile rails --dry-run
