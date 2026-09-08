@@ -257,12 +257,15 @@ echo "knowledge base (core/ — copied verbatim, nothing in it names a stack):"
 # one, and their claims get read as facts about the target.
 #
 # meta/project-mission.md is excluded because it IS the source project's mission
-# statement. It is on the author list instead.
+# statement. It is on the author list instead. The pattern is anchored on the tail
+# (*/meta/project-mission.md) rather than the full path: this file has already moved
+# once (core/meta/ -> meta/), and a literal path silently matched nothing afterwards
+# while the install still looked correct, because the authored step overwrites it.
 while IFS= read -r f; do
   rel="orchestration/${f#"$SOURCE_CLAUDE/orchestration/"}"
   case "$rel" in
     */session-handoffs/*)                    continue ;;
-    orchestration/core/meta/project-mission.md) continue ;;
+    */meta/project-mission.md)               continue ;;
     orchestration/examples/*/*)              continue ;;   # packs handled below
   esac
   copy_from "$f" "$rel"
