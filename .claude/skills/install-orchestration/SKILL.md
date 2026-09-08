@@ -9,16 +9,23 @@ argument-hint: "[path to target project] [--profile NAME] [--examples NAME|none]
 The knowledge base is split into a portable half and a stack-specific half, and the
 installer's whole job is to keep them apart.
 
-- **`orchestration/core/`** — 35 files, 9,839 lines, and **zero** occurrences of
+- **`orchestration/core/`** — 34 files, 9,715 lines, and **zero** occurrences of
   `nestjs|angular|sequelize|npm run|npx |typescript|tsconfig|jest|vitest|eslint|prisma|
   package.json|localhost:3000|postgres|docker`. Copied verbatim into every project. There
   is nothing in it to rewrite; that is a checkable property, not a claim.
 - **`orchestration/examples/<stack>/`** — one stack's worked instances of that method.
-  Installed only if it matches the target. `examples/node/` is 20 files, 3,595 lines.
+  Installed only if it matches the target. `examples/node/` is 19 files, 3,553 lines.
 
 So the install copies a lot and adapts almost nothing. What is left over is small and
-sharply defined: **two files nobody but you can write**, and **the three command files,
-which still hardcode the source's gates.** That is the whole of phase 2.
+sharply defined: **two files nobody but you can write**, and **two files that still name
+the source repo** (`orchestration/README.md`, `orchestration/COMMANDS.md`). Four items.
+That is the whole of phase 2.
+
+The three command files used to be in that list — they hardcoded the source's npm gates.
+They now defer to `meta/project-profile.md` instead, so they are copied verbatim like
+everything else. Verified by grep against the install source, not assumed: `npm run|npm
+test|npx ` and `nestjs|angular|typescript|eslint` both return nothing across
+`commands/`.
 
 ## Principles
 
@@ -56,10 +63,11 @@ whose entire value is being identical in every project.** Keeping them apart is 
 core really is portable.
 
 **3. A visible gap beats an invisible guess.** The installer performs no rewriting at all.
-Where the source names its own stack — the three command files, four `/course/` links —
-the file is copied unchanged and the verifier reports it. Leaving `npm run typecheck` in a
-sentence is *correct*: the check warns and a human decides. Converting it to something
-Ruby-flavoured that nobody can run is not.
+Where the source names its own repo — one `/course/` link and the course framing around it
+in `orchestration/README.md`, two `.claude/curriculum/` lines in `COMMANDS.md` — the file
+is copied unchanged and the verifier reports what it can see. Leaving `npm run typecheck`
+in a sentence would be *correct* too: the check warns and a human decides. Converting it
+to something Ruby-flavoured that nobody can run is not.
 
 **4. Rewrite whole claims, not tokens.** A half-translated sentence is a *new* falsehood, not
 a smaller one. This used to be advice for `substitutions.sed`, which produced three
@@ -88,8 +96,11 @@ else, and an agent that follows it learns this project has a curriculum.
 
 **8. Phase 1 alone is not done — but it is now most of the way.** Before the split, roughly
 4,000 of 7,300 lines named the source stack and 33 files needed hand work. Measured against
-the split KB in a throwaway Rails repo: **9 worklist items, 8 verifier errors, 6 warnings**,
-and all 19 foreign-stack hits confined to the four files the worklist already names.
+the split KB in a throwaway Rails repo (`git init` + a `Gemfile`, `--profile rails`):
+**4 worklist items, 2 verifier errors, 3 warnings**, and the only non-template residue is
+five lines across the two files the worklist names. Re-measure rather than quoting this:
+these numbers were 9/8/6 until the source absorbed the fixes, and a stale count here is
+the same defect §11 of the verifier exists to catch.
 
 **9. Every artifact must be ignorable, and the installer must prove it.** This is how the
 invisibility goal is enforced rather than hoped for. Any new file the install writes —
@@ -132,9 +143,13 @@ Everything the installer touches lands in one of three buckets:
 
 | Bucket | Count | Behaviour |
 | --- | --- | --- |
-| copied verbatim | ~46 | `core/`, the READMEs, the three commands, one examples pack |
+| copied verbatim | 48 | `core/`, the READMEs, the three commands, one examples pack |
 | `author` | 2 | **Not copied.** `meta/project-profile.md`, `meta/project-mission.md`. |
-| `retarget` | 7 | Copied, but they name the source's commands or paths. |
+| `retarget` | 2 | Copied, but they name the source's repo: `README.md`, `COMMANDS.md`. |
+
+48 is the count with a 7-file pack (`--profile rails`); 41 with no pack, 60 with
+`examples/node/`. `install.sh --dry-run` prints the real number for the run you are about
+to do — read that instead of trusting this row.
 
 `manifest.tsv` lists **only** the `author` and `retarget` rows — the residue. Anything not
 in it is copied, because after the split there is nothing left to classify. The worklist
@@ -158,7 +173,7 @@ The copy loops walk only `commands/*.md` and `orchestration/**`, so `workspace/`
 picked up structurally; the exclusion is also commented at the workspace step in
 `install.sh`. `meta/session-handoffs/` is excluded for the same reason.
 
-## Phase 2 — the nine things
+## Phase 2 — the four things
 
 Work `ADAPTATION-TODO.md` top-down. **Before editing anything:** run
 `./detect-stack.sh <target>` and read the output. Also read the target's `CLAUDE.md`,
@@ -206,23 +221,33 @@ The template is a skeleton of questions, not a draft. The upstream version is ab
 validating orchestration methodology for a course; none of it transfers. Ask the user what
 the project is for if the repo doesn't make it obvious.
 
-### 3–5. The three command files
+### 3–4. The two files that still name the source repo
 
-- **`commands/orchestration.md`** — add `@.claude/orchestration/meta/project-profile.md`
-  as the **first** entry in its MANDATORY read list. The list is fixed, so the partner
-  never loads the profile unless you put it there, and **every other phase-2 edit is wasted
-  if you skip this.** Also repoint its `core/meta/project-mission.md` entry at
-  `meta/project-mission.md`, and fix the hardcoded gate list and stack examples.
-- **`commands/validate.md`** — hardcodes `npm run type-check`, `npm run lint` and
-  `npm run dev` in its own validation phases, plus TypeScript/ESLint report headings.
-- **`commands/handoff.md`** — its pre-handoff checklist hardcodes the same npm gates.
+Delete what points at ai-academy; do not invent local equivalents.
 
-### 6–9. Four link fixes
+- **`orchestration/COMMANDS.md`** — two lines referencing
+  `.claude/curriculum/methodology-discoveries.md`, which exists only in the source repo.
+- **`orchestration/README.md`** — three separate things, and **only the first is caught by
+  any check**:
+  1. a link to `/course/guidebook/companion/day-2-ai-intelligence.md` (`verify-install.sh`
+     §3b flags it, and it is one of the two verifier errors a fresh install starts with);
+  2. **course framing in prose** — "introduced and explained in Day 2 of the course",
+     "linked from the course materials", "Complete Day 2 of the course". There is no slash
+     after "course", so neither §3b nor the residue grep sees them. They survive every
+     automated check and tell the target's agent that this project has a curriculum, which
+     is exactly the principle 7 failure in a form no tool reports. Read the file;
+     do not rely on grep for this one.
+  3. its directory tree hardcodes `node/  NestJS + Angular + Sequelize + Jest`. Name the
+     pack actually installed here, or drop the leaf if none was.
 
-`orchestration/COMMANDS.md`, `orchestration/README.md`, `core/playbook/sub-agent-usage.md`
-and `core/playbook/gotcha-library.md` each point at something that exists only in the
-source repo (`/course/guidebook/…`, `.claude/curriculum/…`). Delete the links; do not
-invent local equivalents. `verify-install.sh` §3b lists them.
+**What is no longer on this list.** The three command files (`orchestration.md`,
+`validate.md`, `handoff.md`) used to need retargeting for their hardcoded npm gates. They
+now defer to `meta/project-profile.md`, and `commands/orchestration.md` already carries
+`@.claude/orchestration/meta/project-profile.md` as entry 0 of its MANDATORY read list —
+so the one edit that everything else depended on ships done. The two
+`core/playbook/` link fixes are likewise gone from the source. Confirm with a grep before
+believing this paragraph; if a defect is back, add the row to `manifest.tsv` rather than
+only fixing the one install.
 
 ### Finishing
 
@@ -447,6 +472,6 @@ before filling in `project-profile.md`.
 The old advice here was that phase 2 gets heavier the further the target sits from Node,
 and that with several same-stack targets it is worth building a profile. **The first half
 is no longer true** — core/ is equally correct for all of them, and the residue is the same
-nine items regardless of stack. The second half is: if you install into several projects in
+four items regardless of stack. The second half is: if you install into several projects in
 one stack, write the examples pack once. A pack is worth more than a profile, because it
 travels with the knowledge base instead of with this skill.

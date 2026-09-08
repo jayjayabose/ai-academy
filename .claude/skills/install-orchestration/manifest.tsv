@@ -8,12 +8,15 @@
 #   author    not copied from the source at all -- you write it for this project.
 #   retarget  copied, but it names commands or paths that belong to the source.
 #
+# This file drives ADAPTATION-TODO.md, so a row for a defect that no longer exists
+# sends a human to fix something already fixed -- which teaches them to distrust the
+# whole worklist. Five rows were dropped once the source stopped having the defect
+# (the three command files, which now defer to meta/project-profile.md, and the two
+# core/playbook/ files, whose /course/ links are gone). Before adding a row back,
+# grep the install source for the defect. Before adding a new one, check it is real
+# there too.
+#
 author	orchestration/meta/project-profile.md	NEW FILE. Does not exist upstream. The single source of truth for this project's facts: real gate commands, stack, layout, ports, DB. Every other file defers to it. RUN each command and `ls` each path before writing it down; mark anything unverified NEEDS CONFIRMATION.
 author	orchestration/meta/project-mission.md	The upstream core/meta/project-mission.md is 100% ai-academy ("validate orchestration methodology, generate course content") and is deliberately not copied. Author fresh from this repo, or ask the engineer.
-retarget	commands/orchestration.md	Two things. (1) Add `@.claude/orchestration/meta/project-profile.md` as the FIRST entry in its MANDATORY read list -- the list is fixed, so without this the partner never loads the project's facts and every other edit here is wasted. (2) Its project-mission entry points at `core/meta/project-mission.md`, which the installer does not copy; repoint it at `meta/project-mission.md`. Also: stack examples in the "detection" section, a `course/guidebook/chapters/` rule, and a hardcoded gate list.
-retarget	commands/validate.md	Hardcodes `npm run type-check`, `npm run lint` and `npm run dev` in its own validation phases, plus TypeScript/ESLint report headings. Point them at meta/project-profile.md.
-retarget	commands/handoff.md	Pre-handoff checklist hardcodes `npm test`, `npm run type-check`, `npm run lint`. Point them at meta/project-profile.md.
 retarget	orchestration/COMMANDS.md	References `.claude/curriculum/methodology-discoveries.md`, which exists only in the source repo.
-retarget	orchestration/README.md	Links to `/course/guidebook/companion/day-2-ai-intelligence.md`, and its directory tree names the example packs that ship upstream rather than the ones installed here.
-retarget	orchestration/core/playbook/sub-agent-usage.md	Two links into `/course/guidebook/chapters/`, which exists only in the source repo. Drop them.
-retarget	orchestration/core/playbook/gotcha-library.md	Two links into `/course/guidebook/companion/`, which exists only in the source repo. Drop them.
+retarget	orchestration/README.md	Three things, and only the first is caught by any check. (1) Links to `/course/guidebook/companion/day-2-ai-intelligence.md` (verify-install.sh 3b flags it). (2) Course framing in prose -- lines reading "introduced and explained in Day 2 of the course", "linked from the course materials", "Complete Day 2 of the course". No slash after "course", so neither 3b nor the residue grep sees them; they tell this project's agent it has a curriculum. Delete them. (3) Its directory tree hardcodes `node/  NestJS + Angular + Sequelize + Jest` -- name the pack actually installed here, or drop the leaf if none was.
