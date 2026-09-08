@@ -315,8 +315,17 @@ check_infra() {
   local n; n=$({ grep -rlE "$pat" "$C/orchestration" "$C/commands" --include='*.md' 2>/dev/null || true; } \
                | grep -vE 'ADAPTATION-TODO' | wc -l | tr -d ' ')
   if [ "$n" != "0" ]; then
+    # Test each glob SEPARATELY and pass if ANY matches. `ls a b` exits non-zero when
+    # either argument is missing, so the two-alternative globs below (docker-compose.yml
+    # OR compose.yml) reported "this project has none" for a project that had the first
+    # one -- which is every project using the older filename. Found against a real repo.
+    local found=0 g
     # shellcheck disable=SC2086
-    if ! ls $file_glob >/dev/null 2>&1; then
+    for g in $file_glob; do
+      # shellcheck disable=SC2086
+      if compgen -G "$g" >/dev/null 2>&1 || [ -e "$g" ]; then found=1; break; fi
+    done
+    if [ "$found" -eq 0 ]; then
       warn "$n file(s) reference $label, but this project has none — those examples cannot be followed"
     else
       ok "$label referenced and present"
@@ -545,7 +554,10 @@ if [ -f "$PROFILE" ]; then
     ln="${line%%:*}"; text="${line#*:}"
     # Skip lines that are ABOUT something not existing -- the profile deliberately
     # documents wrong paths in order to warn about them.
-    printf '%s' "$text" | grep -qiE 'does not exist|not exist|NOT `|absent|missing|wrong|stale|aspirational|never|no longer|~~|instead of|rather than|used to|was |had ' && continue
+    printf '%s' "$text" | grep -qiE 'does not exist|not exist|NOT `|absent|missing|wrong|stale|aspirational|never|no longer|~~|instead of|rather than|used to|was |had |not in this repo|inside the gem|in the gem' && continue
+    # Same rule, phrased the way people actually write it. Anchored deliberately:
+    # an unanchored [Nn]o also matches --noEmit and would eat real hits.
+    printf '%s' "$text" | grep -qE '(^|[^A-Za-z])[Nn]o `|(^|[^A-Za-z])[Nn]o [a-z_/.-]+ (directory|file|task|gate|equivalent) |[Tt]here (is|are) no |ha[sv]e? no ' && continue
     while IFS= read -r cand; do
       [ -n "$cand" ] || continue
       case "$cand" in *'*'*|*'<'*|*'{{'*|*'...'*|*' '*) continue ;; esac
