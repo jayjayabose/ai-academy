@@ -640,6 +640,9 @@ print(f"  wrote {n} hook(s) to {sp}" if n else f"  hooks already present in {sp}
 PY
           echo "  triggers: PostToolUse (KB edits) + SessionStart/SessionEnd (Bash-driven"
           echo "            edits and crashed sessions bypass PostToolUse entirely)."
+          echo "  backed up: orchestration/, the three commands, and settings.local.json"
+          echo "             (the hooks file is gitignored too, so a git clean would take"
+          echo "             the backup mechanism with it and the mirror would go quiet)."
           echo "  NOT backed up: .claude/workspace/ — per-repo scratch, different lifetime."
         else
           echo "  python3 not found; add the hooks by hand — see sync-install-backup.sh header."

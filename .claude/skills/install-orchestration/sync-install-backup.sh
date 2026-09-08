@@ -11,9 +11,17 @@
 #   commands) has no durability story at all. `git clean -xfd` destroys it silently.
 #
 # WHAT IT COPIES
-#   orchestration/ and commands/{orchestration,validate,handoff}.md. NOT workspace/ --
-#   that is per-repo scratch (execution plans, agent logs, retrospectives), not install
-#   state, and it has a different lifetime.
+#   orchestration/, commands/{orchestration,validate,handoff}.md, and
+#   settings.local.json. NOT workspace/ -- that is per-repo scratch (execution plans,
+#   agent logs, retrospectives), not install state, and it has a different lifetime.
+#
+#   settings.local.json holds the three hooks that drive THIS script. It is gitignored
+#   like everything else here, so `git clean -xfd` deletes it too -- and without it the
+#   backup silently stops updating, which is the one failure a backup must not have.
+#   Restoring the knowledge base while leaving the hooks dead looks like a full recovery
+#   and is not one. Note the file contains absolute paths to this repo and this $HOME, so
+#   it restores correctly to the same location and needs regenerating elsewhere
+#   (`install.sh <repo> --with-backup`).
 #
 # WHY A BOUNDARY TRIGGER, NOT A FILE-EDIT HOOK
 #   A PostToolUse hook on Write|Edit looks more precise and is strictly less reliable:
@@ -56,11 +64,11 @@ SRC_COUNT=$({ find "$SRC/orchestration" -type f 2>/dev/null || true; } | wc -l |
 BK_COUNT=$({ find "$BK/orchestration" -type f 2>/dev/null || true; } | wc -l | tr -d ' ')
 if [ "${BK_COUNT:-0}" -gt 0 ]; then
   if [ "${SRC_COUNT:-0}" -lt 30 ]; then
-    msg "orchestration backup ABORTED — the install at $SRC/orchestration has only ${SRC_COUNT:-0} files (expected 30+), so it looks damaged. The $BK_COUNT-file backup at $BK was NOT touched. Restore with: cp -R '$BK/orchestration' '$SRC/'"
+    msg "orchestration backup ABORTED — the install at $SRC/orchestration has only ${SRC_COUNT:-0} files (expected 30+), so it looks damaged. The $BK_COUNT-file backup at $BK was NOT touched. Restore with: cp -R '$BK/orchestration' '$BK/commands' '$SRC/' && cp '$BK/settings.local.json' '$SRC/' 2>/dev/null"
     exit 0
   fi
   if [ -f "$BK/orchestration/meta/project-profile.md" ] && [ ! -f "$SRC/orchestration/meta/project-profile.md" ]; then
-    msg "orchestration backup ABORTED — the backup has meta/project-profile.md but the install no longer does. That file is not regenerable, so the mirror would destroy it. $BK was NOT touched. Restore with: cp -R '$BK/orchestration' '$SRC/'"
+    msg "orchestration backup ABORTED — the backup has meta/project-profile.md but the install no longer does. That file is not regenerable, so the mirror would destroy it. $BK was NOT touched. Restore with: cp -R '$BK/orchestration' '$BK/commands' '$SRC/' && cp '$BK/settings.local.json' '$SRC/' 2>/dev/null"
     exit 0
   fi
 fi
@@ -89,6 +97,13 @@ mkdir -p "$BK/commands"
 for f in orchestration validate handoff; do
   [ -f "$SRC/commands/$f.md" ] && cp "$SRC/commands/$f.md" "$BK/commands/$f.md"
 done
+# Deliberately copy-if-present and never delete: if the source has no
+# settings.local.json but the backup does, that is either an opt-out or the very
+# disaster this exists for, and keeping the copy is right in both readings. A missing
+# hooks file is not itself a damage signal -- `git clean -xfd` also empties
+# orchestration/, which the health guard above already catches.
+[ -f "$SRC/settings.local.json" ] && cp "$SRC/settings.local.json" "$BK/settings.local.json"
+
 
 # --- Commit only on a real difference --------------------------------------------
 CHANGED=$({ git -C "$BK" status --porcelain --untracked-files=all 2>/dev/null || true; } | wc -l | tr -d ' ')

@@ -407,8 +407,19 @@ git -C "$TARGET" check-ignore -q .claude/orchestration
    trigger those multiply and need a pruning policy. The working tree stays a plain
    directory, so `cp -R` restore instructions keep working.
 2. `sync-install-backup.sh` copied to `~/.claude/orchestration-installs/`.
-3. Three hooks in the target's **`.claude/settings.local.json`** — gitignored by convention,
-   and the `.local.` name keeps it personal if `.claude/` is ever un-ignored.
+3. Three hooks in the target's **`.claude/settings.local.json`**. The `.local.` name keeps
+   it personal if `.claude/` is ever un-ignored — but **do not assume it is ignored.**
+   Measured in `intake-system`: a repo with no `.claude` rules of its own does **not**
+   ignore it, and the global patterns for `orchestration/`, `commands/` and `workspace/`
+   do not cover it either. Writing it there puts an untracked file in `git status` and
+   undoes the invisibility goal. `install.sh`'s git-trace check reports the leak, but the
+   fix belongs in the ignore file *before* the run:
+
+   ```bash
+   git -C <target> check-ignore -v .claude/settings.local.json   # check FIRST
+   ```
+
+   Add `.claude/settings.local.json` to the same global ignore as the rest.
 
 **Why three hooks and not just the obvious one.** `PostToolUse` on `Write|Edit` is the
 precise event and is *not sufficient*: edits driven through Bash (a `sed` run, a python
@@ -424,6 +435,15 @@ proceeds, which matters because `project-profile.md` does not exist until phase 
 profile supplies it. Net effect: `git clean -xfd` produces a loud alert naming the restore
 command, not a silently emptied backup. Verified against the split KB: deleting `core/`
 leaves 17 files and the sync aborts, naming the 51-file backup.
+
+**Backed up: `orchestration/`, the three commands, and `settings.local.json`.** That last
+one is not obvious and was missed at first. The hooks file is gitignored like everything
+else, so `git clean -xfd` deletes it too — and it is what *drives* the backup. Restoring the
+knowledge base while leaving the hooks dead looks like a full recovery, and from then on the
+mirror is silently never updated again. It is copied if present and **never deleted from the
+backup** when the source lacks one: that state is either a deliberate opt-out or the exact
+disaster this exists for, and keeping the copy is right either way. It holds absolute paths,
+so it restores to the same location and needs regenerating anywhere else.
 
 **Not backed up: `.claude/workspace/`.** Per-repo scratch — execution plans, agent logs,
 retrospectives. Different lifetime from install state. Say so rather than leaving it implicit.
