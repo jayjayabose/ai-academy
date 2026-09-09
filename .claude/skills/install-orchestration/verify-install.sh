@@ -265,18 +265,30 @@ fi
 
 # ------------------------------------------------- 6. foreign-stack residue
 head2 "6. Foreign-stack residue"
+# First match wins, Gemfile first -- the same order as install.sh's detect_stack(). These
+# used to be unconditional assignments in sequence, so the LAST match won and any repo with
+# both a Gemfile and a package.json came out "node" while install.sh called it rails. One
+# repo, two verdicts from the same toolkit.
 STACK="unknown"
-[ -f "$P/Gemfile" ] && STACK="ruby"
-[ -f "$P/package.json" ] && STACK="node"
-{ [ -f "$P/pyproject.toml" ] || [ -f "$P/requirements.txt" ]; } && STACK="python"
-[ -f "$P/go.mod" ] && STACK="go"
-case "$STACK" in
-  ruby)   FOREIGN='nestjs|angular|sequelize|npm run|tsconfig|package\.json|typescript|jest|vitest' ;;
-  python) FOREIGN='nestjs|angular|sequelize|npm run|tsconfig|typescript|bundle exec|Gemfile' ;;
-  go)     FOREIGN='nestjs|angular|sequelize|npm run|typescript|bundle exec|Gemfile' ;;
-  node)   FOREIGN='bundle exec|Gemfile|rubocop|rspec|bin/rails' ;;
-  *)      FOREIGN='' ;;
-esac
+if   [ -f "$P/Gemfile" ];      then STACK="ruby"
+elif [ -f "$P/package.json" ]; then STACK="node"
+elif [ -f "$P/pyproject.toml" ] || [ -f "$P/requirements.txt" ]; then STACK="python"
+elif [ -f "$P/go.mod" ];       then STACK="go"
+fi
+
+# "Foreign" means a stack this project does NOT have, and a project may have two. dot-com is
+# Rails AND Node, so `package.json`, `jest` and `typescript` are its own vocabulary, not
+# residue -- the old fixed-per-stack table flagged 38 correct lines in its profile. Build the
+# pattern from what is ABSENT rather than from the primary stack alone.
+NODE_TOK='nestjs|angular|sequelize|npm run|tsconfig|package\.json|typescript|jest|vitest'
+RUBY_TOK='bundle exec|Gemfile|rubocop|rspec|bin/rails'
+FOREIGN=''
+if [ "$STACK" != "unknown" ]; then
+  [ -f "$P/package.json" ] || FOREIGN="$NODE_TOK"
+  if [ ! -f "$P/Gemfile" ]; then
+    if [ -n "$FOREIGN" ]; then FOREIGN="$FOREIGN|$RUBY_TOK"; else FOREIGN="$RUBY_TOK"; fi
+  fi
+fi
 if [ -n "$FOREIGN" ]; then
   echo "  (detected stack: $STACK)"
   total=0
@@ -294,18 +306,30 @@ if [ -n "$FOREIGN" ]; then
   done < <({ grep -rciE "$FOREIGN" "$C/orchestration" "$C/commands" --include='*.md' 2>/dev/null || true; } | grep -v ':0$' | sort -t: -k2 -rn)
   [ "$total" -eq 0 ] && ok "no foreign-stack references outside examples/"
   [ "$total" -gt 0 ] && echo "         $total total. Commands may already be right; the surrounding EXAMPLES are not."
-  # Installed packs vs the stack this project actually is.
-  if [ -n "$PACKS" ]; then
-    for pk in $PACKS; do
-      # Packs are named for the framework (`rails`), $STACK for the language (`ruby`).
-      pk_stack="$pk"
-      case "$pk" in rails) pk_stack=ruby ;; django|flask) pk_stack=python ;; esac
-      if [ "$pk_stack" = "$STACK" ]; then ok "examples pack '$pk' matches the detected stack"
-      else warn "examples pack '$pk' is installed but this project is $STACK — 20-odd files of another stack's commands, which agents read as instructions. Remove it unless you put it there deliberately."; fi
-    done
+else
+  # Say why nothing was scanned. FOREIGN is empty in exactly two situations, and a section
+  # that prints only its heading reads as a pass while having inspected nothing -- the
+  # inert-check failure this file warns about in section 4.
+  if [ "$STACK" = "unknown" ]; then
+    warn "cannot identify this project's stack (no Gemfile, package.json, pyproject.toml or go.mod), so foreign-stack residue was NOT checked"
   else
-    ok "no examples pack installed (core/ is complete without one)"
+    ok "project is $STACK and node (it has both a Gemfile and a package.json), so no token is foreign to it and the residue scan does not apply"
   fi
+fi
+
+# Installed packs vs the stack this project actually is. Deliberately OUTSIDE the block
+# above: it does not depend on FOREIGN, and leaving it inside meant a hybrid repo -- the
+# case where installing the wrong pack is easiest -- got no pack check at all.
+if [ -n "$PACKS" ]; then
+  for pk in $PACKS; do
+    # Packs are named for the framework (`rails`), $STACK for the language (`ruby`).
+    pk_stack="$pk"
+    case "$pk" in rails) pk_stack=ruby ;; django|flask) pk_stack=python ;; esac
+    if [ "$pk_stack" = "$STACK" ]; then ok "examples pack '$pk' matches the detected stack ($STACK)"
+    else warn "examples pack '$pk' is installed but this project is $STACK — 20-odd files of another stack's commands, which agents read as instructions. Remove it unless you put it there deliberately."; fi
+  done
+else
+  ok "no examples pack installed (core/ is complete without one)"
 fi
 
 # ---------------------------- 7. infrastructure referenced but not present
@@ -356,7 +380,7 @@ else
     case "$g" in
       *N/A*|*n/a*|*'{{'*|*'—'*) continue ;;
     esac
-    bin=$(printf '%s' "$g" | awk '{print $1}')
+    bin=$(printf '%s' "$g" | awk '{ i=1; while ($i ~ /^[A-Za-z_][A-Za-z0-9_]*=/) i++; print $i }')
     case "$bin" in
       bin/*|./bin/*|script/*)
         if [ -x "$P/${bin#./}" ]; then ok "gate wrapper exists: $bin"
