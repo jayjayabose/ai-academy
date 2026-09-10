@@ -23,7 +23,7 @@
 - Development scripts (setup, seed, reset, run)
 - Project scaffolding for each layer the project has
 - Environment configuration
-- **MCP Server configuration** (Filesystem, Playwright, Context7)
+- **Agent tool-surface configuration** (file access, browser automation, current library documentation)
 
 **How to Apply:**
 
@@ -44,67 +44,75 @@ Tasks A, B, C (Parallel): Build features on established foundation
 Testing framework is infrastructure, not optional. Agents can write tests immediately without "no framework exists"
 excuse.
 
-**Extended to MCP Servers:**
-MCP (Model Context Protocol) servers extend agent capabilities and must be configured as infrastructure:
+**Extended to the Agent Tool Surface:**
+The tools agents reach for outside the shell extend their capabilities and must be configured, tested and
+recorded as infrastructure, not discovered mid-task. Which server or extension provides each surface is a
+per-project fact and belongs in `meta/project-profile.md`; the surfaces themselves are these.
 
-**Essential MCP Servers:**
+**Essential surfaces:**
 
-1. **Filesystem MCP** - File operations (read, write, search, directory listing)
+1. **File access** - read, write, search, directory listing
 
     - Why: Agents need to work with code files systematically
-    - Setup: Already available in most Claude Code environments
+    - Usually present by default in the agent environment
 
-2. **Playwright MCP** - Browser automation and testing
+2. **Browser automation** - driving a real browser against the running application
 
-    - Why: Required for validation gate #5 (manual browser testing)
-    - Enables: Taking screenshots, clicking buttons, testing full user flows
-    - Critical: Without this, agents cannot validate their work in actual browsers
+    - Why: Required for validation gate #5 (manual verification in the real interface)
+    - Enables: Screenshots, clicking through flows, seeing what a user would see
+    - Without it: Agents cannot validate front-end work in an actual browser
+    - **Constraint:** this surface is a singleton and browser work is strictly serialized — see below
 
-3. **Context7 MCP** - Up-to-date library documentation
+3. **Current library documentation** - authoritative docs for the libraries this project actually uses
     - Why: Prevents outdated patterns and deprecated API usage
-    - Provides: current docs for the libraries this project actually uses
-    - Benefit: Agents reference latest best practices, not training data
+    - Benefit: Agents reference the library as it is now, not as their training data remembers it
 
 **Configuration as Infrastructure:**
 
-- Install and test MCP servers BEFORE feature development
-- Verify agents can access each MCP server
-- Confirm Playwright can launch browser and take screenshots
-- Test Context7 retrieves current documentation
+- Install and test each surface BEFORE feature development
+- Verify agents can actually reach each one
+- Confirm the browser surface launches and takes a screenshot
+- Confirm the documentation surface returns current docs
 
 **Why This Matters:**
 
-- Validation gate #5 depends on Playwright MCP (browser testing mandatory)
+- Validation gate #5 depends on the browser surface (manual verification is mandatory)
 - Current documentation prevents using deprecated APIs
 - Agents work more effectively with extended tool access
-- Professional development requires browser validation, not just unit tests
+- Professional development requires verification in the real interface, not just unit tests
 
-**Advanced MCP Servers (Introduce As Needed):**
+**The browser surface is a singleton — serialize it.**
 
-4. **[Sequential Thinking MCP](https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking)** -
-   Structured problem decomposition
+Unlike file access or the test runner, the browser surface is typically one browser process against one
+persistent profile holding one authenticated session. Two agents driving it concurrently share that browser and
+navigate out from under each other, producing non-deterministic failures that read as flaky application
+behaviour rather than as a coordination fault. **Exactly one agent may hold the browser surface at a time; never
+fan browser work out across parallel agents**, even when the parallelization test would otherwise allow it.
+Full rule: @.claude/orchestration/core/methodology/delegation-protocol.md § Serialization of the
+Browser-Automation Surface
+
+**Advanced surfaces (introduce as needed):**
+
+4. **Structured problem decomposition** - forces stepwise reasoning through a hard problem
 
     - When: Complex debugging scenarios, multi-step problems
-    - Why: Forces systematic thinking through difficult issues
-    - Use case: "AI integration isn't behaving as expected - walk through it step by step"
+    - Use case: "This integration isn't behaving as expected - walk through it step by step"
 
-5. **[Zen MCP](https://github.com/BeehiveInnovations/zen-mcp-server)** - Multi-model consensus
+5. **Multi-model consensus** - a second opinion from a different model
 
     - When: Important architectural decisions, code review
-    - Why: Get second opinions before committing to approaches
     - Use case: "Should we use approach A or B for this feature?"
 
-6. **[Serena MCP](https://github.com/oraios/serena)** - Semantic code navigation and search
-    - When: Working with substantial codebases (greenfield Day 3+, brownfield ESSENTIAL)
-    - Why: Find symbols, understand existing patterns, navigate code structure
-    - Use case: "Find all authentication-related code", "Where is User model defined?"
-    - Critical for: Brownfield extension to existing company codebases
+6. **Semantic code navigation** - symbol-level search and structural navigation
+    - When: Working with substantial codebases; essential on brownfield
+    - Use case: "Find all authentication-related code", "Where is the user model defined?"
+    - Critical for: extending an existing company codebase
 
 **Tiered Introduction Strategy:**
 
-- **Day 1:** Essential MCP (infrastructure foundation)
-- **Day 2:** Advanced MCP when complexity increases (Sequential Thinking, Zen)
-- **Day 3+:** Brownfield-ready MCP when codebase substantial (Serena)
+- **Start:** the essential surfaces (infrastructure foundation)
+- **As complexity rises:** decomposition and consensus surfaces
+- **On a substantial or brownfield codebase:** semantic code navigation
 
 ---
 

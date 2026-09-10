@@ -23,6 +23,7 @@
 
 **Other Protocols:**
 
+- `delegation-protocol.md` - Delegate by default; artifact ownership; browser-surface serialization
 - `coordination-protocols.md` - Low vs high coordination
 - `session-logging-system.md` - Agent execution logging
 - `testing-as-infrastructure.md` - Testing framework as infrastructure

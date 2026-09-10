@@ -3,6 +3,11 @@
 **Purpose:** Structured feature delivery with execution planning, agent prompt persistence, debugging capability, and
 retrospective learning.
 
+**Who creates these files:** the agent doing the work, as part of the work. All work is delegated — including
+investigation and question-answering — and each agent owns its own execution plan, saved prompt copy and session
+log. There is no task small enough to be exempt from the structure below.
+**Rule:** @.claude/orchestration/core/methodology/delegation-protocol.md
+
 ---
 
 ## Why Workspace Management Matters
@@ -242,6 +247,10 @@ NOT "feature works" - but "user sees X when they do Y"
 
 **Before claiming COMPLETE:** Verify session log is comprehensive.
 ```
+
+**An agent that reports COMPLETE without its execution plan, saved prompt copy and session log has not
+completed.** These are deliverables of the task, not bookkeeping the orchestration partner adds afterwards:
+@.claude/orchestration/core/methodology/delegation-protocol.md
 
 ---
 

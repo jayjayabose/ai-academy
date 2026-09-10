@@ -25,6 +25,15 @@ Risk read: **GREEN** independent, proven parallel pattern · **YELLOW** coordina
 **Assessment questions:** core/methodology/coordination-protocols.md § Phase 1: Task Classification and
 Coordination Planning
 
+**Before classifying, the work is already delegated.** Every task goes to an agent, including investigation and
+question-answering, and there is no size below which that stops being true:
+@.claude/orchestration/core/methodology/delegation-protocol.md
+
+**One surface overrides this table.** Tasks that drive the browser-automation surface are sequential regardless
+of coordination level — that surface is a singleton and only one agent may hold it at a time. Two browser tasks
+can pass the parallelization test below and still collide. See delegation-protocol.md § Serialization of the
+Browser-Automation Surface.
+
 ---
 
 ## 2. Before parallel execution (HIGH coordination)
@@ -44,6 +53,7 @@ Coordination Planning
 - [ ] Consumers read the producer's actual output, never an assumed or remembered shape
 - [ ] Decisions that affect another agent are broadcast, not just recorded
 - [ ] Every agent keeps a session log at `.claude/workspace/[feature]/agent-logs/[agent-name]-session.md`
+- [ ] At most one agent is holding the browser-automation surface at any moment
 
 **Logging templates:** @.claude/orchestration/core/templates/logging-templates.md
 **Consultation process and documentation format:** core/methodology/coordination-protocols.md § 2.1 Cross-Agent
@@ -86,6 +96,8 @@ failed.
 Verify every agent prompt carries:
 
 - [ ] Session logging requirement (location, template, critical log points)
+- [ ] Ownership of its own workspace artifacts — execution plan and saved prompt copy, not just the log
+      (@.claude/orchestration/core/methodology/delegation-protocol.md)
 - [ ] Atomic commit guidelines
 - [ ] Coordination requirements (MEDIUM and HIGH tasks)
 - [ ] Technology stack specifications

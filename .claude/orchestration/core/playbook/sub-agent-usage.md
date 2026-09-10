@@ -1,24 +1,33 @@
 # Sub-Agent Usage: Quick Operational Guide
 
-**What:** Agent spawns focused sub-tasks using Task tool for context isolation
+**What:** An agent spawning focused sub-tasks for context isolation
 
-**When:** Agent decides autonomously, or you request explicitly
+**When:** Inside an agent that is already executing delegated work
+
+**Not the same question as delegation.** Whether the *orchestration partner* hands work to an agent is settled:
+it always does — see @.claude/orchestration/core/methodology/delegation-protocol.md. This file is about the
+narrower call an agent makes once it is running, about splitting its own task further to protect its context.
 
 ---
 
 ## Quick Decision Framework
 
-**Agent uses sub-agents when:**
+**An executing agent splits off a sub-agent when:**
 
 - Large codebase exploration (>10 files to understand)
 - Research synthesis (needs to study docs/approaches)
 - Context getting heavy (>50K tokens accumulated)
 
-**Agent avoids sub-agents when:**
+**It keeps the work in its own context when:**
 
-- Simple tasks (1-2 files, straightforward logic)
-- Small codebases (<10K lines)
+- The task is small enough that the split costs more context than it saves
 - Tight integration needed (debugging, iterative work)
+
+This is a context-budget trade-off, not a rigor trade-off. It never justifies dropping the session log, the
+execution plan or any validation gate.
+
+**Never split browser work across sub-agents.** The browser-automation surface is a singleton: one agent holds
+it at a time. See delegation-protocol.md § Serialization of the Browser-Automation Surface.
 
 ---
 

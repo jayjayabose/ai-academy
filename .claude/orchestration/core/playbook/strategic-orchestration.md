@@ -79,6 +79,10 @@ requirements · environment mismatches.
 - [ ] Prompt states which blockers were removed and what was validated
 - [ ] Prompt states one clear focus area
 - [ ] Prompt requires the validation gates
+- [ ] Prompt requires the agent to write its own session log, execution plan and saved prompt copy
+      (@.claude/orchestration/core/methodology/delegation-protocol.md)
+- [ ] If the task drives the browser-automation surface, no other browser agent is running — that surface is a
+      singleton and browser work is strictly serialized
 
 **Directive template:** core/methodology/pre-execution-validation-protocol.md § Phase 4: Agent Launch with Clear Directive
 
@@ -97,8 +101,14 @@ Any of those means Phase 2 or Phase 3 was skipped, not that the agent is weak.
 
 ## When to skip
 
-Trivial documentation updates, quick consultations, and research tasks with no infrastructure dependency. Everything
-that launches an implementation agent runs the checklist.
+**Nothing is exempt by size.** The earlier carve-out for trivial documentation updates, quick consultations and
+research tasks is withdrawn: those are delegated too, so they launch an agent, so they run the checklist. The
+depth of each phase scales with what the task actually depends on — a task with no infrastructure dependency
+passes Phase 2 in a sentence — but the phases are worked, not skipped, and the result is written down.
+
+The only skip is the engineer explicitly directing one.
+
+**Rule:** @.claude/orchestration/core/methodology/delegation-protocol.md
 
 ---
 

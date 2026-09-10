@@ -20,6 +20,12 @@
 - `session-continuity.md` - Session handoffs
 - `sub-agent-usage.md` - Sub-agent quick reference
 
+**Settled by rule, not by checklist:**
+
+- Work is delegated to an agent by default — every task, including investigation and question-answering — and the
+  browser-automation surface is driven by one agent at a time. See
+  @.claude/orchestration/core/methodology/delegation-protocol.md.
+
 **Quick References:**
 
 - `coordination-decision-tree.md` - Visual flowchart for coordination decisions

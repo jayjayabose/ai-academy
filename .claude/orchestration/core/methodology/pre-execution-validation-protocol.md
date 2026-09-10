@@ -261,16 +261,20 @@ reads is actually set. See @.claude/orchestration/core/methodology/environment-v
 
 **Always use before:**
 
-- Launching any feature implementation agent
+- Launching any agent — implementation, investigation or question-answering alike
 - Continuing a previously blocked feature
 - Trying a new tooling approach
 - Complex infrastructure setup tasks
 
 **Can skip for:**
 
-- Trivial documentation updates (no agent execution)
-- Quick consultations (no implementation)
-- Research tasks (no infrastructure dependencies)
+- Nothing, on grounds of size. The earlier exemptions — trivial documentation updates, quick consultations,
+  research tasks — assumed such work is done without launching an agent. It is not: all work is delegated, so
+  all work runs this protocol. See
+  @.claude/orchestration/core/methodology/delegation-protocol.md.
+- A phase with nothing to validate is answered briefly and recorded as answered. It is not dropped — a phase
+  silently skipped is indistinguishable in the log from one that passed.
+- The engineer explicitly directing that a task be handled without an agent.
 
 ### How Long This Takes
 
