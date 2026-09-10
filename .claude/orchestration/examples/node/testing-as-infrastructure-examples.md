@@ -4,9 +4,6 @@ Companion to `core/methodology/testing-as-infrastructure.md`. Section headings m
 as a Task 0 deliverable — lives there; the six filled-in deliverables live here, because a test runner config is only
 ever true of one stack.
 
-**For the course:** read this alongside core. "Set up the testing framework first" is an instruction nobody argues
-with and nobody follows; the six concrete artefacts below are what following it actually costs.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/` alone and write
 the six deliverables against the project's own runner.
 
@@ -331,7 +328,7 @@ two-tier split ran the integration tier against a real PostgreSQL instance throu
 
 ---
 
-## Curriculum Integration — the source project
+## Provenance — the source project
 
 The evidence in core comes from the `new-crm` project: Angular frontend, NestJS backend, PostgreSQL via Sequelize.
 

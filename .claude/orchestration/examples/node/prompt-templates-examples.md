@@ -3,9 +3,6 @@
 Companion to `core/methodology/prompt-templates.md`. Template numbers and section headings match. The
 skeletons live there; these are the same four prompts with every slot filled for one project.
 
-**For the course:** read this alongside core. An empty skeleton teaches nobody what a good fill looks like —
-these are what the agents were actually handed, verbatim.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/` alone and
 fill the slots with the project's own stack, or contribute an `examples/<stack>/` pack.
 

@@ -3,9 +3,6 @@
 Companion to `core/methodology/agent-specs-library.md`. Section numbers and headings match. The seven roles and
 the spec shape live there; these are the same seven specs with every slot filled for one project.
 
-**For the course:** read this alongside core. The role is the decision — which agents does this feature need.
-These fills are what those agents were actually told.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/` alone and
 fill the slots with the project's own stack, or contribute an `examples/<stack>/` pack.
 

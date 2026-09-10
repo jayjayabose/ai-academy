@@ -4,10 +4,6 @@ Companion to `core/templates/agent-prompts/infrastructure-patterns.md`. Section 
 match. The prompt skeletons live there with `{role}` placeholders; this pack is the same library with
 every placeholder resolved, because a technology choice is only ever true of one project.
 
-**For the course:** read this alongside core. Core teaches you that the deliverable is "containerised
-database service"; this pack shows what an agent was actually told to build, which is the only version
-an agent can execute.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/`
 alone and resolve each placeholder against your own stack. The resolution is a one-time decision per
 project — write it down once and every prompt in the library inherits it.

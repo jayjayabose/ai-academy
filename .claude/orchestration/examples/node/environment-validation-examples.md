@@ -4,9 +4,6 @@ Companion to `core/methodology/environment-validation.md`. Section headings matc
 there; the accessor, the searches and the connection strings live here, because a connection string is
 only ever true of one project.
 
-**For the course:** read this alongside core. Core writes every search against `<env-accessor>`; this
-pack is what happens when you substitute the real one and run it.
-
 **For an install:** take this pack only if the target is Node. Otherwise take `core/` alone and
 substitute your own accessor — `ENV[` in Ruby, `os.environ[` in Python, `os.Getenv(` in Go,
 `getenv(` in PHP/C. Everything else in the protocol is unchanged.

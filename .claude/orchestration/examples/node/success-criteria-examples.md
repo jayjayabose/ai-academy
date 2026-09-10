@@ -4,9 +4,6 @@ Companion to `core/methodology/success-criteria.md`. Section headings match. The
 observable statement out — lives there; the filled-in criteria live here, because a criterion names commands, URLs and
 ports, and those are only ever true of one project.
 
-**For the course:** read this alongside core. The contrast pairs are the teaching device, and a pair is only
-convincing once both halves are concrete.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular on Docker + PostgreSQL. Otherwise take
 `core/` alone and write the criteria against the project's own commands.
 

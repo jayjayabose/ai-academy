@@ -2,10 +2,6 @@
 
 **Primary Audience:** Orchestration Partner (loaded via `/orchestration`)
 
-**For Humans:** Start
-with [/course/guidebook/companion/day-2-ai-intelligence.md](/course/guidebook/companion/day-2-ai-intelligence.md) to
-learn the context and methodology behind these assets.
-
 ## Scale This to the Task
 
 Not everything needs this level of rigor. The full methodology here — validation gates, session logs, execution
@@ -66,8 +62,6 @@ on standalone usage.
 
 - **Do not rename folders** without updating the orchestration partner configuration
 - **Single source of truth:** This directory is the authoritative source for all patterns
-- **Stable entry points:** Human-readable documentation is linked from the course materials
-- **Course integration:** These assets are introduced and explained in Day 2 of the course
 
 ## Directory Structure
 
@@ -79,19 +73,21 @@ orchestration/
 │   ├── templates/      Agent prompt templates
 │   └── meta/           Project conventions and context
 └── examples/           Worked instances, one directory per stack
-    └── node/           NestJS + Angular + Sequelize + Jest
+    └── <stack>/        whichever pack matched this project, if any
 ```
+
+`ls examples/` shows which packs are actually here. A project that had no matching pack has
+none, and that is a normal state — `core/` is complete on its own.
 
 **Which do you need?**
 
 - Reading the method, or installing it into a project of any stack → `core/`
-- Learning by example, or working in Node/NestJS/Angular → both
+- Learning by example, in a stack that has a pack under `examples/` → both
 - Adapting to another stack → `core/`, plus `examples/README.md` for how to contribute a pack
 
 ---
 
 **Next Steps:**
 
-1. Complete Day 2 of the course to understand these assets in context
-2. Run `/orchestration` to see them in action
-3. Reference `/.claude/orchestration/manual-usage.md` for standalone usage patterns
+1. Run `/orchestration` to see them in action
+2. Reference `/.claude/orchestration/manual-usage.md` for standalone usage patterns

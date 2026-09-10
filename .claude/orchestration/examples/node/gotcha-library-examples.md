@@ -4,9 +4,6 @@ Companion to `core/playbook/gotcha-library.md`. Section and gotcha headings matc
 problem lives there; the symptom exactly as it appeared here lives in this file, because a symptom is
 only ever true of one stack.
 
-**For the course:** read this alongside core. The core entry teaches you to recognise a class of
-failure; this pack is what that failure actually looked like on screen.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/`
 alone — the shapes transfer, the symptoms do not — and add an `examples/<stack>/` pack as your own
 project accumulates them.

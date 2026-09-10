@@ -3,9 +3,6 @@
 Companion to `core/methodology/pattern-library.md`. Section numbers match. The patterns live there; the
 concrete instances live here, because an instance is only ever true of one stack.
 
-**For the course:** read this alongside core. The examples are the teaching material — a
-pattern without an instance is an aphorism.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take
 `core/` alone and write the instances against the project's own stack, or contribute an
 `examples/<stack>/` pack.

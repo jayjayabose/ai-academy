@@ -4,9 +4,6 @@ Companion to `core/methodology/investigation-workflow.md`. Section headings matc
 workflow lives there; the directory roles resolved into real paths live here, because a path is only
 ever true of one project.
 
-**For the course:** read this alongside core. Core says "grep the pages directory"; this pack is what
-"the pages directory" turned out to be, and what the grep actually returned.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/`
 alone and resolve the same six roles — pages, widgets/components, services, shared API types, models,
 source root — against your own layout. Write them down once; every later investigation reuses them.

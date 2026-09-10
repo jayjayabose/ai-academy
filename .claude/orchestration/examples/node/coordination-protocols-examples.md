@@ -3,9 +3,6 @@
 Companion to `core/methodology/coordination-protocols.md`. Section headings match. The protocols live there;
 the filled-in slots live here, because a library version is only ever true of one project.
 
-**For the course:** read this alongside core. The protocol is the rule; these are the values one project
-locked before it let three agents run in parallel.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/` alone
 and fill the same slots with the project's own stack, or contribute an `examples/<stack>/` pack.
 

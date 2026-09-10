@@ -3,8 +3,6 @@
 Companion to `core/methodology/pre-execution-validation-protocol.md`. Section names match. The protocol lives there;
 the commands and the one worked trade-off live here, because both are only ever true of one project.
 
-**For the course:** read this alongside core. The protocol is the rule; these are what running it looked like once.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/` alone and write
 the probes your own project needs.
 

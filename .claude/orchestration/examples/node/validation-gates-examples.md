@@ -3,9 +3,6 @@
 Companion to `core/methodology/validation-gates.md`. Gate numbers match. The gates live there; the commands that
 satisfy them live here, because a command is only ever true of one project.
 
-**For the course:** read this alongside core. The gate is the rule; the command is how this project happened to
-satisfy it.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/` alone and write
 the four commands your project actually runs. There are only four, and getting them wrong is obvious immediately.
 

@@ -4,9 +4,6 @@ Companion to `core/methodology/logging-protocol-integration.md`. Section heading
 into every agent prompt live there; the values you paste into them live here, because a test path is only
 ever true of one project.
 
-**For the course:** read this alongside core. Core tells you the prompt must name the test locations and the
-three test commands; this pack is what naming them actually looked like.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular/Jest. Otherwise take `core/`
 alone and fill the same four slots — test locations, full run, watch, coverage — with your project's own.
 

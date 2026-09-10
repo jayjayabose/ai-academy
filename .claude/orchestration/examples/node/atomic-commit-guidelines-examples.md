@@ -4,9 +4,6 @@ Companion to `core/methodology/atomic-commit-guidelines.md`. Section headings ma
 discipline lives there; the three hook commands and the real commit messages live here, because a
 hook command is only ever true of one project.
 
-**For the course:** read this alongside core. Core says "one logical change per commit, and the hook
-enforces the gates"; this pack is what the hook actually ran and what the commits actually said.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/`
 alone and wire your project's own three commands into the hook. There are only three.
 

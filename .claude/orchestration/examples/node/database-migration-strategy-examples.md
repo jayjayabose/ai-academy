@@ -4,9 +4,6 @@ Companion to `core/methodology/database-migration-strategy.md`. Section headings
 pattern lives there; the npm scripts and `psql` invocations live here, because a migrate command is
 only ever true of one project.
 
-**For the course:** read this alongside core. Core says "the fresh-schema command destroys data and is
-usually the one named `db:migrate`"; this pack is the `package.json` where that was literally true.
-
 **For an install:** take this pack only if the target is Node with PostgreSQL. Otherwise take `core/`
 alone and name your own two commands. The naming is the whole intervention — a project that calls the
 destructive one `db:migrate` will lose data eventually, whatever the docs say.

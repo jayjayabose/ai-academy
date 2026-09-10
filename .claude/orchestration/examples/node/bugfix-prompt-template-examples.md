@@ -3,9 +3,6 @@
 Companion to `core/methodology/bugfix-prompt-template.md`. Section headings match. The template lives there;
 the filled-in commands and paths live here, because a command is only ever true of one project.
 
-**For the course:** read this alongside core. The template is the discipline — baseline, fix, compare. These
-are the four commands one project used to measure the baseline and the after.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/` alone and
 fill the same slots with the project's own commands, or contribute an `examples/<stack>/` pack.
 

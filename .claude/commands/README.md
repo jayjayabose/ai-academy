@@ -1,6 +1,6 @@
 # Claude Code Slash Commands
 
-Custom slash commands for AI Orchestration Mastery course workflow.
+Custom slash commands for the orchestration workflow.
 
 ---
 
@@ -32,7 +32,7 @@ Custom slash commands for AI Orchestration Mastery course workflow.
 
 **Use When:**
 
-- Starting any feature work (course or production)
+- Starting any feature work
 - Creating agent prompts
 - Analyzing coordination requirements
 - Continuing features across sessions
@@ -99,7 +99,6 @@ Custom slash commands for AI Orchestration Mastery course workflow.
 - Identifies bugs with root cause analysis
 - Creates bug fix prompt if needed
 - Updates methodology learnings
-- Updates curriculum discoveries
 - Creates comprehensive validation report
 
 **Use When:**
@@ -114,7 +113,6 @@ Custom slash commands for AI Orchestration Mastery course workflow.
 2. `BUG-FIX-PROMPT.md` - Step-by-step fix instructions (if bugs)
 3. `methodology-learnings.md` - Feature-specific insights
 4. `DELIVERABLES-SUMMARY.md` - Quick reference guide
-5. Updates to `.claude/curriculum/methodology-discoveries.md`
 
 ---
 

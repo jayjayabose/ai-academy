@@ -4,9 +4,6 @@ Companion to `core/templates/agent-prompts/testing-infrastructure-agent.md`. Sec
 skeleton and every requirement live there; the filled-in slots live here, because a runner, a config file and a
 dependency list are only ever true of one stack.
 
-**For the course:** read this alongside core. The template is what you reuse; this is what handing it to an agent
-actually looks like once the slots are filled.
-
 **For an install:** take this pack only if the target is Node/NestJS/Angular. Otherwise take `core/` alone and fill
 the slots from the project's own stack.
 
