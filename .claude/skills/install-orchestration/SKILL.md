@@ -17,9 +17,13 @@ installer's whole job is to keep them apart.
   Installed only if it matches the target. `examples/node/` is 19 files, 3,553 lines.
 
 So the install copies a lot and adapts almost nothing. What is left over is small and
-sharply defined: **two files nobody but you can write**, and **two files that still name
-the source repo** (`orchestration/README.md`, `orchestration/COMMANDS.md`). Four items.
-That is the whole of phase 2.
+sharply defined: **two files nobody but you can write.** That is the whole of phase 2.
+
+It used to also include two files that named the source repo. Once the fork became the
+source of truth, the course framing was stripped out of `orchestration/README.md` and
+`commands/README.md` at the source instead of in every install, and those rows left the
+manifest. What is left is irreducible: a profile and a mission are per-project by
+definition, and no installer can write them for you.
 
 The three command files used to be in that list — they hardcoded the source's npm gates.
 They now defer to `meta/project-profile.md` instead, so they are copied verbatim like
@@ -97,10 +101,10 @@ else, and an agent that follows it learns this project has a curriculum.
 **8. Phase 1 alone is not done — but it is now most of the way.** Before the split, roughly
 4,000 of 7,300 lines named the source stack and 33 files needed hand work. Measured against
 the split KB in a throwaway Rails repo (`git init` + a `Gemfile`, `--profile rails`):
-**4 worklist items, 2 verifier errors, 3 warnings**, and the only non-template residue is
-five lines across the two files the worklist names. Re-measure rather than quoting this:
-these numbers were 9/8/6 until the source absorbed the fixes, and a stale count here is
-the same defect §11 of the verifier exists to catch.
+**2 worklist items, 1 verifier error, 2 warnings**, and no non-template residue at all.
+Re-measure rather than quoting this: the numbers were 9/8/6, then 4/2/3, and each drop came
+from fixing something at the source rather than in every install. A stale count here is the
+same defect §11 of the verifier exists to catch.
 
 **9. Every artifact must be ignorable, and the installer must prove it.** This is how the
 invisibility goal is enforced rather than hoped for. Any new file the install writes —
@@ -168,7 +172,7 @@ Everything the installer touches lands in one of three buckets:
 | --- | --- | --- |
 | copied verbatim | 48 | `core/`, the READMEs, the three commands, one examples pack |
 | `author` | 2 | **Not copied.** `meta/project-profile.md`, `meta/project-mission.md`. |
-| `retarget` | 2 | Copied, but they name the source's repo: `README.md`, `COMMANDS.md`. |
+| `retarget` | 0 | Nothing in the copied tree names another project any more. |
 
 48 is the count with a 7-file pack (`--profile rails`); 41 with no pack, 60 with
 `examples/node/`. `install.sh --dry-run` prints the real number for the run you are about
@@ -196,7 +200,7 @@ The copy loops walk only `commands/*.md` and `orchestration/**`, so `workspace/`
 picked up structurally; the exclusion is also commented at the workspace step in
 `install.sh`. `meta/session-handoffs/` is excluded for the same reason.
 
-## Phase 2 — the four things
+## Phase 2 — the two things
 
 Work `ADAPTATION-TODO.md` top-down. **Before editing anything:** run
 `./detect-stack.sh <target>` and read the output. Also read the target's `CLAUDE.md`,
@@ -244,33 +248,17 @@ The template is a skeleton of questions, not a draft. The upstream version is ab
 validating orchestration methodology for a course; none of it transfers. Ask the user what
 the project is for if the repo doesn't make it obvious.
 
-### 3–4. The two files that still name the source repo
+### What used to be items 3 and 4
 
-Delete what points at ai-academy; do not invent local equivalents.
+`orchestration/README.md` and `COMMANDS.md` carried the source project's course framing —
+a `/course/guidebook/…` link, three lines of prose, and two `.claude/curriculum/` references.
+Every install fixed the same lines by hand, and the prose ones were invisible to
+`verify-install.sh` §3b and to the residue grep because there is no slash after "course".
 
-- **`orchestration/COMMANDS.md`** — two lines referencing
-  `.claude/curriculum/methodology-discoveries.md`, which exists only in the source repo.
-- **`orchestration/README.md`** — three separate things, and **only the first is caught by
-  any check**:
-  1. a link to `/course/guidebook/companion/day-2-ai-intelligence.md` (`verify-install.sh`
-     §3b flags it, and it is one of the two verifier errors a fresh install starts with);
-  2. **course framing in prose** — "introduced and explained in Day 2 of the course",
-     "linked from the course materials", "Complete Day 2 of the course". There is no slash
-     after "course", so neither §3b nor the residue grep sees them. They survive every
-     automated check and tell the target's agent that this project has a curriculum, which
-     is exactly the principle 7 failure in a form no tool reports. Read the file;
-     do not rely on grep for this one.
-  3. its directory tree hardcodes `node/  NestJS + Angular + Sequelize + Jest`. Name the
-     pack actually installed here, or drop the leaf if none was.
-
-**What is no longer on this list.** The three command files (`orchestration.md`,
-`validate.md`, `handoff.md`) used to need retargeting for their hardcoded npm gates. They
-now defer to `meta/project-profile.md`, and `commands/orchestration.md` already carries
-`@.claude/orchestration/meta/project-profile.md` as entry 0 of its MANDATORY read list —
-so the one edit that everything else depended on ships done. The two
-`core/playbook/` link fixes are likewise gone from the source. Confirm with a grep before
-believing this paragraph; if a defect is back, add the row to `manifest.tsv` rather than
-only fixing the one install.
+**Stripped at the source instead.** If you find framing like this again, fix it in the
+knowledge base rather than in the install: a defect in a copied tree is a defect in every
+copy of it, and the ones no check can see are exactly the ones that survive install after
+install.
 
 ### Finishing
 

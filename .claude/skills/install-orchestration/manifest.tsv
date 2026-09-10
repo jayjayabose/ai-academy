@@ -16,7 +16,10 @@
 # grep the install source for the defect. Before adding a new one, check it is real
 # there too.
 #
+# The two retarget rows are gone as well: the source project's course framing was
+# stripped out of orchestration/README.md and commands/README.md once the fork became
+# the source of truth, so there is nothing left in the copied tree that names another
+# project. What remains is the irreducible part -- the two files only you can write.
+#
 author	orchestration/meta/project-profile.md	NEW FILE. Does not exist upstream. The single source of truth for this project's facts: real gate commands, stack, layout, ports, DB. Every other file defers to it. RUN each command and `ls` each path before writing it down; mark anything unverified NEEDS CONFIRMATION.
 author	orchestration/meta/project-mission.md	The upstream core/meta/project-mission.md is 100% ai-academy ("validate orchestration methodology, generate course content") and is deliberately not copied. Author fresh from this repo, or ask the engineer.
-retarget	orchestration/COMMANDS.md	References `.claude/curriculum/methodology-discoveries.md`, which exists only in the source repo.
-retarget	orchestration/README.md	Three things, and only the first is caught by any check. (1) Links to `/course/guidebook/companion/day-2-ai-intelligence.md` (verify-install.sh 3b flags it). (2) Course framing in prose -- lines reading "introduced and explained in Day 2 of the course", "linked from the course materials", "Complete Day 2 of the course". No slash after "course", so neither 3b nor the residue grep sees them; they tell this project's agent it has a curriculum. Delete them. (3) Its directory tree hardcodes `node/  NestJS + Angular + Sequelize + Jest` -- name the pack actually installed here, or drop the leaf if none was.
