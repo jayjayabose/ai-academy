@@ -9,6 +9,64 @@ that produces it belongs to the project. A worked set is in `examples/<stack>/va
 
 ---
 
+## A gate must leave the project as it found it
+
+This governs all five gates below, and it is the property most often lost by accident.
+
+**Two things must be unchanged when a gate finishes: the tracked files, and the state the
+next run starts from.** Touching either *during* the run is fine. Leaving either altered is
+not.
+
+### Never use an autocorrecting command as a gate
+
+Most linters and formatters have a mode that rewrites source until it passes. Used as a gate
+it is not a check at all:
+
+- **It cannot fail**, because it edits the code until it agrees with itself. A green result
+  carries no information.
+- **The rewrite rides along in your diff**, unreviewed, mixed into a change about something
+  else.
+- **It hides the thing the gate exists to surface.** You wanted to know the code violated a
+  rule; instead the violation was silently removed.
+
+So: invoke the linter in its read-only form, and confirm the working tree is still clean
+afterwards. If the tree changed, those edits are now part of your change and need reading.
+
+**Expect the project's own script to be the autocorrecting one.** Wiring the fixing mode into
+the everyday command is convenient while developing and is a common default. That does not
+make it the gate. When they differ, record both in `meta/project-profile.md` — the gate
+command and the everyday one — so nobody reaches for the wrong one under time pressure.
+Where a pre-commit or pre-push hook runs the fixing form and continuous integration runs the
+read-only form, **CI is the gate.**
+
+### Databases are a different case, and forbidding them would be wrong
+
+Gate 3's integration tier has to reach a real database; that is the entire point of running
+it without mocks. The constraint is not *don't touch it* but **leave no trace**:
+
+- Roll back or truncate what the run wrote. No rows outlive the suite.
+- No schema drift: the structure afterwards is the structure before.
+- No leftover fixtures that a later run would silently depend on.
+
+A suite that writes and cleans up is a good gate. A suite that leaves records behind is not —
+and neither is a "gate" that drops, recreates or reloads the schema, or loads seed data,
+because the next run no longer starts from the same place. The objection is never that the
+database was touched. It is that the starting state moved.
+
+### Why this is stated here rather than left to judgement
+
+Three separate projects hit the same trap independently before it was written down: in each
+one the everyday lint command silently rewrote source, and in two of them a git hook ran the
+fixing form while CI ran the read-only form. Nothing in this document said a gate had to be
+read-only, so each project rediscovered it. That is the signal that a rule belongs in the
+portable method rather than in one project's notes.
+
+Automated tooling that runs gates on your behalf may refuse anything stateful-looking
+outright — a blunter rule than this one, and correct for a tool that cannot know your
+project's cleanup story. Do not read that as "gates may not use a database."
+
+---
+
 ## Gate 1: Type / Compile Check
 
 **Command:** the project's compile or static type check
@@ -32,9 +90,11 @@ gate. A gate that is silently skipped is indistinguishable in the log from one t
 
 ## Gate 2: Lint
 
-**Command:** the project's linter, at the strictness the project has agreed
+**Command:** the project's linter, at the strictness the project has agreed, **in its
+read-only form** — see § A gate must leave the project as it found it. If the everyday script
+autocorrects, it is not this gate.
 
-**Required:** 0 warnings, 0 errors
+**Required:** 0 warnings, 0 errors, and a clean working tree afterwards
 
 **Why:** Consistent code quality, catches common mistakes, enforces team conventions
 
@@ -64,7 +124,8 @@ gate. A gate that is silently skipped is indistinguishable in the log from one t
 **Integration Tests (WITHOUT mocks):**
 
 - Test cross-layer integration
-- Real database operations
+- Real database operations — permitted and expected, provided the run leaves no trace
+  (see § A gate must leave the project as it found it)
 - Example: "Create record → verify in database → retrieve it back through the API"
 
 **Why both:**
