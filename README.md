@@ -126,25 +126,31 @@ Delete `ADAPTATION-TODO.md` when both are done, then re-run `verify-install.sh`.
 The point of the arrangement. You improve the method while doing real work in a product repo;
 that improvement should reach every other project rather than staying where it was written.
 
-**1. Find what a project changed since its install.** The install manifest records a hash per
-file as the installer last wrote it, so divergence is computable:
+**1. Ask what diverged.** `promote.sh` reports; it never writes.
 
 ```bash
-cd /path/to/target
-python3 - <<'EOF'
-import hashlib, os
-root, man = ".claude", ".claude/orchestration/.install-manifest"
-for line in open(man, encoding="utf-8"):
-    line = line.strip()
-    if not line or line.startswith("#") or " " not in line: continue
-    sha, rel = line.split(None, 1)
-    p = os.path.join(root, rel)
-    if not os.path.exists(p): print("D", rel); continue
-    if hashlib.sha256(open(p, "rb").read()).hexdigest() != sha: print("M", rel)
-EOF
+cd ~/Documents/kin/repos/ai-academy-main/.claude/skills/install-orchestration
+./promote.sh /path/to/project [/path/to/another ...]
 ```
 
-Files the installer never wrote (anything new) will not appear — check for those too.
+It reads the install manifest, walks the tree for files the manifest never recorded,
+compares each one against the **current** source, applies the path mapping for the one file
+install.sh renames (`orchestration/COMMANDS.md` comes from `commands/README.md`), sorts
+everything into the tiers below, and runs the portability gate on `core/` candidates. Output
+is one of:
+
+| Line | Meaning |
+| --- | --- |
+| `PROMOTE` | a real candidate — read the diff and decide |
+| `BLOCKED` | a `core/` candidate that names a stack or the project; belongs in `examples/<stack>/` |
+| `deleted` | removed locally; decide deliberately rather than promoting a deletion by accident |
+| `already in the source` | **this install is behind.** Re-run `install.sh`, do not promote |
+| `per-project file(s) ignored` | profile, mission, workspace, session handoffs — never promotable |
+| `SKIPPED` | no manifest, so divergence cannot be computed. Says so rather than reporting "clean" |
+
+The distinction that matters most is `PROMOTE` versus `already in the source`. A file the
+project changed *and* the source already has is not a learning waiting to move — it is an
+install that has fallen behind, and the fix runs the other way.
 
 **2. Classify every changed file. This is a judgement call, not a script.**
 
