@@ -15,6 +15,9 @@ source of truth.** Upstream remains a tracked remote; see *Pulling upstream chan
 
 ## The arrangement
 
+**A clickable version of everything below is in [`docs/workflow.html`](docs/workflow.html)** — open it
+in a browser and click any box or flow to get the commands for it.
+
 One clone, two working directories, and any number of unrelated product repos.
 
 ```

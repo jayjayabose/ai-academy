@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ai-academy — how the fork and the projects fit together</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --line:#2a2f3a;
+    --ink:#e6e9ef; --dim:#98a0ae; --faint:#6b7280;
+    --tool:#6ea8fe;     /* the toolbox */
+    --course:#c79a4b;   /* the course */
+    --proj:#4db6a4;     /* product repos */
+    --warn:#d98b8b;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 24px 80px}
+  h1{font-size:24px;margin:0 0 4px;letter-spacing:-.2px}
+  .sub{color:var(--dim);margin:0 0 28px}
+  .sub code{font-family:var(--mono);font-size:12.5px;color:var(--tool)}
+
+  .board{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.board{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin:0 0 12px;font-weight:600}
+
+  .node{border:1px solid var(--line);border-left-width:3px;border-radius:8px;
+        background:var(--panel2);padding:11px 13px;margin-bottom:9px;cursor:pointer;
+        transition:border-color .12s,transform .12s}
+  .node:hover{transform:translateX(2px)}
+  .node.tool{border-left-color:var(--tool)}
+  .node.course{border-left-color:var(--course)}
+  .node.proj{border-left-color:var(--proj)}
+  .node.sel{border-color:var(--tool);background:#212734}
+  .node .t{font-family:var(--mono);font-size:13px}
+  .node .d{color:var(--dim);font-size:12.5px;margin-top:3px}
+  .badge{float:right;font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:99px;
+         border:1px solid var(--line);color:var(--dim);background:#12151b}
+  .badge.on{color:var(--proj);border-color:#2c4a44}
+  .badge.off{color:var(--faint)}
+  .badge.old{color:var(--warn);border-color:#4a2f2f}
+
+  .flows{margin-top:18px}
+  .flow{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);
+        border-radius:10px;padding:13px 15px;margin-bottom:10px;cursor:pointer;background:var(--panel)}
+  .flow:hover{border-color:#39404e}
+  .flow.sel{border-color:var(--tool);background:#1a1f29}
+  .arrow{font-family:var(--mono);font-size:17px;color:var(--tool);line-height:1.2;flex:0 0 auto}
+  .flow h3{margin:0 0 2px;font-size:14.5px}
+  .flow p{margin:0;color:var(--dim);font-size:12.5px}
+
+  .detail{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+          padding:18px 20px;min-height:120px}
+  .detail h3{margin:0 0 10px;font-size:15px}
+  .detail p{color:var(--dim);margin:0 0 12px;font-size:13.5px}
+  pre{background:#0b0d11;border:1px solid var(--line);border-radius:8px;padding:12px 14px;
+      overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;margin:0 0 12px}
+  .cm{color:var(--faint)}
+  .note{border-left:3px solid var(--warn);padding:8px 12px;background:#1a1517;border-radius:0 6px 6px 0;
+        font-size:13px;color:#e8d6d6;margin:0}
+  .note b{color:#fff}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;color:var(--dim);font-size:12.5px;margin:22px 0 0}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  footer{margin-top:30px;color:var(--faint);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>How the fork and the projects fit together</h1>
+  <p class="sub">One clone, two worktrees, and any number of product repos. Click anything to see the commands.
+     &nbsp;·&nbsp; <code id="stamp"></code></p>
+
+  <div class="board">
+    <div class="card">
+      <h2>One clone — ~/Documents/kin/repos/ai-academy</h2>
+      <div class="node tool sel" data-k="main">
+        <span class="badge">main</span>
+        <div class="t">ai-academy-main/</div>
+        <div class="d">The toolbox. Refactored KB + install skill. You edit the method here.</div>
+      </div>
+      <div class="node course" data-k="course">
+        <span class="badge">course</span>
+        <div class="t">ai-academy/</div>
+        <div class="d">The course. apps/ + guidebook + the original flat KB the material describes.</div>
+      </div>
+      <div class="d" style="color:var(--faint);font-size:12px;margin-top:10px">
+        <code style="font-family:var(--mono)">ai-academy-main/.git</code> is a file pointing back into the
+        one clone. Two folders, one repository — branches and history are shared.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Product repos — separate clones, where work happens</h2>
+      <div class="node proj" data-k="p-intake"><span class="badge on">installed</span>
+        <div class="t">intake-system</div><div class="d">Rails engine · 0 errors</div></div>
+      <div class="node proj" data-k="p-dotcom"><span class="badge on">installed</span>
+        <div class="t">dot-com</div><div class="d">Rails + Node monolith · 0 errors · needs re-install</div></div>
+      <div class="node proj" data-k="p-papi"><span class="badge off">no install</span>
+        <div class="t">product-api</div><div class="d">Not started</div></div>
+      <div class="node proj" data-k="p-ap"><span class="badge old">pre-split</span>
+        <div class="t">administered-policies</div><div class="d">Old flat install · migration, not a refresh</div></div>
+    </div>
+  </div>
+
+  <div class="flows">
+    <div class="flow" data-k="install"><span class="arrow">&#8594;</span>
+      <div><h3>Install — toolbox to project</h3>
+      <p>Copy <code>core/</code>, the three commands and a stack pack into a repo. Then write the two files only you can write.</p></div></div>
+    <div class="flow" data-k="promote"><span class="arrow">&#8592;</span>
+      <div><h3>Promote — project back to the toolbox</h3>
+      <p>You improved the method while doing real work. Get it to every other project.</p></div></div>
+    <div class="flow" data-k="update"><span class="arrow">&#8635;</span>
+      <div><h3>Update an existing install</h3>
+      <p>Fan a promotion out. Re-running is safe; your edits are kept.</p></div></div>
+    <div class="flow" data-k="upstream"><span class="arrow">&#8607;</span>
+      <div><h3>Pull from upstream</h3>
+      <p>charltonaustin/ai-academy is dormant but not dead. main is a clean descendant.</p></div></div>
+  </div>
+
+  <div class="detail" id="detail"></div>
+
+  <div class="legend">
+    <span><i class="sw" style="background:var(--tool)"></i>toolbox — the method lives here</span>
+    <span><i class="sw" style="background:var(--course)"></i>course — outside the loop entirely</span>
+    <span><i class="sw" style="background:var(--proj)"></i>product repos — the method gets used here</span>
+  </div>
+
+  <footer>
+    Generated from the repo, not from memory. Regenerate the numbers with
+    <code style="font-family:var(--mono)">verify-install.sh</code> and
+    <code style="font-family:var(--mono)">promote.sh</code> — a stale diagram is the defect this
+    project keeps finding.
+  </footer>
+</div>
+
+<script>
+const SKILL = "cd ~/Documents/kin/repos/ai-academy-main/.claude/skills/install-orchestration";
+const D = {
+  main:{h:"main — the toolbox",p:"The refactored knowledge base and the install skill on one branch. This is what every project installs from. Product development does not happen here: this is where the method is edited, and the product repos are where it gets used.",
+    code:`<span class="cm"># 35 portable files, no stack token in any of them</span>
+.claude/orchestration/core/
+.claude/orchestration/examples/node/     <span class="cm"># 19 files</span>
+.claude/skills/install-orchestration/    <span class="cm"># 5 scripts</span>`,
+    note:"<b>No <code>AI_ACADEMY_CLAUDE</code> to set.</b> The skill finds its own checkout. That only became true once the skill and the KB stopped living on separate lineages."},
+  course:{h:"course — following the material",p:"Checked out at ~/Documents/kin/repos/ai-academy. Deliberately keeps the ORIGINAL flat knowledge base, because the guidebook references those paths. apps/api and apps/web are here with node_modules already built.",
+    code:`cd ~/Documents/kin/repos/ai-academy
+git branch --show-current        <span class="cm"># course</span>
+open course/guidebook/           <span class="cm"># companion/day-1/tools-setup.md</span>`,
+    note:"<b>Do not install the refactored KB here.</b> The course text would stop matching the tree, and one place where the original structure survives is useful for comparison."},
+  install:{h:"Install into a project",p:"Read the project's real facts first, dry-run, then install. A fresh install arrives deliberately unfinished — 2 worklist items, 1 verifier error. That is the intended state.",
+    code:`${SKILL}
+
+./detect-stack.sh   /path/to/target     <span class="cm"># read real facts FIRST</span>
+./install.sh        /path/to/target --profile rails --dry-run
+./install.sh        /path/to/target --profile rails --with-backup
+./verify-install.sh /path/to/target
+
+<span class="cm"># then phase 2 — the two files nobody else can write:</span>
+<span class="cm">#   meta/project-profile.md   RUN every command before writing it down</span>
+<span class="cm">#   meta/project-mission.md   ask if the repo does not say</span>`,
+    note:"<b>Check invisibility with a NESTED path.</b> <code>git check-ignore .claude/orchestration</code> reports \"not ignored\" when the directory does not exist yet, because the pattern has a trailing slash. Probe <code>.claude/orchestration/README.md</code> instead."},
+  promote:{h:"Promote a learning back",p:"The return path, and the reason the arrangement is worth the trouble. promote.sh reports and never writes — deciding what belongs in a tree whose value is being identical everywhere is a judgement call.",
+    code:`${SKILL}
+./promote.sh /path/to/project
+
+<span class="cm"># PROMOTE  = a real candidate, read the diff</span>
+<span class="cm"># BLOCKED  = names a stack; belongs in examples/&lt;stack&gt;/, not core/</span>
+<span class="cm"># already in the source = this install is BEHIND. Re-run install.sh instead</span>
+
+<span class="cm"># never promotable: meta/project-*.md, workspace/, session-handoffs/</span>
+
+git add -f .claude/orchestration/core/methodology/your-file.md
+git diff --cached --name-status    <span class="cm"># every entry must be intended</span>
+git commit && git push fork main`,
+    note:"<b>Not every learning is a file diff.</b> \"A gate must be read-only\" was rediscovered in three projects before anyone wrote it down. The signal was noticing <i>I have written this before</i> — no tool will surface that."},
+  update:{h:"Update an existing install",p:"Re-running is safe. The installer builds the expected install in a staging directory, then reconciles file by file.",
+    code:`${SKILL}
+./install.sh /path/to/target --profile rails
+
+<span class="cm"># already current  byte-identical to pristine   -> untouched</span>
+<span class="cm"># updated          matches the hash we wrote     -> overwritten</span>
+<span class="cm"># kept local       you edited it -> YOURS KEPT, new one lands as .new</span>
+<span class="cm"># new              did not exist                 -> installed</span>
+
+find /path/to/target/.claude -name '*.new'   <span class="cm"># reconcile deliberately</span>`,
+    note:"Your <code>project-profile.md</code> and <code>project-mission.md</code> are always <b>kept local</b> — discard those <code>.new</code> templates. For a copied file you had hand-edited, taking the new version keeps it byte-identical to source, so future updates apply cleanly instead of forking a <code>.new</code> every time."},
+  upstream:{h:"Pull from upstream",p:"The maintainer declined the refactor, so this fork is the source of truth. Upstream stays a tracked remote — it shipped nine commits in a single day in August.",
+    code:`cd ~/Documents/kin/repos/ai-academy-main
+git fetch upstream
+git log --oneline main..upstream/main   <span class="cm"># what they have that we do not</span>
+git merge upstream/main`,
+    note:"<b>Fetch before assessing.</b> A stale local <code>upstream/main</code> has twice produced confident wrong conclusions here — once \"the repo is dormant\" when it had just shipped a burst, and once a PR asking the maintainer to fix what they had already fixed."},
+  "p-intake":{h:"intake-system",p:"Rails engine, gem-packaged, specs run against spec/dummy. First real install. Verifies at 0 errors, 1 warning. Four NEEDS CONFIRMATION items remain open in its mission by choice.",
+    code:`<span class="cm"># gates, each executed and pasted into project-profile.md</span>
+bundle exec rubocop                    <span class="cm"># 395 files, 0 offenses</span>
+bundle exec rspec                      <span class="cm"># 715 examples, 0 failures, 4.6s</span>
+bundle exec rails app:zeitwerk:check   <span class="cm"># "All is good!"</span>`,
+    note:"<b>Generic Rails advice is wrong on an engine.</b> <code>rails zeitwerk:check</code> fails with UnrecognizedCommandError; it must be <code>app:zeitwerk:check</code>, because the task lives under the dummy app's namespace."},
+  "p-dotcom":{h:"dot-com",p:"Rails 8 + Node modular monolith: 46 Packwerk subsystems, 1,343 migrations, 2,287 spec files. Scope was limited to Ruby; the JS toolchain is recorded as deliberately out of scope rather than omitted.",
+    code:`./bin/linter                             <span class="cm"># 8023 files, 0 offenses</span>
+bundle exec erb_lint --lint-all          <span class="cm"># 334 files, 0 errors</span>
+bundle exec packwerk check               <span class="cm"># no offenses, no stale violations</span>
+AWS_SDK_CONFIG_OPT_OUT=true ELASTICSEARCH_ENABLED=false \\
+  ./bin/rails zeitwerk:check             <span class="cm"># "Otherwise, all is good!"</span>`,
+    note:"<b>Where hooks and CI disagree, CI wins.</b> lefthook runs <code>rubocop -A</code> and the pre-commit hook runs <code>standardrb --fix</code> — both rewrite source, so neither can be a gate. Also: <code>bin/rspec</code> (Spring) hung for 14 minutes here; <code>bundle exec rspec</code> ran the same file in 1.23s."},
+  "p-papi":{h:"product-api",p:"No install yet. Next in the order.",
+    code:`${SKILL}
+./detect-stack.sh ~/Documents/kin/repos/product-api
+./install.sh      ~/Documents/kin/repos/product-api --profile rails --dry-run`,
+    note:"Three installs in a row found defects in the tooling that no amount of throwaway-repo testing had surfaced. Expect this one to find more, and encode what it finds as a check."},
+  "p-ap":{h:"administered-policies",p:"Has an OLD pre-split install: 43 files in the flat layout, no core/, no .install-manifest. It also has a hand-authored project-profile.md with a verification log. Goes last.",
+    code:`<span class="cm"># this is a MIGRATION, not a refresh:</span>
+<span class="cm">#  - the manifest seeds itself; pristine files get recorded,</span>
+<span class="cm">#    everything else is protected as localised</span>
+<span class="cm">#  - the new core/ tree lands alongside</span>
+<span class="cm">#  - all 43 existing files become orphans at the old paths</span>
+<span class="cm"># expect two parallel trees to reconcile by hand. Never clear it.</span>`,
+    note:"<b>Never clear this one.</b> Its profile is the only hand-authored one with a full verification log — real gate commands, a corrected Rails range, the factories path. That is not regenerable."}
+};
+const stamp = "main 5f24c55 · course f13576f · upstream 993ab8c";
+document.getElementById('stamp').textContent = stamp;
+function show(k){
+  const d=D[k]; if(!d) return;
+  document.querySelectorAll('.node,.flow').forEach(n=>n.classList.toggle('sel',n.dataset.k===k));
+  document.getElementById('detail').innerHTML =
+    `<h3>${d.h}</h3><p>${d.p}</p><pre>${d.code}</pre>`+(d.note?`<p class="note">${d.note}</p>`:'');
+}
+document.querySelectorAll('.node,.flow').forEach(n=>n.addEventListener('click',()=>show(n.dataset.k)));
+show('main');
+</script>
+</body>
+</html>
