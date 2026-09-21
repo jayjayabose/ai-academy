@@ -44,6 +44,16 @@ export class LeadList {
   protected readonly errors = signal<string[]>([]);
 
   /**
+   * Deliberately separate from `loading`/`errors`, which own the page-level
+   * fetch. Recalculating is a second request over a page that has already
+   * rendered; sharing the page's state would let a failed recalculation empty
+   * the table and take every score on screen with it. Same separation the
+   * detail page makes for `summarizing`/`summaryErrors`.
+   */
+  protected readonly recalculating = signal(false);
+  protected readonly recalculateErrors = signal<string[]>([]);
+
+  /**
    * Contract: default sort is `activityScore` descending — hottest lead first,
    * with no click required.
    *
@@ -107,6 +117,38 @@ export class LeadList {
       error: (error: unknown) => {
         this.errors.set(apiErrorMessages(error));
         this.loading.set(false);
+      },
+    });
+  }
+
+  /**
+   * Recomputes every score in the book and replaces the rows with the response.
+   *
+   * Wholesale replacement is safe because the bulk endpoint returns the same
+   * rows in the same order as `GET /api/leads` — no merge, no id matching. The
+   * `sortedLeads` computed re-sorts off the new array by itself, so the table
+   * re-orders without anything here touching the sort.
+   *
+   * The `recalculating()` guard is the double-submit guard: the button is
+   * disabled while in flight, but a disabled button is a rendering detail and a
+   * second click through a keyboard or a test would otherwise issue a second
+   * POST.
+   */
+  protected recalculateScores(): void {
+    if (this.recalculating()) return;
+    this.recalculating.set(true);
+    this.recalculateErrors.set([]);
+    this.leadService.rescoreAll().subscribe({
+      next: (leads) => {
+        this.leads.set(leads);
+        this.recalculating.set(false);
+      },
+      error: (error: unknown) => {
+        // Only the error line changes. `leads()` is left exactly as it was, so
+        // the scores already on screen — which are still the stored, correct
+        // ones — survive a failed recalculation.
+        this.recalculateErrors.set(apiErrorMessages(error));
+        this.recalculating.set(false);
       },
     });
   }

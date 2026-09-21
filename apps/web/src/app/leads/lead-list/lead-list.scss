@@ -3,6 +3,14 @@
   font-size: 0.8125rem;
 }
 
+/* Two buttons in the page head now. Same rule the detail page's `.actions`
+   group uses, kept local rather than promoted to styles.scss until a third
+   page wants it. */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .table-wrap {
   overflow-x: auto;
   background: var(--surface);

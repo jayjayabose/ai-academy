@@ -1,11 +1,29 @@
 <div class="page-head">
   <h1>Leads</h1>
-  <a class="button button--primary" routerLink="/leads/new">New lead</a>
+  <div class="actions">
+    <!-- Disabled while in flight, and guarded again in the handler — a disabled
+         button is a rendering detail, not a lock. -->
+    <button type="button" class="button" (click)="recalculateScores()" [disabled]="recalculating()">
+      {{ recalculating() ? 'Recalculating…' : 'Recalculate scores' }}
+    </button>
+    <a class="button button--primary" routerLink="/leads/new">New lead</a>
+  </div>
 </div>
 
 @if (errors().length > 0) {
   <ul class="errors">
     @for (message of errors(); track message) {
+      <li>{{ message }}</li>
+    }
+  </ul>
+}
+
+<!-- Its own list, outside the page-level one: a failed recalculation is a
+     failure of one button, and the table below keeps every score it already
+     had. -->
+@if (recalculateErrors().length > 0) {
+  <ul class="errors errors--recalculate">
+    @for (message of recalculateErrors(); track message) {
       <li>{{ message }}</li>
     }
   </ul>

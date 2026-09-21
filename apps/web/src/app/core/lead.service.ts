@@ -79,4 +79,42 @@ export class LeadService {
   summarize(id: string): Observable<LeadSummary> {
     return this.http.post<LeadSummary>(`/api/leads/${encodeURIComponent(id)}/summary`, {});
   }
+
+  /**
+   * POST /api/leads/:id/score -> 200 Lead. Recomputes and persists one score.
+   *
+   * The empty body is deliberate, as in `summarize`: the server needs no input,
+   * so the lead id in the path is the whole request. 200 rather than 201,
+   * because a recalculation replaces a score in place.
+   *
+   * Unlike `summarize`, which answers with just the summary, this answers with
+   * the WHOLE lead — both score fields live on `Lead` itself, so there is no
+   * nested wire type and nothing to splice. Note for the detail page: this is a
+   * `Lead`, not a `LeadDetail`. Spreading it over the current record would drop
+   * `interactions` and `summary`; patch the two fields instead.
+   *
+   * Arithmetic server-side, not a model call, so this returns in milliseconds —
+   * callers still need a pending state to guard against double-submit, but not
+   * the minutes-long tolerance `summarize` needs.
+   */
+  rescore(id: string): Observable<Lead> {
+    return this.http.post<Lead>(`/api/leads/${encodeURIComponent(id)}/score`, {});
+  }
+
+  /**
+   * POST /api/leads/scores/recalculate -> 200 Lead[]. Recomputes the whole book.
+   *
+   * Returns every row in the same order `list()` does — Task A made the two
+   * endpoints agree (and added an id tiebreaker to get there), so the caller can
+   * replace its rows wholesale and the table cannot reshuffle under the user.
+   * Score order is NOT what comes back; sorting is the client's job.
+   *
+   * A literal path segment where `:id` would go. It is declared before
+   * `:id/score` on the server, though Task A measured that the two cannot
+   * actually collide — `scores/recalculate` fails to match `:id/score` on the
+   * second segment either way round.
+   */
+  rescoreAll(): Observable<Lead[]> {
+    return this.http.post<Lead[]>('/api/leads/scores/recalculate', {});
+  }
 }
