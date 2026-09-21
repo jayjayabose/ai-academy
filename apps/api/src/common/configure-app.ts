@@ -1,6 +1,6 @@
 import { type INestApplication, ValidationPipe } from '@nestjs/common';
 
-/** Decision 7: one global prefix, so the Angular dev proxy is a single `/api` -> localhost:3000 rule. */
+/** Decision 7: one global prefix, so the Angular dev proxy is a single `/api` -> localhost:4000 rule. */
 export const API_PREFIX = 'api';
 
 /**

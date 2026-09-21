@@ -11,7 +11,7 @@ import { apiErrorMessages, isNotFound } from './api-error';
  *
  * Written after Gate 5 put "Http failure response for http://localhost:4300/api/
  * leads/…/summary: 502 Bad Gateway" on screen — the dev proxy answers 502 when
- * nothing is listening on 3000, so the status-0 branch never ran.
+ * nothing is listening on 4000, so the status-0 branch never ran.
  */
 function httpError(status: number, body: unknown): HttpErrorResponse {
   return new HttpErrorResponse({ status, error: body, url: '/api/leads/x/summary' });

@@ -15,7 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     // No interceptors. Until apps/api existed, a fixtureInterceptor answered
     // /api/** in-process; every request now goes over the wire through
-    // proxy.conf.json to localhost:3000. LeadService did not change — it was
+    // proxy.conf.json to localhost:4000. LeadService did not change — it was
     // always the real client.
     provideHttpClient(withFetch()),
   ],

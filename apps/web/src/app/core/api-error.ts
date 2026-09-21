@@ -32,7 +32,7 @@ export function apiErrorMessages(error: unknown): string[] {
     }
     // Status 0 is the browser refusing to connect. 502/503/504 with no ApiError
     // body means something in front of the API answered instead of the API — the
-    // dev proxy while nothing is listening on 3000, or a load balancer in front
+    // dev proxy while nothing is listening on 4000, or a load balancer in front
     // of a dead instance. Either way `error.message` here is HttpClient's
     // developer-facing string ("Http failure response for http://…: 502 Bad
     // Gateway"), which is not something to put in front of a salesperson.
