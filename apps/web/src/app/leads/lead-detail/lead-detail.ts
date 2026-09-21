@@ -13,6 +13,8 @@ import type {
   SummaryUrgency,
 } from '@ai-academy/shared';
 
+import type { ScoreBand } from '../../core/activity-score';
+import { scoreAriaLabel, scoreBand } from '../../core/activity-score';
 import { apiErrorMessages, isNotFound } from '../../core/api-error';
 import { isoToLocalInput, localInputToIso } from '../../core/format';
 import {
@@ -75,6 +77,18 @@ export class LeadDetailPage {
   protected readonly summarizing = signal(false);
   protected readonly summaryErrors = signal<string[]>([]);
 
+  /**
+   * Separate again, for the same reason and following the same shape as
+   * `summarizing`/`summaryErrors`. Nothing on this page is gated on it.
+   *
+   * Note what this pair is NOT: there is no read-through generate-on-first-view
+   * here. A score already exists on the server and the page displays what is
+   * stored — that is the "persisted, not recomputed" requirement, and it is
+   * pinned by a spec asserting the POST this page must never make on load.
+   */
+  protected readonly rescoring = signal(false);
+  protected readonly scoreErrors = signal<string[]>([]);
+
   protected readonly interactionTypes = INTERACTION_TYPES;
 
   /**
@@ -116,6 +130,7 @@ export class LeadDetailPage {
     // survive into the next one. `summarizing` is not reset here: it tracks a
     // request that is genuinely still in flight.
     this.summaryErrors.set([]);
+    this.scoreErrors.set([]);
     this.leadService.get(id).subscribe({
       next: (lead) => {
         this.lead.set(lead);
@@ -206,6 +221,55 @@ export class LeadDetailPage {
     this.generateSummary(lead.id);
   }
 
+  // --- Activity score -------------------------------------------------------
+
+  /**
+   * Recomputes and persists this one lead's score.
+   *
+   * Only ever called from the button. There is deliberately no counterpart to
+   * the summary card's generate-on-first-view: a score is already stored, the
+   * page renders what the server sent, and a POST on load would be the exact
+   * "recomputed, not persisted" bug this feature is supposed to rule out.
+   */
+  protected rescore(): void {
+    const lead = this.lead();
+    if (!lead || this.rescoring()) return;
+
+    const id = lead.id;
+    this.rescoring.set(true);
+    this.scoreErrors.set([]);
+    this.leadService.rescore(id).subscribe({
+      next: (scored) => {
+        // The two fields, not a spread. The endpoint answers with a `Lead`, and
+        // `{ ...current, ...scored }` would compile and then quietly strip
+        // `interactions` and `summary` off a `LeadDetail` — the history list
+        // and the AI card would empty out on a button that says "recalculate
+        // score".
+        //
+        // The id guard is the same one `generateSummary` uses. This request is
+        // milliseconds rather than minutes, so the window is narrow, but a
+        // narrow window for landing one lead's score on another is still one.
+        this.lead.update((current) =>
+          current && current.id === id
+            ? {
+                ...current,
+                activityScore: scored.activityScore,
+                scoreCalculatedAt: scored.scoreCalculatedAt,
+              }
+            : current,
+        );
+        this.rescoring.set(false);
+      },
+      error: (error: unknown) => {
+        // Only the score's own error line moves. The summary card, the details
+        // and the history are untouched, and the badge keeps the stored score
+        // it was already showing.
+        if (this.lead()?.id === id) this.scoreErrors.set(apiErrorMessages(error));
+        this.rescoring.set(false);
+      },
+    });
+  }
+
   // --- Log interaction ------------------------------------------------------
 
   protected logInteraction(): void {
@@ -269,5 +333,15 @@ export class LeadDetailPage {
 
   protected urgencyLabel(urgency: SummaryUrgency): string {
     return SUMMARY_URGENCY_LABELS[urgency];
+  }
+
+  /** Badge modifier. Same pair as the list's, deriving from the same one file. */
+  protected bandOf(score: number): ScoreBand {
+    return scoreBand(score);
+  }
+
+  /** The badge's accessible name. Colour is reinforcement; this is the meaning. */
+  protected scoreLabel(score: number): string {
+    return scoreAriaLabel(score);
   }
 }

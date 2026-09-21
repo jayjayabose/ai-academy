@@ -10,6 +10,29 @@
   gap: 0.5rem;
 }
 
+/* The score sits on the name's baseline rather than under it: the badge is a
+   property of this lead, not a second heading, and stacking it would read as
+   two facts where there is one. */
+.head-line {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Provenance under the name, same weight as the summary card's "Generated …"
+   line — it answers the same question about the same kind of staleness. */
+.score-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+}
+
+/* The em-dash an unscored lead shows instead of a badge. No pill: "never
+   scored" is an absence, and dressing it as a badge would make it look like a
+   fourth band. */
+.score-empty {
+  font-size: 1.1rem;
+}
+
 .card + .card {
   margin-top: 1.25rem;
 }

@@ -10,13 +10,53 @@
   <div class="page-head">
     <div>
       <a class="back" routerLink="/leads">← All leads</a>
-      <h1>{{ lead.firstName }} {{ lead.lastName }}</h1>
+      <div class="head-line">
+        <h1>{{ lead.firstName }} {{ lead.lastName }}</h1>
+        <!-- `!== null`, not truthiness — a clamped 0 is a score and gets a red
+             badge reading 0, not the em-dash that means "never scored". Same
+             branch, same `count` pipe and the same one band function as the
+             list, so the two pages cannot disagree about a colour. -->
+        @if (lead.activityScore !== null) {
+          <span
+            class="score score--{{ bandOf(lead.activityScore) }}"
+            role="img"
+            [attr.aria-label]="scoreLabel(lead.activityScore)"
+            >{{ lead.activityScore | count }}</span
+          >
+        } @else {
+          <span class="muted score-empty">{{ lead.activityScore | count }}</span>
+        }
+      </div>
+      <!-- Provenance, exactly as the summary card carries `generatedAt`: a score
+           is not invalidated when an interaction is logged, so the user is
+           entitled to see how old this one is and decide it is stale. -->
+      <p class="muted score-meta">
+        @if (lead.scoreCalculatedAt !== null) {
+          Scored {{ lead.scoreCalculatedAt | timestamp }}
+        } @else {
+          Never scored
+        }
+      </p>
     </div>
     <div class="actions">
+      <button type="button" class="button" (click)="rescore()" [disabled]="rescoring()">
+        {{ rescoring() ? 'Recalculating…' : 'Recalculate score' }}
+      </button>
       <a class="button" [routerLink]="['/leads', lead.id, 'edit']">Edit</a>
       <button type="button" class="button button--danger" (click)="askToDelete()">Delete</button>
     </div>
   </div>
+
+  <!-- Its own list. A failed recalculation costs the user the button and
+       nothing else — the badge keeps the stored score and the summary card
+       below is untouched. -->
+  @if (scoreErrors().length > 0) {
+    <ul class="errors errors--score">
+      @for (message of scoreErrors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
 
   @if (errors().length > 0) {
     <ul class="errors">
