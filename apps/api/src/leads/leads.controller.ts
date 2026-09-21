@@ -88,18 +88,23 @@ export class LeadsController {
   }
 
   /**
-   * DECLARED BEFORE `:id/score`, and it has to be.
+   * DECLARED BEFORE `:id/score`, as the rule says — though MEASURED, the two do
+   * not actually collide, and the comment should say so rather than repeat a
+   * hazard it does not have.
    *
-   * Nest matches routes in DECLARATION order, not by specificity. With the two
-   * the other way round, `scores` is captured as `:id`, ParseUUIDPipe rejects
-   * it, and the bulk endpoint answers 400 to every request — a failure that
-   * looks like a client bug and lives in a file nobody suspects. There is an
-   * integration test whose entire job is to prove this one returns 200.
+   * Nest matches routes in declaration order, not by specificity, so a literal
+   * segment declared after a param route can be captured as the param. That is
+   * real: swap the order and add a colliding path and you get it immediately —
+   * `POST /api/leads/scores/score` against `@Post(':id/score')` declared first
+   * answers `400 Validation failed (uuid is expected)`, which reads like a
+   * client bug and lives in a file nobody suspects.
    *
-   * `scores/recalculate` rather than a bare `recalculate` so the path says what
-   * it recalculates; the segment can never collide with a UUID either way, but
-   * the collision is a property of the declaration order above, not of the
-   * word.
+   * It does not bite HERE because the second segment differs: matching
+   * `scores/recalculate` against `:id/score` fails on `recalculate` vs `score`
+   * whichever way round they are declared. The order is kept anyway, because it
+   * is what keeps that true if either path is ever shortened — the day someone
+   * writes `@Post('recalculate')` against a `@Post(':id')`, the order is the
+   * only thing standing between them.
    *
    * 200 with the whole book, in GET /api/leads order (R3): the client replaces
    * its table from this response, so anything less than every row would leave

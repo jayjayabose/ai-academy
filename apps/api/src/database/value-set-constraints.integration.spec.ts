@@ -150,6 +150,85 @@ describe('the migrations value-set constraints', () => {
     });
   });
 
+  /**
+   * Also not a value set. The activity score's closed set is a RANGE, and it
+   * has the same seam a hardcoded union has: `scoreLead` guarantees 0-100 by
+   * construction in TypeScript, and nothing links that guarantee to this SQL.
+   * Reweight the components so they sum to 110 and the only thing that notices
+   * is a 23514 on the next write — which is exactly why the constraint is here
+   * and why it is tested here.
+   */
+  describe('leads_activity_score_range_check', () => {
+    it.each([0, 1, 50, 99, 100])(
+      'accepts the in-range score %i',
+      async (score) => {
+        const id = await insertScoredLead(score);
+
+        expect(await storedActivityScore(id)).toBe(score);
+      },
+    );
+
+    it.each([101, -1, 1000])(
+      'rejects the out-of-range score %i with check_violation',
+      async (score) => {
+        await expect(insertScoredLead(score)).rejects.toMatchObject({
+          parent: {
+            code: CHECK_VIOLATION,
+            constraint: 'leads_activity_score_range_check',
+          },
+        });
+      },
+    );
+
+    it('stores NULL, because a lead that has never been scored is normal', async () => {
+      const id = await insertLead('active');
+
+      expect(await storedActivityScore(id)).toBeNull();
+    });
+  });
+
+  /**
+   * A shape, like leads_summary_complete_check. Null means never scored, and
+   * that fact is carried by BOTH columns or neither — a score with no
+   * timestamp is a state the wire contract has no rendering for, and it is
+   * what lets lead-wire.ts map the timestamp without re-testing the score.
+   */
+  describe('leads_activity_score_complete_check', () => {
+    it('rejects a score written without its timestamp', async () => {
+      const id = await insertLead('active');
+
+      await expect(setActivityScoreOnly(id)).rejects.toMatchObject({
+        parent: {
+          code: CHECK_VIOLATION,
+          constraint: 'leads_activity_score_complete_check',
+        },
+      });
+    });
+
+    it('rejects a timestamp written without its score', async () => {
+      const id = await insertLead('active');
+
+      await expect(setScoreCalculatedAtOnly(id)).rejects.toMatchObject({
+        parent: {
+          code: CHECK_VIOLATION,
+          constraint: 'leads_activity_score_complete_check',
+        },
+      });
+    });
+
+    it('accepts both together', async () => {
+      const id = await insertScoredLead(73);
+
+      expect(await storedActivityScore(id)).toBe(73);
+    });
+
+    it('accepts neither, which is every lead before its first scoring', async () => {
+      const id = await insertLead('active');
+
+      expect(await storedActivityScore(id)).toBeNull();
+    });
+  });
+
   describe('interactions_type_check', () => {
     it.each([...INTERACTION_TYPES])(
       'accepts the InteractionType member %s',
@@ -217,6 +296,36 @@ function setSummaryNarrativeOnly(id: string): Promise<unknown> {
   );
 }
 
+/** A lead inserted with both score columns populated in the same statement. */
+async function insertScoredLead(score: number): Promise<string> {
+  const rows = await testConnection().query<{ id: string }>(
+    `INSERT INTO leads (first_name, last_name, email, status,
+                        activity_score, score_calculated_at)
+         VALUES ('Constraint', 'Probe', 'probe@example.com', 'active',
+                 :score, now())
+         RETURNING id`,
+    { replacements: { score }, type: QueryTypes.SELECT },
+  );
+
+  return rows[0].id;
+}
+
+/** Half the pair — the partial write leads_activity_score_complete_check exists to refuse. */
+function setActivityScoreOnly(id: string): Promise<unknown> {
+  return testConnection().query(
+    `UPDATE leads SET activity_score = 42 WHERE id = :id`,
+    { replacements: { id }, type: QueryTypes.UPDATE },
+  );
+}
+
+/** The other half, because a constraint that only catches one direction is half a constraint. */
+function setScoreCalculatedAtOnly(id: string): Promise<unknown> {
+  return testConnection().query(
+    `UPDATE leads SET score_calculated_at = now() WHERE id = :id`,
+    { replacements: { id }, type: QueryTypes.UPDATE },
+  );
+}
+
 async function insertInteraction(
   leadId: string,
   type: string,
@@ -252,4 +361,14 @@ async function storedInteractionType(id: string): Promise<string | null> {
   );
 
   return rows[0].type;
+}
+
+/** INTEGER, so the pg driver hands back a number — the assertion would be `'73'` otherwise. */
+async function storedActivityScore(id: string): Promise<number | null> {
+  const rows = await testConnection().query<{ activity_score: number | null }>(
+    `SELECT activity_score FROM leads WHERE id = :id`,
+    { replacements: { id }, type: QueryTypes.SELECT },
+  );
+
+  return rows[0].activity_score;
 }
