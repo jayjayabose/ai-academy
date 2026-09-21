@@ -19,7 +19,20 @@ const COUNT = Number(process.argv[2] ?? 100);
 const OUTFILE = process.argv[3] ?? 'seed-leads.csv';
 
 // Fixed so inquiryDate spreads are stable across runs.
-const REFERENCE_DATE = new Date('2026-08-01T00:00:00Z');
+//
+// RE-ANCHORED 2026-09-21. This is the date the whole book is measured back
+// from, so it ages a day per day: pinned at 2026-08-01 it left the newest lead
+// 54 days old, 99 of 100 leads with no interaction inside the 30-day
+// engagement window, and every activity badge red. Bumping it is the remedy
+// Decision 3 chose. The known limitation is that it will age again — the
+// durable fix is scoring recency against the newest interaction in the book
+// rather than now(), which was considered and declined.
+//
+// SEED is deliberately NOT bumped with it. The PRNG sequence is what keeps
+// every other column byte-identical across a re-anchor; REFERENCE_DATE feeds
+// only isoDateDaysAgo, and the intBetween(3, maxAge) draw that decides each
+// lead's age is independent of it.
+const REFERENCE_DATE = new Date('2026-09-21T00:00:00Z');
 const SEED = 20260801;
 
 /** mulberry32 — small, fast, deterministic. */

@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { Interaction } from '../../interactions/interaction.model';
 import { Lead } from '../../leads/lead.model';
+import { scoreLead } from '../../scoring/activity-score';
 import { generateInteractions } from './interaction-generator';
 import { readSeedLeads } from './lead-csv';
 
@@ -68,15 +69,44 @@ export class SeedService {
 
       const created = await this.leads.bulkCreate(rows, { transaction });
 
-      const history = created.flatMap((lead, index) =>
+      // Kept grouped rather than flattened straight away: the scoring pass
+      // below needs each lead's OWN history, and regrouping a flat array by
+      // leadId afterwards would be a join written by hand over data that was
+      // already grouped a line earlier.
+      const historyByLead = created.map((lead, index) =>
         generateInteractions(
           { id: lead.id, inquiryDate: lead.inquiryDate },
           index,
           now,
         ),
       );
+      const history = historyByLead.flat();
 
       await this.interactions.bulkCreate(history, { transaction });
+
+      // Scored here, in the same transaction, so a freshly seeded database
+      // arrives with a fully populated dashboard and GET /api/leads never
+      // needs to write (R2 — a GET that writes rows is not a GET, the same
+      // call Day 2 made for summaries).
+      //
+      // The seeder's injected `now`, not `new Date()`: that parameter is what
+      // makes a re-seed reproduce the same history, and a score computed
+      // against a different clock than its interactions would be a quiet lie
+      // about data that is otherwise deterministic.
+      //
+      // One UPDATE per lead. `bulkCreate` has already assigned the ids the
+      // interactions hang off, so the scores cannot be known before the
+      // INSERT; 100 updates inside a transaction that is already open is the
+      // cheap end of the alternatives.
+      for (const [index, lead] of created.entries()) {
+        await lead.update(
+          {
+            activityScore: scoreLead(lead, historyByLead[index], now),
+            scoreCalculatedAt: now,
+          },
+          { transaction },
+        );
+      }
 
       return {
         outcome: 'seeded',

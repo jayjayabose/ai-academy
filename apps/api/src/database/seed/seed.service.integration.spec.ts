@@ -31,6 +31,13 @@ const OVERLONG_NAME_CSV = join(
 const SAMPLE_ROWS = 3;
 const NOW = new Date('2026-08-07T12:00:00Z');
 
+/**
+ * The date scripts/generate-seed-leads.mjs is anchored to. Scoring the
+ * committed CSV against it is deterministic and stays so, which is what makes
+ * the band-spread assertion below a test rather than a countdown.
+ */
+const SEED_ANCHOR = new Date('2026-09-21T12:00:00Z');
+
 describe('importing the seed CSV', () => {
   let service: SeedService;
 
@@ -94,6 +101,26 @@ describe('importing the seed CSV', () => {
         source: null,
         notes: null,
       });
+    });
+
+    it('scores every lead it inserts, so a fresh dashboard is populated', async () => {
+      // R2: the seeder computes the scores, rather than GET /api/leads
+      // computing them on first read. A GET that writes rows is not a GET,
+      // which is the call Day 2 already made for summaries.
+      await service.seed({ csvPath: SAMPLE_CSV, now: NOW });
+
+      const leads = await Lead.findAll();
+
+      expect(leads).toHaveLength(SAMPLE_ROWS);
+      for (const lead of leads) {
+        expect(typeof lead.activityScore).toBe('number');
+        expect(lead.activityScore).toBeGreaterThanOrEqual(0);
+        expect(lead.activityScore).toBeLessThanOrEqual(100);
+        // The injected `now`, not the wall clock: a score stamped from a
+        // different clock than the history it was computed from would make a
+        // deterministic seed quietly non-reproducible.
+        expect(lead.scoreCalculatedAt).toEqual(NOW);
+      }
     });
 
     it('stores budget as a number, the way the wire contract promises', async () => {
@@ -178,6 +205,32 @@ describe('importing the seed CSV', () => {
       expect(await Interaction.count()).toBe(
         (result as { interactions: number }).interactions,
       );
+    });
+
+    it('spreads across all three badge bands at the date it is anchored to', async () => {
+      // The acceptance test for the re-anchor, made deterministic: a fixed CSV
+      // scored against the fixed date the generator is anchored to. Pinned at
+      // 2026-08-01 the file produced a wall of red — 99 of 100 leads with no
+      // interaction inside the 30-day window — and the "badges are
+      // colour-coded" criterion could not honestly be ticked.
+      //
+      // This does NOT say the dashboard still shows three colours TODAY. The
+      // book ages a day per day, so that is a property of the clock rather
+      // than of the file, and it belongs to the manual gate. What this catches
+      // is a regeneration of the CSV that flattens the distribution.
+      await service.seed({ now: SEED_ANCHOR });
+
+      const scores = (await Lead.findAll()).map((lead) => lead.activityScore);
+
+      expect(
+        scores.filter((score) => score !== null && score <= 30),
+      ).not.toHaveLength(0);
+      expect(
+        scores.filter((score) => score !== null && score > 30 && score <= 70),
+      ).not.toHaveLength(0);
+      expect(
+        scores.filter((score) => score !== null && score > 70),
+      ).not.toHaveLength(0);
     });
   });
 });
