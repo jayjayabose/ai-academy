@@ -74,3 +74,12 @@ tbody tr:last-child td {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* The badge is its own pill and sets its own width, so the cell only has to stop
+   the column stretching. The em-dash an unscored lead renders instead inherits
+   the same alignment, which keeps the column from looking ragged when a few rows
+   have no score. */
+.cell-score {
+  width: 1%;
+  text-align: center;
+}

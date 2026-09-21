@@ -13,6 +13,24 @@ import { LeadList } from './lead-list';
  * NestJS. Here the response is stated in the test, and the request the component
  * makes is asserted rather than assumed.
  */
+/**
+ * Column positions, named rather than spelled as magic numbers.
+ *
+ * The Score column landed second — it is the default sort key and the thing the
+ * user scans — which shifted every index these specs used to hard-code. Naming
+ * them means the next insertion is a one-line change here instead of a hunt
+ * through the assertions.
+ */
+const COLUMN = {
+  name: 0,
+  score: 1,
+  status: 2,
+  budget: 3,
+  location: 4,
+  propertyType: 5,
+  inquiryDate: 6,
+} as const;
+
 function rowCells(fixture: ComponentFixture<LeadList>, column: number): string[] {
   const rows = fixture.nativeElement.querySelectorAll('tbody tr') as NodeListOf<HTMLElement>;
   return Array.from(rows).map((row) => {
@@ -47,16 +65,22 @@ describe('LeadList', () => {
     http.verify();
   });
 
-  it('renders one row per lead, sorted by inquiryDate descending by default', () => {
-    const dates = rowCells(fixture, 5);
-    expect(dates.length).toBe(10);
-    expect(dates[0]).toBe('Aug 5, 2026');
-    expect(dates[dates.length - 1]).toBe('May 30, 2026');
+  it('renders one row per lead, sorted by activityScore descending by default', () => {
+    // Contract amendment: the Day 1 default was inquiryDate descending. The
+    // whole user story is "order the list by how hot each lead is", so a
+    // default that needs a click is not the feature.
+    const scores = rowCells(fixture, COLUMN.score);
+    expect(scores.length).toBe(10);
+    expect(scores[0]).toBe('78');
+    // The unscored lead, not the two zeroes: null is unknown, and unknown sorts
+    // below a lead we have actually measured as ice cold.
+    expect(scores[scores.length - 1]).toBe('—');
+    expect(scores[scores.length - 2]).toBe('0');
   });
 
   it('renders nullable columns as an em-dash, and never as "null" or blank', () => {
-    const locations = rowCells(fixture, 3);
-    const budgets = rowCells(fixture, 2);
+    const locations = rowCells(fixture, COLUMN.location);
+    const budgets = rowCells(fixture, COLUMN.budget);
     expect(locations).toContain('—');
     expect(budgets).toContain('—');
     expect(locations.every((text) => text.length > 0 && text !== 'null')).toBe(true);
@@ -64,19 +88,19 @@ describe('LeadList', () => {
   });
 
   it('re-sorts client-side, keeping unknown values at the bottom in both directions', () => {
-    const budgetHeader = fixture.nativeElement.querySelectorAll(
-      'thead .sort-button',
-    )[2] as HTMLButtonElement;
+    const budgetHeader = fixture.nativeElement.querySelectorAll('thead .sort-button')[
+      COLUMN.budget
+    ] as HTMLButtonElement;
 
     budgetHeader.click();
     fixture.detectChanges();
-    const ascending = rowCells(fixture, 2);
+    const ascending = rowCells(fixture, COLUMN.budget);
     expect(ascending[0]).toBe('$220,000');
     expect(ascending[ascending.length - 1]).toBe('—');
 
     budgetHeader.click();
     fixture.detectChanges();
-    const descending = rowCells(fixture, 2);
+    const descending = rowCells(fixture, COLUMN.budget);
     expect(descending[0]).toBe('$100,000,000');
     // Nulls stay last: reversing must not bury the rows that carry data.
     expect(descending[descending.length - 1]).toBe('—');
@@ -86,7 +110,11 @@ describe('LeadList', () => {
     // Contract §1: sorting is client-side because the list already carries every
     // field. A re-fetch per click would be an unnoticed regression — the rows
     // would still look right.
-    (fixture.nativeElement.querySelectorAll('thead .sort-button')[2] as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelectorAll('thead .sort-button')[
+        COLUMN.budget
+      ] as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
 
     http.expectNone('/api/leads');

@@ -3,8 +3,10 @@ import { Router, RouterLink } from '@angular/router';
 
 import type { Lead, LeadStatus, PropertyType } from '@ai-academy/shared';
 
+import type { ScoreBand } from '../../core/activity-score';
+import { scoreAriaLabel, scoreBand } from '../../core/activity-score';
 import { apiErrorMessages } from '../../core/api-error';
-import { BudgetPipe, DateOnlyPipe, OrDashPipe } from '../../core/format.pipes';
+import { BudgetPipe, CountPipe, DateOnlyPipe, OrDashPipe } from '../../core/format.pipes';
 import {
   LEAD_STATUSES,
   LEAD_STATUS_LABELS,
@@ -15,6 +17,7 @@ import { LeadService } from '../../core/lead.service';
 
 export type SortKey =
   | 'name'
+  | 'activityScore'
   | 'status'
   | 'budget'
   | 'location'
@@ -28,7 +31,7 @@ type SortValue = string | number | null;
 
 @Component({
   selector: 'app-lead-list',
-  imports: [RouterLink, BudgetPipe, DateOnlyPipe, OrDashPipe],
+  imports: [RouterLink, BudgetPipe, CountPipe, DateOnlyPipe, OrDashPipe],
   templateUrl: './lead-list.html',
   styleUrl: './lead-list.scss',
 })
@@ -40,12 +43,28 @@ export class LeadList {
   protected readonly loading = signal(true);
   protected readonly errors = signal<string[]>([]);
 
-  /** Contract: default sort is `inquiryDate` descending. */
-  protected readonly sortKey = signal<SortKey>('inquiryDate');
+  /**
+   * Contract: default sort is `activityScore` descending — hottest lead first,
+   * with no click required.
+   *
+   * This AMENDS the Day 1 contract, which was `inquiryDate` descending. The
+   * amendment is the feature: the user story is "I want the list ordered by how
+   * hot each lead is so I work the top of it instead of guessing", and a default
+   * the user has to click to get is not a default. Inquiry date is still one
+   * click away on its own header.
+   *
+   * Leads with no score (`null`) pin to the bottom rather than reading as
+   * ice-cold, which `sortedLeads` already handles for every nullable column.
+   */
+  protected readonly sortKey = signal<SortKey>('activityScore');
   protected readonly sortDirection = signal<SortDirection>('desc');
 
   protected readonly columns: readonly { key: SortKey; label: string }[] = [
     { key: 'name', label: 'Name' },
+    // Second, not last: it is the default sort key and the column the user
+    // scans. A temperature gauge at the far right of a horizontally scrolling
+    // table is a temperature gauge nobody reads.
+    { key: 'activityScore', label: 'Score' },
     { key: 'status', label: 'Status' },
     { key: 'budget', label: 'Budget' },
     { key: 'location', label: 'Location' },
@@ -98,8 +117,9 @@ export class LeadList {
       return;
     }
     this.sortKey.set(key);
-    // Dates read most usefully newest-first; everything else A-Z / smallest-first.
-    this.sortDirection.set(key === 'inquiryDate' ? 'desc' : 'asc');
+    // Dates read most usefully newest-first and scores hottest-first; everything
+    // else A-Z / smallest-first.
+    this.sortDirection.set(key === 'inquiryDate' || key === 'activityScore' ? 'desc' : 'asc');
   }
 
   protected ariaSort(key: SortKey): 'ascending' | 'descending' | 'none' {
@@ -119,12 +139,35 @@ export class LeadList {
     // Returning null lets the `orDash` pipe own the em-dash, in one place.
     return propertyType === null ? null : PROPERTY_TYPE_LABELS[propertyType];
   }
+
+  /**
+   * Badge modifier for a scored lead.
+   *
+   * Only reachable from the branch of the template that has already proved the
+   * score non-null — `scoreBand` takes a `number` and the compiler enforces it,
+   * which is what keeps "never scored" out of the cold band.
+   */
+  protected bandOf(score: number): ScoreBand {
+    return scoreBand(score);
+  }
+
+  /** The badge's accessible name. Colour is reinforcement; this is the meaning. */
+  protected scoreLabel(score: number): string {
+    return scoreAriaLabel(score);
+  }
 }
 
 function sortValue(lead: Lead, key: SortKey): SortValue {
   switch (key) {
     case 'name':
       return `${lead.lastName} ${lead.firstName}`.toLowerCase();
+    case 'activityScore':
+      // Raw, including the nulls. No special-casing here: `sortedLeads` pins
+      // null to the bottom before the direction factor is applied, so an
+      // unscored lead stays out of the way in both directions. A second
+      // null-check here would be a second place for the two to disagree — and
+      // `0` is a real score that must sort among the numbers, not with them.
+      return lead.activityScore;
     case 'status':
       // Pipeline order (active -> lost), not alphabetical: the array in
       // core/lead-status.ts is ordered, and "closed" before "contacted" would

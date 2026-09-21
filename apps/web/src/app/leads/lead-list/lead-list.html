@@ -49,6 +49,23 @@
             (keydown.space)="open(lead)"
           >
             <td class="cell-name">{{ lead.firstName }} {{ lead.lastName }}</td>
+            <td class="cell-score">
+              <!-- `!== null`, never truthiness: `@if (lead.activityScore)` would
+                   send every 0 — the 23 closed and lost leads the server clamps
+                   — down the em-dash branch and hide them. The `count` pipe
+                   renders the em-dash for the absent case and keeps 0 as "0",
+                   for exactly the same reason `bedrooms: 0` needs it. -->
+              @if (lead.activityScore !== null) {
+                <span
+                  class="score score--{{ bandOf(lead.activityScore) }}"
+                  role="img"
+                  [attr.aria-label]="scoreLabel(lead.activityScore)"
+                  >{{ lead.activityScore | count }}</span
+                >
+              } @else {
+                {{ lead.activityScore | count }}
+              }
+            </td>
             <td>
               <span class="status status--{{ lead.status }}">{{ statusLabel(lead.status) }}</span>
             </td>

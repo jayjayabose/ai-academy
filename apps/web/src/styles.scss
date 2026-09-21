@@ -160,6 +160,51 @@ a {
   color: #8e1b18;
 }
 
+/* --- Activity score badge ------------------------------------------------ */
+
+/* Global rather than per-component for the same reason `.status` is: the leads
+   table and the detail page both render it, Angular scopes component styles, and
+   a copy in each stylesheet would be two palettes to keep in step.
+
+   Same pill geometry as `.status`; only the palette differs, and it is drawn
+   from the colours already in this sheet (lost / contacted / qualified) rather
+   than three new ones. This is a data table, not a traffic light — a hundred
+   saturated chips in a column would be unreadable.
+
+   Colour is never the only signal: the badge always shows the number, and the
+   band goes in the badge's aria-label. A null score is not styled here at all —
+   it renders as a plain em-dash, because "never scored" is an absence and 0 is
+   a score. */
+.score {
+  display: inline-block;
+  min-width: 2.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  /* Lining figures, so a column of badges lines up digit for digit. */
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.score--cold {
+  background: #fdeceb;
+  border-color: #f2bdba;
+  color: #8e1b18;
+}
+.score--warm {
+  background: #fff5e0;
+  border-color: #f2d79a;
+  color: #7a5300;
+}
+.score--hot {
+  background: #e6f6ec;
+  border-color: #a9dcbc;
+  color: #1c6b3a;
+}
+
 /* Error surface. `ApiError.message` may be an array (one line per field), so
    this is always rendered as a list. */
 .errors {
