@@ -218,6 +218,36 @@ describe('the lead activity score endpoints', () => {
       );
     });
 
+    it('breaks a tie on both sort keys by id, so both endpoints agree', async () => {
+      // Leads created over HTTP get distinct createdAt values, so they cannot
+      // tie and the ordering bug hides. The SEEDER inserts all 100 rows in one
+      // bulkCreate and they share a created_at to the millisecond; the
+      // committed CSV leaves 79 distinct (inquiry_date, created_at) pairs
+      // across 100 leads.
+      //
+      // Measured against the seeded dev database before `id` became the third
+      // sort key: findAll's plain SELECT and rescoreAll's join returned the
+      // same 100 rows in DIFFERENT orders, which is the table reshuffling
+      // after the Recalculate button.
+      //
+      // The assertion is that ties come back in id order, NOT merely that the
+      // two endpoints agree. Agreement is the symptom and it is not reliably
+      // reproducible — an arbitrary order is entitled to be the same arbitrary
+      // order twice, and on a small table it usually is, so that assertion
+      // passes with or without the fix. A total ordering is the actual
+      // contract, and twelve random UUIDs arrive sorted by accident about once
+      // in 479 million times.
+      await insertLeadsSharingSortKeys(12);
+
+      const { body: listed } = await getLeads();
+      const { body: recalculated } = await postRecalculateAll();
+
+      const ids = listed.map((lead) => lead.id);
+      expect(ids).toHaveLength(12);
+      expect(ids).toEqual([...ids].sort());
+      expect(recalculated.map((lead) => lead.id)).toEqual(ids);
+    });
+
     it('stamps every row with the same instant', async () => {
       // A bulk recalculation happened at ONE instant; per-row `new Date()`
       // would make the timestamps disagree about an event that did not.
@@ -294,6 +324,21 @@ describe('the lead activity score endpoints', () => {
     );
 
     return body.id;
+  }
+
+  /**
+   * Rows that tie on BOTH sort keys, which is what the seeder produces and
+   * what no HTTP-created lead can reproduce. Raw SQL because the point is one
+   * INSERT stamping one created_at across every row.
+   */
+  function insertLeadsSharingSortKeys(count: number): Promise<unknown> {
+    return app.get(Sequelize).query(
+      `INSERT INTO leads (first_name, last_name, email, status, inquiry_date, created_at, updated_at)
+         SELECT 'Tied', 'Row', 'tied' || n || '@example.com', 'active',
+                DATE '2026-06-05', now(), now()
+           FROM generate_series(1, :count) AS n`,
+      { replacements: { count } },
+    );
   }
 
   /** Dated now by the column default, so it lands in both the recency and engagement windows. */

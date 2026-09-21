@@ -28,10 +28,22 @@ import { Lead } from './lead.model';
  * Note this is the SERVER's order, which is not the dashboard's default sort.
  * Sorting by score is the client's job (R4); the server's job is to be
  * deterministic.
+ *
+ * `id` is the third key and it is not decoration. inquiryDate and createdAt do
+ * NOT identify a row between them: the seeder inserts all 100 leads in one
+ * bulkCreate, so every seeded row shares a created_at to the millisecond, and
+ * the committed CSV leaves only 79 distinct (inquiry_date, created_at) pairs
+ * across 100 leads. Ties are ordered arbitrarily by Postgres, and arbitrarily
+ * means DIFFERENTLY between two queries — measured: `findAll`'s plain SELECT
+ * and `rescoreAll`'s join returned the 100 rows in different orders, which is
+ * the table reshuffling after the Recalculate button. It also means the Day 1
+ * promise just above, that the list does not reshuffle between requests, was
+ * not actually kept until this key was added.
  */
 const LIST_ORDER: Order = [
   ['inquiryDate', 'DESC'],
   ['createdAt', 'DESC'],
+  ['id', 'ASC'],
 ];
 
 @Injectable()
