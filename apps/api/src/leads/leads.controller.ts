@@ -86,4 +86,44 @@ export class LeadsController {
   summarize(@Param('id', ParseUUIDPipe) id: string): Promise<LeadSummary> {
     return this.leads.summarize(id);
   }
+
+  /**
+   * DECLARED BEFORE `:id/score`, and it has to be.
+   *
+   * Nest matches routes in DECLARATION order, not by specificity. With the two
+   * the other way round, `scores` is captured as `:id`, ParseUUIDPipe rejects
+   * it, and the bulk endpoint answers 400 to every request — a failure that
+   * looks like a client bug and lives in a file nobody suspects. There is an
+   * integration test whose entire job is to prove this one returns 200.
+   *
+   * `scores/recalculate` rather than a bare `recalculate` so the path says what
+   * it recalculates; the segment can never collide with a UUID either way, but
+   * the collision is a property of the declaration order above, not of the
+   * word.
+   *
+   * 200 with the whole book, in GET /api/leads order (R3): the client replaces
+   * its table from this response, so anything less than every row would leave
+   * it merging.
+   */
+  @Post('scores/recalculate')
+  @HttpCode(HttpStatus.OK)
+  rescoreAll(): Promise<LeadResource[]> {
+    return this.leads.rescoreAll();
+  }
+
+  /**
+   * 200 with the updated lead, for the same reason `:id/summary` answers 200:
+   * this recomputes a field of an existing resource, it does not create a
+   * subordinate one with an identity of its own.
+   *
+   * The whole `Lead` rather than just the score, unlike the summary endpoint.
+   * Both score fields live on `Lead` itself, so returning the row costs no new
+   * wire type and saves the client from patching two fields into an object it
+   * already holds.
+   */
+  @Post(':id/score')
+  @HttpCode(HttpStatus.OK)
+  rescore(@Param('id', ParseUUIDPipe) id: string): Promise<LeadResource> {
+    return this.leads.rescore(id);
+  }
 }
