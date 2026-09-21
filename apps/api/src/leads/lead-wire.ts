@@ -42,6 +42,14 @@ export function toLead(lead: Lead): LeadResource {
     // DATEONLY, so Sequelize already hands back 'YYYY-MM-DD'.
     inquiryDate: lead.inquiryDate,
     notes: lead.notes,
+    // On a LIST row, unlike the summary: the dashboard's default sort is this
+    // number, so every row has to carry it. The pair is written together and
+    // `leads_activity_score_complete_check` enforces that, so the timestamp is
+    // mapped off its own null rather than off the score's — two independent
+    // `?:` for a pair that cannot disagree, which reads as belt-and-braces and
+    // is really just the compiler being told what the constraint already knows.
+    activityScore: lead.activityScore,
+    scoreCalculatedAt: lead.scoreCalculatedAt?.toISOString() ?? null,
     createdAt: lead.createdAt.toISOString(),
     updatedAt: lead.updatedAt.toISOString(),
   };

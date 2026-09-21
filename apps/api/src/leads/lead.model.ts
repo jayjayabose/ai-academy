@@ -143,6 +143,26 @@ export class Lead extends Model<
   @Column({ type: DataType.STRING(50), allowNull: true })
   declare summaryModel: string | null;
 
+  /**
+   * The activity score and its provenance (migration 003).
+   *
+   * Both populated or both NULL — `leads_activity_score_complete_check` makes
+   * a score with no timestamp unrepresentable, which is what lets lead-wire.ts
+   * read one and infer the other. Unlike the summary columns these two ARE on
+   * the wire, on `Lead` itself, because the list sorts by the score.
+   *
+   * No `validate.isInt`/`min`/`max` here. The range is owned by
+   * `leads_activity_score_range_check` and by the scorer that produces the
+   * number; a model validator would be a third place to keep 0..100 in step,
+   * and the two that exist are already one more than ideal.
+   */
+  @Column({ type: DataType.INTEGER, allowNull: true })
+  declare activityScore: number | null;
+
+  /** A Date here, an ISO string on the wire — the same split summaryGeneratedAt has. */
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare scoreCalculatedAt: Date | null;
+
   @CreatedAt
   declare createdAt: CreationOptional<Date>;
 

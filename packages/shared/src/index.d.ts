@@ -58,6 +58,33 @@ export interface Lead {
     /** 'YYYY-MM-DD'. A date, not an instant — no time of day is known. */
     inquiryDate: string;
     notes: string | null;
+    /**
+     * How hot this lead is, 0-100, from recency, engagement, budget and status.
+     *
+     * Null means NEVER SCORED, which is a different fact from 0 (ice cold) — a
+     * lead created through POST /api/leads has no interactions and no score
+     * until someone recalculates. The list renders null as an em-dash and sorts
+     * it last; it does not render it as a zero.
+     *
+     * INTEGER in the database, so the pg driver returns a real number. NUMERIC
+     * would arrive as the string "87" and every comparison in the sort would be
+     * lexicographic.
+     *
+     * On `Lead` rather than `LeadDetail` — unlike `summary` — because the list
+     * sorts by it, so every row must carry it.
+     */
+    activityScore: number | null;
+    /**
+     * ISO 8601. When the server computed `activityScore`.
+     *
+     * Provenance, exactly as `LeadSummary.generatedAt` is: scores are not
+     * invalidated when a lead or its interactions change, so a score computed
+     * before this morning's three calls is stale and the user is entitled to
+     * see that. Null whenever `activityScore` is null, and never otherwise —
+     * `leads_activity_score_complete_check` makes the half-populated pair
+     * unrepresentable.
+     */
+    scoreCalculatedAt: string | null;
     /** ISO 8601. */
     createdAt: string;
     /** ISO 8601. */

@@ -68,6 +68,8 @@ const LEAD_KEYS = [
   'source',
   'inquiryDate',
   'notes',
+  'activityScore',
+  'scoreCalculatedAt',
   'createdAt',
   'updatedAt',
 ];

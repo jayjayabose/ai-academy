@@ -49,6 +49,8 @@ const LEAD_DEFAULTS = {
   summaryUrgency: null,
   summaryGeneratedAt: null,
   summaryModel: null,
+  activityScore: null,
+  scoreCalculatedAt: null,
   createdAt: new Date('2026-06-05T09:00:00.000Z'),
   updatedAt: new Date('2026-06-05T09:00:00.000Z'),
 } satisfies CreationAttributes<Lead>;
