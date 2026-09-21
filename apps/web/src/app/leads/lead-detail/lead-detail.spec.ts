@@ -7,7 +7,7 @@ import type { ApiError, Interaction, LeadDetail, SummaryUrgency } from '@ai-acad
 import { BehaviorSubject, of } from 'rxjs';
 
 import { SUMMARY_URGENCIES } from '../../core/summary-urgency';
-import { SAMPLE_LEADS, sampleSummary } from '../../testing/lead-samples';
+import { SAMPLE_LEADS, sampleSummary, toListRow } from '../../testing/lead-samples';
 import { LeadDetailPage } from './lead-detail';
 
 /**
@@ -344,5 +344,175 @@ describe('LeadDetailPage', () => {
         expect(badge.classList.contains('status')).toBe(true);
       });
     }
+  });
+
+  // --- Activity score -------------------------------------------------------
+
+  describe('the activity score badge', () => {
+    function scoreUrl(lead: LeadDetail): string {
+      return `/api/leads/${lead.id}/score`;
+    }
+
+    /** The first button in the page head's action group. */
+    function recalculateButton(): HTMLButtonElement {
+      return fixture.nativeElement.querySelector('.page-head .actions button') as HTMLButtonElement;
+    }
+
+    function badge(): HTMLElement | null {
+      return fixture.nativeElement.querySelector('.page-head .score');
+    }
+
+    it('does not request a score on load', async () => {
+      // The mirror of "spends nothing on a lead the server has already
+      // summarised", and the test that protects the persistence requirement.
+      // A score is not a summary: it already exists, the page renders what the
+      // server stored, and a POST here would make "scores survive a refresh
+      // without recomputation" false while looking entirely correct on screen.
+      await open(LEAD);
+
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      http.expectNone({ method: 'POST', url: scoreUrl(LEAD) });
+      expect(badge()!.textContent!.trim()).toBe(String(LEAD.activityScore));
+    });
+
+    it('renders the stored score with its band and its provenance', async () => {
+      await open(LEAD);
+
+      expect(badge()!.classList.contains('score--hot')).toBe(true);
+      expect(badge()!.getAttribute('aria-label')).toBe('Activity score 78, hot');
+      // Provenance, the reason the timestamp is persisted at all: a score
+      // computed before this morning's calls is stale and the user may see it.
+      expect(first('.score-meta')).toContain('Aug 7, 2026');
+    });
+
+    it('shows an em-dash, not a zero, for a lead that was never scored', async () => {
+      await open(UNSUMMARISED);
+      // UNSUMMARISED also triggers the summary generate-on-first-view; flush it
+      // so `http.verify()` has nothing outstanding to complain about.
+      http.expectOne({ method: 'POST', url: summaryUrl(UNSUMMARISED) }).flush(sampleSummary());
+      await settle();
+
+      expect(badge()).toBeNull();
+      expect(first('.score-empty')).toBe('—');
+      expect(first('.score-meta')).toContain('Never scored');
+    });
+
+    it('issues one POST and moves the badge and the timestamp', async () => {
+      await open(LEAD);
+
+      recalculateButton().click();
+      // Twice, for the same reason the list spec clicks twice: the disabled
+      // attribute is a rendering detail and the guard in the handler is what
+      // makes this one request.
+      recalculateButton().click();
+      fixture.detectChanges();
+
+      const posted = http.match({ method: 'POST', url: scoreUrl(LEAD) });
+      expect(posted.length).toBe(1);
+      expect(posted[0]!.request.body).toEqual({});
+      expect(recalculateButton().disabled).toBe(true);
+      expect(recalculateButton().textContent!.trim()).toBe('Recalculating…');
+
+      // The endpoint answers with a whole `Lead` — no interactions, no summary
+      // — which is exactly what `toListRow` models.
+      //
+      // `status` is deliberately different from the lead on screen. It is what
+      // makes this test non-vacuous: the handler patches the two score fields
+      // by name, and a `{ ...current, ...scored }` spread would pass every
+      // other assertion here while quietly rewriting the record from a payload
+      // the user did not ask for. Verified by making that substitution and
+      // watching only this line fail.
+      posted[0]!.flush({
+        ...toListRow(LEAD),
+        status: 'lost',
+        activityScore: 24,
+        scoreCalculatedAt: '2026-09-21T11:30:00.000Z',
+      });
+      await settle();
+
+      expect(badge()!.textContent!.trim()).toBe('24');
+      expect(badge()!.classList.contains('score--cold')).toBe(true);
+      expect(badge()!.classList.contains('score--hot')).toBe(false);
+      expect(first('.score-meta')).toContain('Sep 21, 2026');
+      expect(recalculateButton().disabled).toBe(false);
+
+      // A button that says "Recalculate score" changes the score. Nothing else
+      // on the record moves, and nothing the response omitted was lost.
+      expect(first('.details')).toContain('Qualified');
+      expect(texts('.history__item').length).toBe(5);
+      expect(first('.summary__narrative')).toBe(LEAD.summary!.narrative);
+    });
+
+    it('reports a failed recalculation without disturbing the summary card', async () => {
+      await open(LEAD);
+
+      recalculateButton().click();
+      fixture.detectChanges();
+
+      const body: ApiError = {
+        statusCode: 503,
+        message: 'Service Unavailable',
+        error: 'Service Unavailable',
+      };
+      http
+        .expectOne({ method: 'POST', url: scoreUrl(LEAD) })
+        .flush(body, { status: 503, statusText: 'Service Unavailable' });
+      await settle();
+
+      expect(texts('.errors--score li').length).toBe(1);
+      // Its own error line, and its own state. The badge keeps the score the
+      // server already had, and the card next to it is untouched — the whole
+      // reason `rescoring` is not `summarizing`.
+      expect(badge()!.textContent!.trim()).toBe(String(LEAD.activityScore));
+      expect(first('.summary__narrative')).toBe(LEAD.summary!.narrative);
+      expect(texts('.history__item').length).toBe(5);
+      expect(recalculateButton().disabled).toBe(false);
+    });
+
+    it('does not land a slow score on whichever lead is open by the time it returns', async () => {
+      // Milliseconds rather than the summary's minutes, so the window is
+      // narrow — but a narrow window for writing one lead's score onto another
+      // is still one, and the guard costs a line.
+      const params = new BehaviorSubject<ParamMap>(convertToParamMap({ id: LEAD.id }));
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          { provide: ActivatedRoute, useValue: { paramMap: params } },
+        ],
+      });
+      http = TestBed.inject(HttpTestingController);
+      fixture = TestBed.createComponent(LeadDetailPage);
+      fixture.detectChanges();
+
+      http.expectOne(`/api/leads/${LEAD.id}`).flush(LEAD);
+      await settle();
+
+      recalculateButton().click();
+      fixture.detectChanges();
+      const pending = http.expectOne({ method: 'POST', url: scoreUrl(LEAD) });
+
+      // Navigate to another lead while that POST is outstanding.
+      params.next(convertToParamMap({ id: UNSUMMARISED_WITH_HISTORY.id }));
+      http.expectOne(`/api/leads/${UNSUMMARISED_WITH_HISTORY.id}`).flush(UNSUMMARISED_WITH_HISTORY);
+      await settle();
+      http
+        .expectOne({ method: 'POST', url: summaryUrl(UNSUMMARISED_WITH_HISTORY) })
+        .flush(sampleSummary());
+      await settle();
+
+      pending.flush({
+        ...toListRow(LEAD),
+        activityScore: 3,
+        scoreCalculatedAt: '2026-09-21T11:30:00.000Z',
+      });
+      await settle();
+
+      // The second lead's own score, not the first lead's late arrival.
+      expect(badge()!.textContent!.trim()).toBe(String(UNSUMMARISED_WITH_HISTORY.activityScore));
+    });
   });
 });

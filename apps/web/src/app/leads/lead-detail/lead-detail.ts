@@ -240,11 +240,21 @@ export class LeadDetailPage {
     this.scoreErrors.set([]);
     this.leadService.rescore(id).subscribe({
       next: (scored) => {
-        // The two fields, not a spread. The endpoint answers with a `Lead`, and
-        // `{ ...current, ...scored }` would compile and then quietly strip
-        // `interactions` and `summary` off a `LeadDetail` — the history list
-        // and the AI card would empty out on a button that says "recalculate
-        // score".
+        // The two fields, not a spread.
+        //
+        // The first version of this comment claimed `{ ...current, ...scored }`
+        // would strip `interactions` and `summary` off the `LeadDetail`. That
+        // is WRONG and was corrected by measuring it: the endpoint answers with
+        // a `Lead`, which simply has no such keys, and spread does not
+        // overwrite with keys that are absent. The card and the history survive
+        // either way.
+        //
+        // The real difference is the other direction. A spread copies every
+        // field the response DOES carry — `status`, `budget`, `updatedAt`, all
+        // of it — so a button labelled "Recalculate score" would rewrite the
+        // whole record from a payload nobody asked it for. Naming the two
+        // fields says what a rescore actually changes, and keeps that true if
+        // this route ever starts answering with something wider.
         //
         // The id guard is the same one `generateSummary` uses. This request is
         // milliseconds rather than minutes, so the window is narrow, but a
