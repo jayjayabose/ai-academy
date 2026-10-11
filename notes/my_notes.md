@@ -19,6 +19,14 @@ https://oraios.github.io/serena/02-usage/040_workflow.html
 configuration
 https://oraios.github.io/serena/02-usage/050_configuration.html
 
+
+
+# START THE APP
+- start database in docker `npm run db:up`
+- start the api and frontend apps `npm run dev`
+- check db health:  `http://localhost:4000/api/health/db`
+- hit the app: `http://localhost:4300/leads`
+
 I sort of cheated in a sense. I asked claude about how to approach the work: "what do you think of building a front end and stubbing backend to get started" and it responded by telling me what the course materials say on this very point.
 
 Because I had setup my project with shared types, I took an approach of designing FE screens, figuring out what that means for data model, API end pointa and data types. Then tried to do front and back ends in parallel.  I skipped dual track database migrations because we had setup so as to avoid the problem that it solved.
