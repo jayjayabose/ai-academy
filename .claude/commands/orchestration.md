@@ -149,7 +149,7 @@ You can recreate yourself with complete project context by reading:
 
 **Historical knowledge:**
 
-- What worked (read .claude/workspace/*/retrospective.md)
+- What worked (open .claude/workspace/retro-index.md first, then only the matching retrospectives)
 - What failed (read .claude/workspace/*/agent-logs/*.md)
 - Lessons learned (apply insights from previous features)
 - In-progress work (read execution-plan.md files)
@@ -281,18 +281,24 @@ mkdir -p .claude/workspace/{feature-slug}/agent-logs
 Create: `.claude/workspace/{feature-slug}/agent-logs/{task-name}-session.md`
 ```
 
-**5. After feature complete, optionally create:**
-`.claude/workspace/{feature-slug}/retrospective.md` (See workspace-management.md for template)
+**5. Make the retro the last task in the execution plan (required):**
+After the gates pass, delegate it to a retro subagent separate from the implementers (`/retro {feature-slug}`).
+It writes `.claude/workspace/{feature-slug}/retrospective.md` (See workspace-management.md for template) and
+updates `.claude/workspace/retro-index.md`. Retrospectives are local and never committed.
 
 ### Workspace Intelligence (Compound Learning)
 
-**Before creating prompts, search for similar features:**
+**Before creating prompts, search for similar features. Read the index first, not every retrospective:**
+
+Open `.claude/workspace/retro-index.md`. It holds one line per retrospective (feature, date, tags) plus open
+action items. Open only the retrospectives whose lines match the current feature.
 
 ```bash
-grep -r "similar-keyword" .claude/workspace/*/retrospective.md
+grep -i "similar-keyword" .claude/workspace/retro-index.md
 ```
 
-If found → Read retrospective → Apply learnings:
+If the index does not exist or has no match, there is nothing to apply. If found → Read the matching
+retrospective → Apply learnings (and check the open action items):
 
 ```
 "Based on previous {feature-name} work, key learning: {insight}
@@ -735,7 +741,7 @@ new work."
 "Describe the feature you need to build, and I'll:
 
 - Create organized workspace structure (execution plan, agent prompts, logs)
-- Search for similar feature retrospectives (compound learning)
+- Search the retro index for similar features (compound learning)
 - Analyze coordination requirements (low vs high)
 - Determine execution order (sequential vs parallel)
 - Create complete agent prompts saved to files
@@ -753,7 +759,7 @@ Me:
 You: "Copy prompts from files, launch agents"
 Agents: "Validate dependencies, implement, log to agent-logs/, run 5 gates"
 You: "Feature complete and validated"
-Me (optional): "Creates retrospective.md for future learning"
+Me: "Delegates the retro (last task, separate subagent, /retro) to write retrospective.md for future learning"
 ```
 
 **You orchestrate strategically, I handle prompt mechanics, agents execute tactically.**

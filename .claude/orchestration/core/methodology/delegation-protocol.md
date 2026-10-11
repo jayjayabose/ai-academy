@@ -62,10 +62,28 @@ Every delegated task must state, in its prompt, that the subagent creates:
   @.claude/orchestration/core/templates/execution-plan-template.md
 - **A saved copy of its own prompt** — `.claude/workspace/{feature-slug}/agent-prompts/{task-name}.md`, so the
   instruction that produced the work survives the chat window
+- **A retrospective** — `.claude/workspace/{feature-slug}/retrospective.md`, for any feature that ran more than
+  one task or produced a commit or a database write. Written by the retro task below, not by the implementers.
+  Template: @.claude/orchestration/core/templates/retrospective-template.md
 
 Full structure and file purposes: @.claude/orchestration/core/playbook/workspace-management.md
 
 A subagent that reports COMPLETE without these has not completed. Send it back.
+
+### Create the Session Log Immediately, Append as You Go
+
+The session log is created **right after the subagent reads its prompt**, before any other work, and appended to
+as each step finishes: commands run, gate output, decisions, surprises. It is never composed at the end. A log
+written from memory at the close is the one agents stall on, and it reports what was intended rather than what
+happened.
+
+### The Retro Task
+
+The **retro** is the last task in every execution plan. It runs after the gates pass, is delegated like all other
+work, and is performed by a subagent **separate from the implementers**: the people who did the work are the
+least able to see how the process failed. The retro subagent reads the plan, the logs, the commit history and any
+validation report, writes the retrospective and its own session log, and proposes changes without applying them.
+Retrospectives are local to the engineer's machine and are never committed. The `/retro` command runs this task.
 
 ---
 
@@ -131,8 +149,10 @@ the work would turn out to be.
 **Before doing anything yourself, check:**
 
 - [ ] Did the engineer explicitly direct that this be done without a subagent? If not, delegate.
-- [ ] Does the prompt require a session log, an execution plan and a saved prompt copy?
+- [ ] Does the prompt require a session log, an execution plan and a saved prompt copy (and, for multi-task, committing or database-writing features, a retrospective)?
 - [ ] Does this task touch the browser-automation surface? If so, is it the only browser task running?
+- [ ] Does the prompt tell the subagent to create its session log immediately and append as it goes?
+- [ ] Is the retro the last task in the execution plan, assigned to a subagent other than the implementers?
 
 **No scale question appears on this list. That is intentional.**
 

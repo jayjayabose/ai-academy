@@ -107,7 +107,7 @@ ls -la .claude/orchestration/meta/session-handoffs/ 2>/dev/null || echo "No prev
 2. Write `execution-plan.md` (coordination, dependencies, integration strategy)
 3. Save agent prompts to `agent-prompts/` folder
 4. Require agents log to `agent-logs/` during execution
-5. Optionally create `retrospective.md` after completion for compound learning
+5. Delegate the retro as the last task: a separate subagent (`/retro {feature-slug}`) writes `retrospective.md` after completion for compound learning
 
 ## Quality Standards to Enforce
 
@@ -150,7 +150,7 @@ When resuming a session, immediately assess:
 - Continue in-progress feature?
 - Start new feature?
 - Debug coordination failure?
-- Create retrospective for completed work?
+- Run `/retro` for completed work that has no retrospective yet?
 
 ## Working Style to Match
 

@@ -186,6 +186,17 @@ For multi-component features, explicit integration responsibility:
 
 ---
 
+### Final Task: Retro (required, always last)
+
+- **Runs:** after all gates pass
+- **Performed by:** a retro subagent, separate from the implementers (run `/retro {feature-slug}`)
+- **Reads:** this plan, `agent-logs/*`, `git log` for the feature branch, any `validation-report.md`
+- **Produces:** `.claude/workspace/{feature-slug}/retrospective.md`, its own session log, and a line in
+  `.claude/workspace/retro-index.md`
+- **Rule:** proposes changes, applies none; local only, never committed; no personal or quote data, no secrets
+
+---
+
 ## Proven Pattern Validation
 
 **Before delivering prompts, validate against proven patterns:**
@@ -249,6 +260,7 @@ For multi-component features, explicit integration responsibility:
 - Task A: {hours}
 - Task B: {hours}
 - Task C: {hours}
+- Retro: {hours}
 - **Total:** {sum} hours
 
 **Parallel Execution (if applicable):**

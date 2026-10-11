@@ -10,7 +10,7 @@ argument-hint: '[feature-id (e.g., dashboard-widgets)]'
 When executed, this slash command expands to:
 
 ````text
-You are the Orchestration Partner performing systematic validation of completed agent work. Tactical agents have reported their work complete. Your job is to verify everything works, identify bugs, create fix prompts if needed, and document findings for the retrospective.
+You are the Orchestration Partner performing systematic validation of completed agent work. Tactical agents have reported their work complete. Your job is to verify everything works, identify bugs, create fix prompts if needed, and document findings for `/retro`, which writes the retrospective.
 
 REQUIRED ARGUMENT:
 - Feature ID (e.g., "dashboard-widgets", "user-auth") - identifies which feature to validate
@@ -30,7 +30,7 @@ YOUR ROLE:
 - Strategic validator (orchestration partner reviewing tactical work)
 - Quality assurance (systematic bug finding)
 - Fix prompt creator (actionable bug fix instructions)
-- Retrospective contributor (findings feed into feature retrospective)
+- Retro contributor (findings feed into `/retro`, which writes the retrospective)
 
 ---
 
@@ -325,29 +325,30 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 
 ---
 
-## PHASE 4: DOCUMENT FINDINGS FOR RETROSPECTIVE
+## PHASE 4: HAND FINDINGS TO /retro
 
-**Update feature retrospective with validation findings:**
-`.claude/workspace/{feature-id}/retrospective.md`
+**Do not write or update the retrospective here.** One author writes it: the retro subagent run by `/retro`.
+Your job is to leave the findings where it will read them (the validation report from Phase 5 and the
+bug analysis below), then tell the engineer to run:
 
-**If retrospective doesn't exist yet, create it using template:**
-`.claude/orchestration/core/templates/retrospective-template.md`
+`/retro {feature-id}`
 
-**Add validation findings to retrospective sections:**
+The sections below are the **input** for the retro: record them in the validation report so the retro can
+carry them into the retrospective.
 
-### What Went Well  (Validation Confirmed)
+### What Went Well  (Validation Confirmed) - input for /retro
 
 - {Patterns that worked effectively}
 - {Quality code delivered}
 - {Coordination that prevented issues}
 
-### What Didn't Go Well  (Bugs Found)
+### What Didn't Go Well  (Bugs Found) - input for /retro
 
 - Bug #{number}: {Description with file:line}
 - Testing gap: {What mocks hid}
 - Integration issue: {What manual testing revealed}
 
-### Key Learnings 💡 (Prevention)
+### Key Learnings 💡 (Prevention) - input for /retro
 
 ```markdown
 **Why Bug #{number} Happened:**
@@ -358,7 +359,7 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 - Prevention: {pattern for future}
 ```
 
-### Action Items 🎯 (Immediate Fixes)
+### Action Items 🎯 (Immediate Fixes) - input for /retro
 
 - [ ] Fix Bug #1: {specific fix needed}
 - [ ] Fix Bug #2: {specific fix needed}
@@ -496,7 +497,7 @@ grep -r "## Decisions" .claude/workspace/{feature-id}/agent-logs/
 
 -  Validation Report: `.claude/workspace/{feature-id}/validation-report.md`
 -  Bug Fix Prompt: `.claude/workspace/{feature-id}/bugfix-prompt.md` (if bugs found)
--  Retrospective Updated: `.claude/workspace/{feature-id}/retrospective.md` (with validation findings)
+-  Retro handoff: run `/retro {feature-id}` (it writes `.claude/workspace/{feature-id}/retrospective.md` from these findings)
 
 ### Next Steps
 
@@ -530,9 +531,9 @@ Before completing validation:
 
 - [ ] Validation report comprehensive (>100 lines)
 - [ ] Bug fix prompt actionable (if needed)
-- [ ] Retrospective updated with findings
+- [ ] Findings recorded for `/retro` (retrospective is written by /retro, not here)
 
-**Retrospective Update:**
+**Retro Input (for `/retro`):**
 
 - [ ] What worked documented (validation confirmed successes)
 - [ ] What failed analyzed (bugs found with root causes)
@@ -585,7 +586,7 @@ Before completing validation:
 - Feature functional (possibly with known fixes needed)
 - All bugs documented with fix prompts
 - Clear time estimate for any fixes
-- Retrospective updated with validation findings
+- Findings handed to `/retro` for the retrospective
 - Engineer can fix bugs and proceed to next feature
 
 ---
@@ -610,7 +611,7 @@ None - command is comprehensive by default
 **Documentation Created:**
 1. `validation-report.md` - Comprehensive findings with bug analysis
 2. `bugfix-prompt.md` - Step-by-step fix instructions (if bugs found)
-3. `retrospective.md` - Updated with validation findings and learnings
+3. Findings for `/retro`, which writes `retrospective.md` (one author)
 
 **Summary Report:**
 Status, bugs found, time to fix, key learnings, next steps
@@ -641,7 +642,7 @@ Status, bugs found, time to fix, key learnings, next steps
 # Result:
 # - Found 2 critical bugs (type mismatch, invalid UUID)
 # - Created bugfix-prompt.md (~30 min to fix)
-# - Updated retrospective.md with validation findings
+# - Recorded findings for /retro (run /retro dashboard-widgets next)
 # - Documented prevention strategies for next feature
 # - Engineer can fix bugs and proceed
 ````

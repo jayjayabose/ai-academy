@@ -61,7 +61,7 @@ Orchestration Partner:
 You: Copy prompts from files, launch agents
 Agents: Execute, log to agent-logs/, run 5 validation gates
 You: Feature complete and validated
-Orchestration Partner (optional): Create retrospective.md for compound learning
+Orchestration Partner: Delegate the retro (last task, separate subagent, `/retro`) to write retrospective.md for compound learning
 ```
 
 ## Session Continuity

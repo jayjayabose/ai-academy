@@ -133,8 +133,10 @@ Custom slash commands for the orchestration workflow.
 # 4. Agents complete - validate their work
 /validate {feature-id}
 
-# 5. After validation - optionally create retrospective
-# Partner creates .claude/workspace/{feature}/retrospective.md
+# 5. After validation - run the retro (required, last task in the plan)
+/retro {feature-id}
+# A retro subagent writes .claude/workspace/{feature}/retrospective.md and updates retro-index.md
+# Retrospectives are local and never committed
 
 # 6. Need to close session - create handoff
 /handoff {feature-id}
@@ -203,7 +205,7 @@ Commands automate repetitive validation and documentation tasks that would other
 │   ├── task-a-session.md
 │   ├── task-b-session.md
 │   └── task-c-session.md
-├── retrospective.md            # Feature learnings, patterns, insights
+├── retrospective.md            # From /retro: learnings, patterns, insights (local, never committed)
 ├── {FEATURE-ID}-VALIDATION-REPORT.md  # From /validate
 ├── BUG-FIX-PROMPT.md          # From /validate (if bugs found)
 ├── methodology-learnings.md    # From /validate

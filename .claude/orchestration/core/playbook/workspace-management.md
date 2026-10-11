@@ -39,7 +39,7 @@ log. There is no task small enough to be exempt from the structure below.
       {task-name}.md            # Saved by orchestration partner (persistent prompts)
     agent-logs/
       {task-name}-session.md    # Written by agents DURING execution
-    retrospective.md            # Created AFTER feature complete (optional)
+    retrospective.md            # Created AFTER feature complete by a retro subagent (required)
 ```
 
 ### File Purposes
@@ -99,7 +99,8 @@ mkdir -p .claude/workspace/{feature-slug}/agent-logs
 
 **Template Location:** `.claude/orchestration/core/templates/execution-plan-template.md`
 
-Copy template and customize:
+Copy template and customize (the inline outline below is a condensed version; the template file above is
+authoritative):
 
 ```markdown
 # {Feature Name} - Execution Plan
@@ -254,12 +255,17 @@ completed.** These are deliverables of the task, not bookkeeping the orchestrati
 
 ---
 
-### Phase 3: Feature Completion (Retrospective - Optional)
+### Phase 3: Feature Completion (Retrospective - Required)
 
 **When:** After feature validated and complete (all 5 gates passed)
 
-**Orchestration partner can create:**
+**A retro subagent, separate from the implementers, creates (the retro is the last task in the execution plan;
+run it with `/retro {feature-slug}`):**
 `.claude/workspace/{feature-slug}/retrospective.md`
+
+It also adds one line for the feature to `.claude/workspace/retro-index.md` and tags each learning with one
+destination. Retrospectives are local and are never committed. They contain no personal or quote data and no
+secrets.
 
 **Template Location:** `.claude/orchestration/core/templates/retrospective-template.md`
 
@@ -270,7 +276,8 @@ completed.** These are deliverables of the task, not bookkeeping the orchestrati
 - Extract learnings (patterns for next feature)
 - Create action items (improvements to apply)
 
-Copy template and customize:
+Copy template and customize (the inline outline below is a condensed version; the template file above is
+authoritative):
 
 ```markdown
 # {Feature Name} - Retrospective
@@ -355,13 +362,14 @@ Copy template and customize:
 
 **Scenario 1: Similar Feature Detected**
 
-Engineer requests feature → Partner searches for similar:
+Engineer requests feature → Partner opens `.claude/workspace/retro-index.md` (one line per retrospective:
+feature, date, tags, plus open action items), then opens only the matching retrospectives:
 
 ```bash
-grep -r "dashboard.*widget" .claude/workspace/*/retrospective.md
+grep -i "dashboard.*widget" .claude/workspace/retro-index.md
 ```
 
-If found → Partner reads retrospective → Applies learnings to current feature:
+If found → Partner reads the matching retrospective → Applies learnings to current feature:
 
 ```
 "Based on previous dashboard widget work (f-03-dashboard-widgets),
@@ -420,9 +428,9 @@ Engineer: "What did we learn from authentication feature?"
 
 ### For Teams Sharing a Repo
 
--  **Knowledge sharing:** Retrospectives checked in, everyone benefits
+-  **Individual learning:** Retrospectives are local to the engineer's machine and are not committed to the project repo; generic learnings reach the team through promotion of method changes
 -  **Compound learning:** Each feature makes repo smarter
--  **Onboarding faster:** New engineers read retrospectives
+-  **Onboarding faster:** Engineers can read their own past retrospectives
 -  **Pattern library:** Repo accumulates proven approaches
 
 ### For Orchestration Partner
