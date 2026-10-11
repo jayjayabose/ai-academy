@@ -363,7 +363,7 @@ authoritative):
 **Scenario 1: Similar Feature Detected**
 
 Engineer requests feature → Partner opens `.claude/workspace/retro-index.md` (one line per retrospective:
-feature, date, tags, plus open action items), then opens only the matching retrospectives:
+feature, date, partial|complete, tag counts, plus an Open items list), then opens only the matching retrospectives:
 
 ```bash
 grep -i "dashboard.*widget" .claude/workspace/retro-index.md

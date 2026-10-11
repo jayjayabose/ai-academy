@@ -143,6 +143,18 @@
 - **Recommendations:**
 ```
 
+## Optional: Final Status Block (for timing and cheap retro reading)
+
+Logs record only a start time. Add these lines to the `Final Status` section of any template above so the retro
+can estimate duration from facts and read the outcome without opening the whole log:
+
+```markdown
+- **Outcome:** [complete / partial / blocked]
+- **Start Time:** [timestamp]  **End Time:** [timestamp]
+- **Gates:** [one line each: Gate N - pass / fail / not run]
+- **Open Items:** [what remains, or none]
+```
+
 ## Copy-Paste Prompt Addition for Agent Instructions
 
 Add this to ANY feature-building agent prompt:

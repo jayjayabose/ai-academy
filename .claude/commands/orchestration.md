@@ -290,15 +290,16 @@ updates `.claude/workspace/retro-index.md`. Retrospectives are local and never c
 
 **Before creating prompts, search for similar features. Read the index first, not every retrospective:**
 
-Open `.claude/workspace/retro-index.md`. It holds one line per retrospective (feature, date, tags) plus open
-action items. Open only the retrospectives whose lines match the current feature.
+Open `.claude/workspace/retro-index.md`. It holds one line per retrospective (feature, date, `partial|complete`,
+tags with counts) plus an "Open items" list (ID, `action|decision`, owner, status). Open only the retrospectives
+whose lines match the current feature, and check the items still `open`; a `decision` waits on the engineer.
 
 ```bash
 grep -i "similar-keyword" .claude/workspace/retro-index.md
 ```
 
 If the index does not exist or has no match, there is nothing to apply. If found → Read the matching
-retrospective → Apply learnings (and check the open action items):
+retrospective → Apply learnings (and check the open items):
 
 ```
 "Based on previous {feature-name} work, key learning: {insight}
