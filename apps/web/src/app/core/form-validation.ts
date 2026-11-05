@@ -59,6 +59,10 @@ export function controlError(control: AbstractControl | null, label: string): st
     const required = Number(errors['maxlength'].requiredLength);
     return `${label} must be ${required} characters or fewer.`;
   }
+  if (errors['minlength']) {
+    const required = Number(errors['minlength'].requiredLength);
+    return `${label} must be at least ${required} characters.`;
+  }
   if (errors['integer']) return `${label} must be a whole number.`;
   if (errors['min']) return `${label} must be at least ${errors['min'].min}.`;
   if (errors['max']) return `${label} must be at most ${errors['max'].max}.`;

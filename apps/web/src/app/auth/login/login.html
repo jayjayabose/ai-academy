@@ -1,0 +1,46 @@
+<div class="auth-page">
+  <div class="page-head">
+    <h1>Log in</h1>
+  </div>
+
+  @if (errors().length > 0) {
+    <ul class="errors" role="alert">
+      @for (message of errors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="field" [class.field--invalid]="error('email', 'Email')">
+      <label for="email">Email <span class="required-marker">*</span></label>
+      <input id="email" type="email" formControlName="email" maxlength="255" autocomplete="email" />
+      @if (error('email', 'Email'); as message) {
+        <span class="error">{{ message }}</span>
+      }
+    </div>
+
+    <div class="field" [class.field--invalid]="error('password', 'Password')">
+      <label for="password">Password <span class="required-marker">*</span></label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        autocomplete="current-password"
+      />
+      @if (error('password', 'Password'); as message) {
+        <span class="error">{{ message }}</span>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="button button--primary" [disabled]="pending()">
+        {{ pending() ? 'Signing in…' : 'Log in' }}
+      </button>
+    </div>
+
+    <p class="auth-switch muted">
+      No account yet? <a routerLink="/register" [queryParams]="registerQuery">Create one</a>
+    </p>
+  </form>
+</div>
