@@ -180,6 +180,94 @@ export interface CreateInteractionRequest {
 }
 
 // ---------------------------------------------------------------------------
+// Auth (Day 3, Feature 1)
+// ---------------------------------------------------------------------------
+
+/** Never carries a password hash. */
+export interface User {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+}
+
+export interface RegisterRequest {
+    email: string;
+    /** Minimum length is enforced by the API DTO, not by this type. */
+    password: string;
+    firstName: string;
+    lastName: string;
+}
+
+export interface LoginRequest {
+    email: string;
+    password: string;
+}
+
+/** Returned by POST /api/auth/register and POST /api/auth/login. */
+export interface AuthResponse {
+    /** Sent back as `Authorization: Bearer <token>` and as the Socket.io handshake `auth.token`. */
+    token: string;
+    user: User;
+}
+
+// ---------------------------------------------------------------------------
+// Notifications (Day 3, Feature 2)
+// ---------------------------------------------------------------------------
+
+/** All four are in the contract; only 'lead_created' is emitted today. */
+export type NotificationType =
+    | 'lead_created'
+    | 'task_completed'
+    | 'score_updated'
+    | 'comment_added';
+
+/**
+ * Named `AppNotification`, not `Notification`, on purpose: `Notification` is a DOM
+ * global in apps/web, and an unimported use would silently bind to it.
+ */
+export interface AppNotification {
+    id: string;
+    /** The recipient. One row exists per recipient. */
+    userId: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    isRead: boolean;
+    /** Null when the notification is not about a lead. */
+    leadId: string | null;
+    /** ISO 8601. */
+    createdAt: string;
+}
+
+/** GET /api/notifications/unread-count */
+export interface UnreadCountResponse {
+    count: number;
+}
+
+/**
+ * WebSocket contract (Socket.io).
+ *   path:      '/api/socket.io'  — under /api so the dev proxy's single `/api` rule
+ *                                  (ws: true) carries it. The default '/socket.io'
+ *                                  would 404 through the proxy.
+ *   namespace: '/notifications'
+ *   handshake: `auth: { token }` — see NotificationSocketAuth. An invalid or missing
+ *              token makes the server reject the connection; the client sees a
+ *              `connect_error` whose message is 'Unauthorized'.
+ *   rooms:     the server joins each socket to `user:<userId>` and emits only there.
+ */
+export interface NotificationSocketAuth {
+    token: string;
+}
+
+export interface NotificationServerToClientEvents {
+    /** A new notification was persisted for this user. */
+    notification: (notification: AppNotification) => void;
+    /** The user's unread count changed (new notification or any read/unread/delete). */
+    'unread-count': (payload: UnreadCountResponse) => void;
+}
+
+// ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
 
