@@ -100,7 +100,7 @@ export class NotificationService {
       }),
     );
     this.notificationList.update((list) => list.filter((n) => n.id !== id));
-    if (existing && !existing.isRead) this.unread.update((n) => Math.max(0, n - 1));
+    if (existing && !existing.isRead) this.adjustUnread(-1);
   }
 
   private async setRead(id: string, action: 'read' | 'unread'): Promise<void> {
@@ -113,11 +113,17 @@ export class NotificationService {
       ),
     );
     this.notificationList.update((list) => list.map((n) => (n.id === id ? updated : n)));
-    // The server's unread-count event sets the absolute value; this keeps the badge right
-    // in the meantime (and when the socket is down).
-    if (before && before.isRead !== updated.isRead) {
-      this.unread.update((n) => Math.max(0, n + (updated.isRead ? -1 : 1)));
-    }
+    if (before && before.isRead !== updated.isRead) this.adjustUnread(updated.isRead ? -1 : 1);
+  }
+
+  /**
+   * Only while the socket is down. While it is up, the server's unread-count event is the
+   * truth, and it can arrive BEFORE the HTTP response: adjusting on top of it would count
+   * the same change twice (seen live: 2 unread, mark one read, badge 0).
+   */
+  private adjustUnread(delta: number): void {
+    if (this.socket.connected()) return;
+    this.unread.update((n) => Math.max(0, n + delta));
   }
 
   private reset(): void {

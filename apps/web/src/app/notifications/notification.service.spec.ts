@@ -106,9 +106,33 @@ describe('NotificationService', () => {
     expect(req.request.method).toBe('PATCH');
     req.flush(make('a', true));
     await done;
+    socket.fire('unread-count', { count: 0 });
 
     expect(service.notifications()[0].isRead).toBe(true);
     expect(service.unreadCount()).toBe(0);
+  });
+
+  it('does not count a change twice when the server event beats the HTTP response', async () => {
+    await connectWith([make('a'), make('b')], 2);
+
+    const done = service.markRead('a');
+    socket.fire('unread-count', { count: 1 });
+    http.expectOne('/api/notifications/a/read').flush(make('a', true));
+    await done;
+
+    expect(service.unreadCount()).toBe(1);
+  });
+
+  it('adjusts the badge itself while the socket is down', async () => {
+    await connectWith([make('a'), make('b')], 2);
+    socket.fire('disconnect');
+    TestBed.tick();
+
+    const done = service.markRead('a');
+    http.expectOne('/api/notifications/a/read').flush(make('a', true));
+    await done;
+
+    expect(service.unreadCount()).toBe(1);
   });
 
   it('marks unread through the API and raises the badge', async () => {
@@ -117,6 +141,7 @@ describe('NotificationService', () => {
     const done = service.markUnread('a');
     http.expectOne('/api/notifications/a/unread').flush(make('a', false));
     await done;
+    socket.fire('unread-count', { count: 1 });
 
     expect(service.notifications()[0].isRead).toBe(false);
     expect(service.unreadCount()).toBe(1);
@@ -141,6 +166,7 @@ describe('NotificationService', () => {
     const first = service.remove('b');
     http.expectOne('/api/notifications/b').flush(null, { status: 204, statusText: 'No Content' });
     await first;
+    socket.fire('unread-count', { count: 1 });
     expect(service.unreadCount()).toBe(1);
 
     const second = service.remove('a');
@@ -148,6 +174,7 @@ describe('NotificationService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null, { status: 204, statusText: 'No Content' });
     await second;
+    socket.fire('unread-count', { count: 0 });
 
     expect(service.notifications()).toEqual([]);
     expect(service.unreadCount()).toBe(0);
