@@ -1,0 +1,103 @@
+@if (session.isAuthenticated()) {
+  <div class="bell">
+    <button
+      type="button"
+      class="bell__button"
+      [attr.aria-label]="bellLabel()"
+      aria-haspopup="true"
+      [attr.aria-expanded]="open()"
+      aria-controls="notification-dropdown"
+      (click)="toggle()"
+    >
+      <svg class="bell__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"
+          fill="currentColor"
+        />
+      </svg>
+      @if (badge()) {
+        <span class="bell__badge" aria-hidden="true">{{ badge() }}</span>
+      }
+    </button>
+
+    @if (open()) {
+      <section id="notification-dropdown" class="dropdown" aria-label="Notifications">
+        <header class="dropdown__header">
+          <h2 class="dropdown__title">Notifications</h2>
+          <button
+            type="button"
+            class="link-button"
+            [disabled]="badge() === ''"
+            (click)="markAllRead()"
+          >
+            Mark all read
+          </button>
+        </header>
+
+        @if (notifications().length === 0) {
+          <p class="dropdown__empty">No notifications yet.</p>
+        } @else {
+          <ul class="dropdown__list">
+            @for (n of notifications(); track n.id) {
+              <li class="item" [class.item--unread]="!n.isRead">
+                <button type="button" class="item__body" (click)="activate(n)">
+                  <span class="item__title">{{ n.title }}</span>
+                  <span class="item__message">{{ n.message }}</span>
+                  <span class="item__time">{{ timeAgo(n) }}</span>
+                </button>
+                <span class="item__actions">
+                  @if (n.isRead) {
+                    <button
+                      type="button"
+                      class="link-button"
+                      [attr.aria-label]="'Mark unread: ' + n.message"
+                      (click)="markUnread(n)"
+                    >
+                      Mark unread
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="link-button"
+                      [attr.aria-label]="'Mark read: ' + n.message"
+                      (click)="markRead(n)"
+                    >
+                      Mark read
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="link-button link-button--danger"
+                    [attr.aria-label]="'Delete: ' + n.message"
+                    (click)="remove(n)"
+                  >
+                    Delete
+                  </button>
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    <div class="toasts" aria-live="polite" aria-label="New notifications">
+      @for (toast of toasts(); track toast.key) {
+        <div class="toast" role="status">
+          <button type="button" class="toast__body" (click)="activateToast(toast)">
+            <span class="toast__title">{{ toast.notification.title }}</span>
+            <span class="toast__message">{{ toast.notification.message }}</span>
+          </button>
+          <button
+            type="button"
+            class="toast__dismiss"
+            aria-label="Dismiss notification"
+            (click)="dismissToast(toast.key)"
+          >
+            &times;
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
