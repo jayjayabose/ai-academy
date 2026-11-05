@@ -8,6 +8,7 @@ import { QueryTypes } from 'sequelize';
 import { INTERACTION_TYPES } from '../interactions/interaction-type';
 import { LEAD_STATUSES, PROPERTY_TYPES } from '../leads/lead-status';
 import { SUMMARY_URGENCIES } from '../leads/summary-urgency';
+import { NOTIFICATION_TYPES } from '../notifications/notification-type';
 
 /**
  * The only thing linking the TypeScript unions to the migrations' SQL.
@@ -253,6 +254,28 @@ describe('the migrations value-set constraints', () => {
       });
     });
   });
+
+  describe('notifications_type_check', () => {
+    it.each([...NOTIFICATION_TYPES])(
+      'accepts the NotificationType member %s',
+      async (type) => {
+        const id = await insertNotification(await insertUser(), type);
+
+        expect(await storedNotificationType(id)).toBe(type);
+      },
+    );
+
+    it('rejects a value outside the union with check_violation', async () => {
+      await expect(
+        insertNotification(await insertUser(), 'carrier_pigeon'),
+      ).rejects.toMatchObject({
+        parent: {
+          code: CHECK_VIOLATION,
+          constraint: 'notifications_type_check',
+        },
+      });
+    });
+  });
 });
 
 const CHECK_VIOLATION = '23514';
@@ -371,4 +394,39 @@ async function storedActivityScore(id: string): Promise<number | null> {
   );
 
   return rows[0].activity_score;
+}
+
+/** Raw SQL: the users table has no model on this branch (the auth branch owns it). */
+async function insertUser(): Promise<string> {
+  const rows = await testConnection().query<{ id: string }>(
+    `INSERT INTO users (email, password_hash, first_name, last_name)
+         VALUES ('probe@example.com', 'x', 'Probe', 'User')
+         RETURNING id`,
+    { type: QueryTypes.SELECT },
+  );
+
+  return rows[0].id;
+}
+
+async function insertNotification(
+  userId: string,
+  type: string,
+): Promise<string> {
+  const rows = await testConnection().query<{ id: string }>(
+    `INSERT INTO notifications (user_id, type, title, message)
+         VALUES (:userId, :type, 'Probe', 'Probe message')
+         RETURNING id`,
+    { replacements: { userId, type }, type: QueryTypes.SELECT },
+  );
+
+  return rows[0].id;
+}
+
+async function storedNotificationType(id: string): Promise<string | null> {
+  const rows = await testConnection().query<{ type: string | null }>(
+    `SELECT type FROM notifications WHERE id = :id`,
+    { replacements: { id }, type: QueryTypes.SELECT },
+  );
+
+  return rows[0].type;
 }

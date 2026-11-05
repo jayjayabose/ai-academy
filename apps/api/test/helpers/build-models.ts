@@ -2,6 +2,7 @@ import type { CreationAttributes } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { Interaction } from '../../src/interactions/interaction.model';
 import { Lead } from '../../src/leads/lead.model';
+import { Notification } from '../../src/notifications/notification.model';
 
 /**
  * Unsaved Lead and Interaction instances for the unit tier.
@@ -23,7 +24,7 @@ import { Lead } from '../../src/leads/lead.model';
  */
 export const modelRegistry = new Sequelize({
   dialect: 'postgres',
-  models: [Lead, Interaction],
+  models: [Lead, Interaction, Notification],
   // Must match database.module.ts, or `build()` maps attributes to the wrong
   // column names — harmless here, since nothing is written, but misleading.
   define: { underscored: true },
