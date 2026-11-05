@@ -1,6 +1,7 @@
 import type { SequelizeOptions } from 'sequelize-typescript';
 import { Sequelize } from 'sequelize-typescript';
 import { loadEnv } from '../../src/config/workspace-env';
+import { User } from '../../src/auth/user.model';
 import { Interaction } from '../../src/interactions/interaction.model';
 import { Lead } from '../../src/leads/lead.model';
 import { describeError } from './describe-error';
@@ -58,7 +59,7 @@ export function testConnection(): Sequelize {
 export async function truncateAll(
   sequelize: Sequelize = testConnection(),
 ): Promise<void> {
-  await sequelize.query('TRUNCATE TABLE leads, interactions CASCADE');
+  await sequelize.query('TRUNCATE TABLE leads, interactions, users CASCADE');
 }
 
 export async function teardownTestDatabase(): Promise<void> {
@@ -101,7 +102,7 @@ export function testDatabaseOptions(): SequelizeOptions {
     password: process.env.DB_PASSWORD,
     database,
 
-    models: [Lead, Interaction],
+    models: [Lead, Interaction, User],
 
     // Decision 4: set globally so no individual model can forget it. Must match
     // database.module.ts, or the models look for camelCase columns that the
