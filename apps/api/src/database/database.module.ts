@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { User } from '../auth/user.model';
 import { Interaction } from '../interactions/interaction.model';
 import { Lead } from '../leads/lead.model';
 import { Notification } from '../notifications/notification.model';
@@ -18,7 +19,7 @@ import { Notification } from '../notifications/notification.model';
         password: config.getOrThrow<string>('DB_PASSWORD'),
         database: config.getOrThrow<string>('DB_NAME'),
 
-        models: [Lead, Interaction, Notification],
+        models: [Lead, Interaction, Notification, User],
 
         // Decision 3: migrations own the schema. If this were true it would
         // silently fight Umzug and produce drift that only appears on a
