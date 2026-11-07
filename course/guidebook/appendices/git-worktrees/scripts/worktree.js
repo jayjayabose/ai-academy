@@ -22,6 +22,9 @@ const DEFAULT_CONFIG = {
   // Main branch name (usually "main" or "master")
   mainBranch: 'main',
 
+  // Git remote to fetch from and pull the main branch from
+  remote: 'origin',
+
   // Package manager (npm, yarn, pnpm, none, or auto)
   packageManager: 'auto',
 
@@ -67,7 +70,7 @@ Creates a git worktree with configuration files and opens it in your editor.
 
 OPTIONS:
   -h, --help      Show this help message
-  -e, --existing  Use an existing branch from origin instead of creating new
+  -e, --existing  Use an existing branch from the remote instead of creating new
   --mcp PURPOSE   Activate a specific MCP template (if configured)
   --init          Initialize a ${CONFIG_FILE} file in the current repository
   --no-install    Skip package installation
@@ -384,7 +387,7 @@ async function main() {
   let localBranchName;
   if (useExisting) {
     branchName = branchInput;
-    localBranchName = branchName.replace(/^origin\//, '');
+    localBranchName = branchName.replace(`${config.remote}/`, '');
   } else {
     branchName = branchInput.startsWith(config.branchPrefix)
       ? branchInput
@@ -422,13 +425,13 @@ async function main() {
   }
 
   // Update git references
-  console.log('Fetching latest from origin...');
-  gitOrExit(['fetch', 'origin']);
+  console.log(`Fetching latest from ${config.remote}...`);
+  gitOrExit(['fetch', config.remote]);
 
   // Pull latest main branch only if creating a new branch
   if (!useExisting) {
     console.log(`Pulling latest ${config.mainBranch} branch...`);
-    gitOrExit(['pull', 'origin', config.mainBranch]);
+    gitOrExit(['pull', config.remote, config.mainBranch]);
   }
 
   // Create the worktree
@@ -437,15 +440,15 @@ async function main() {
 
   let created;
   if (useExisting) {
-    // Check if branch exists on origin
-    const remoteHeads = git(['ls-remote', '--heads', 'origin', localBranchName]) || '';
+    // Check if branch exists on the remote
+    const remoteHeads = git(['ls-remote', '--heads', config.remote, localBranchName]) || '';
     if (!remoteHeads.includes(localBranchName)) {
-      console.error(`Error: Branch '${localBranchName}' not found on origin`);
+      console.error(`Error: Branch '${localBranchName}' not found on ${config.remote}`);
       console.error('Available remote branches:');
       const remoteBranches = (git(['branch', '-r']) || '')
         .split('\n')
         .filter((line) => !line.includes('HEAD'))
-        .map((line) => line.trim().replace(/^origin\//, ''))
+        .map((line) => line.trim().replace(`${config.remote}/`, ''))
         .slice(0, 20);
       console.error(remoteBranches.join('\n'));
       return 1;
