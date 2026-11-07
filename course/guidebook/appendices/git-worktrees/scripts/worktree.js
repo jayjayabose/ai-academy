@@ -59,6 +59,19 @@ const DEFAULT_CONFIG = {
 
   // MCP template directory (relative to main worktree). Empty if not using MCP templates.
   mcpTemplateDir: 'mcp-json-templates',
+
+  // --- Per-worktree dev environment (used only with --ports BASE) ---------------
+  // Env file inside each worktree that receives the overrides.
+  envFile: '.env.local',
+
+  // Env var name -> offset from BASE. With --ports 5300 and { "PORT": 0, "DB_PORT": 10 }
+  // the new worktree gets PORT=5300 and DB_PORT=5310. Empty = --ports is unavailable.
+  portEnv: {},
+
+  // Optional: also give each worktree its own container name,
+  // `<worktree-dir><suffix>` written to this env var (e.g. DB_CONTAINER_NAME).
+  containerNameEnv: '',
+  containerNameSuffix: '-db',
 };
 
 const SCRIPT_NAME = path.basename(process.argv[1] || 'worktree.js');
@@ -75,6 +88,10 @@ OPTIONS:
   --init          Initialize a ${CONFIG_FILE} file in the current repository
   --no-install    Skip package installation
   --no-editor     Don't open editor after creation
+  --ports BASE    Give the worktree its own dev ports, written into its env file:
+                  each variable in "portEnv" = BASE + its configured offset
+                  (and its own container name if "containerNameEnv" is set).
+                  Fails before creating anything if a derived port is in use.
 
 ARGUMENTS:
   branch-name     For new branches: suffix for configured prefix
@@ -85,6 +102,7 @@ EXAMPLES:
   ${SCRIPT_NAME} --init                  # Initialize config file
   ${SCRIPT_NAME} my-feature              # Creates new prefixed branch
   ${SCRIPT_NAME} -e feature/existing     # Uses existing branch
+  ${SCRIPT_NAME} auth --ports 5200       # Own ports: e.g. API 5200, web 5201, DB 5210
 
 CONFIGURATION:
   The script looks for ${CONFIG_FILE} in the repository root.
@@ -312,6 +330,80 @@ function runPostCreateCommands(worktreePath, config) {
   }
 }
 
+const MAX_PORT = 65535;
+
+/** { ENV_VAR: 'port' } for every variable in portEnv, or throws a readable Error. */
+function derivePorts(base, portEnv) {
+  const entries = Object.entries(portEnv || {});
+  if (entries.length === 0) {
+    throw new Error(
+      `--ports needs "portEnv" in ${CONFIG_FILE}, e.g. { "PORT": 0, "WEB_PORT": 1, "DB_PORT": 10 }`
+    );
+  }
+  const values = {};
+  for (const [name, offset] of entries) {
+    if (!Number.isInteger(offset) || offset < 0) {
+      throw new Error(`portEnv.${name} must be a non-negative integer offset`);
+    }
+    const port = base + offset;
+    if (port < 1024 || port > MAX_PORT) {
+      throw new Error(`${name} would be ${port}; ports must be between 1024 and ${MAX_PORT}`);
+    }
+    values[name] = String(port);
+  }
+  return values;
+}
+
+/** Which of these TCP ports already have a listener. Skipped (empty) when lsof is unavailable. */
+function portsInUse(ports) {
+  if (!commandExists('lsof')) return [];
+  return ports.filter(
+    (port) => spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN'], { stdio: 'ignore' }).status === 0
+  );
+}
+
+/**
+ * Sets KEY=value for each override in dotenv text. An existing line is replaced in place;
+ * any later duplicate of the same key is dropped, because dotenv lets the LAST duplicate
+ * win and would silently undo the override. Missing keys are appended. Other lines
+ * (comments, secrets) pass through untouched.
+ */
+function applyEnvOverrides(text, overrides) {
+  const keyOf = (line) => {
+    const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/.exec(line);
+    return match ? match[1] : null;
+  };
+  const written = new Set();
+  const out = [];
+  for (const line of text.split(/\r?\n/)) {
+    const key = keyOf(line);
+    if (key === null || !(key in overrides)) {
+      out.push(line);
+    } else if (!written.has(key)) {
+      out.push(`${key}=${overrides[key]}`);
+      written.add(key);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === '') out.pop();
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!written.has(key)) out.push(`${key}=${value}`);
+  }
+  return out.join('\n') + '\n';
+}
+
+function applyPortOverrides(targetRoot, config, overrides) {
+  const envPath = path.join(targetRoot, config.envFile);
+  const summary = Object.entries(overrides)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(' ');
+  if (!fs.existsSync(envPath)) {
+    console.log(`  ⚠ ${config.envFile} was not copied into the worktree. Set these yourself: ${summary}`);
+    return;
+  }
+  fs.writeFileSync(envPath, applyEnvOverrides(fs.readFileSync(envPath, 'utf8'), overrides));
+  console.log(`  ✓ Set ${summary} in ${config.envFile}`);
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -321,6 +413,7 @@ async function main() {
   let skipInstall = false;
   let skipEditor = false;
   let needInit = false;
+  let portBase = null;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -349,6 +442,14 @@ async function main() {
         break;
       case '--no-editor':
         skipEditor = true;
+        break;
+      case '--ports':
+        if (args[i + 1] && /^\d+$/.test(args[i + 1])) {
+          portBase = Number(args[++i]);
+        } else {
+          console.error('Error: --ports requires a base port number, e.g. --ports 5300');
+          return 1;
+        }
         break;
       default:
         if (arg.startsWith('-')) {
@@ -401,6 +502,31 @@ async function main() {
   console.log(`Repository root: ${mainWorktree}`);
   console.log(`Creating worktree: ${worktreeDir}`);
   console.log(useExisting ? `Using existing branch: ${branchName}` : `Creating new branch: ${branchName}`);
+
+  // Resolve the per-worktree environment now, so a bad base or a busy port fails
+  // before the stash, the checkout or the worktree exist.
+  let envOverrides = null;
+  if (portBase !== null) {
+    try {
+      envOverrides = derivePorts(portBase, config.portEnv);
+    } catch (err) {
+      console.error(`Error: ${err.message}`);
+      return 1;
+    }
+    if (config.containerNameEnv) {
+      const safeName = worktreeDir.replace(/[^A-Za-z0-9_.-]/g, '-');
+      envOverrides[config.containerNameEnv] = `${safeName}${config.containerNameSuffix}`;
+    }
+    const busy = portsInUse(
+      Object.entries(envOverrides)
+        .filter(([key]) => key in config.portEnv)
+        .map(([, value]) => Number(value))
+    );
+    if (busy.length > 0) {
+      console.error(`Error: port(s) already in use: ${busy.join(', ')}. Pick a different --ports base.`);
+      return 1;
+    }
+  }
 
   // Stash any uncommitted changes
   console.log('Checking for uncommitted changes...');
@@ -467,6 +593,10 @@ async function main() {
 
   findAndCopyConfigFiles(mainWorktree, newWorktreePath, config);
 
+  if (envOverrides) {
+    applyPortOverrides(newWorktreePath, config, envOverrides);
+  }
+
   if (mcpTemplate) {
     activateMcpTemplate(mcpTemplate, newWorktreePath, mainWorktree, config);
   }
@@ -505,10 +635,14 @@ async function main() {
   return 0;
 }
 
-main().then(
-  (code) => process.exit(code),
-  (err) => {
-    console.error(err.message);
-    process.exit(1);
-  }
-);
+if (require.main === module) {
+  main().then(
+    (code) => process.exit(code),
+    (err) => {
+      console.error(err.message);
+      process.exit(1);
+    }
+  );
+}
+
+module.exports = { applyEnvOverrides, derivePorts };

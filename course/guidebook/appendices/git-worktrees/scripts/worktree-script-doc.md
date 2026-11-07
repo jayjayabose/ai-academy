@@ -49,6 +49,9 @@ Creates new worktrees with automatic environment setup, file copying, and packag
 # Quick options
 ./worktree.js my-feature --no-install    # Skip package installation
 ./worktree.js my-feature --no-editor     # Don't open editor
+
+# Give the worktree its own dev ports (see "Per-worktree ports" below)
+./worktree.js my-feature --ports 5300
 ```
 
 ### Configuration (`.worktree-config.json`)
@@ -58,6 +61,7 @@ Creates new worktrees with automatic environment setup, file copying, and packag
   "branchPrefix": "gw-",
   "defaultBranchSuffix": "test",
   "mainBranch": "main",
+  "remote": "origin",
 
   "packageManager": "auto",
   "editor": "auto",
@@ -74,12 +78,42 @@ Creates new worktrees with automatic environment setup, file copying, and packag
 
 - `branchPrefix` - Prefix for new branches; `defaultBranchSuffix` is used if no name is provided
 - `mainBranch` - Usually `"main"` or `"master"`
+- `remote` - Git remote to fetch from and pull `mainBranch` from (default `"origin"`; e.g. `"fork"`)
 - `packageManager` - `"auto"` detects from lock files; also `"npm"`, `"yarn"`, `"pnpm"`, `"none"`
 - `editor` - `"auto"` detects an installed editor; also `"cursor"`, `"code"`, `"vim"`, `"none"`
 - `copyFiles` - Files (matched by name anywhere in the repo) copied to new worktrees
 - `copyPathPatterns` - Paths (relative to repo root) copied to new worktrees
 - `excludeDirs` - Directories skipped when searching for files to copy
 - `postCreateCommands` - Shell commands run in the new worktree after creation
+- `envFile`, `portEnv`, `containerNameEnv`, `containerNameSuffix` - Per-worktree ports; see below
+
+### Per-worktree ports (`--ports BASE`)
+
+Several worktrees running at once collide on dev ports and on the Docker container name. Pass a base
+port per worktree and the script writes a non-colliding block into that worktree's env file:
+
+```json
+{
+  "copyFiles": [".env.local"],
+  "envFile": ".env.local",
+  "portEnv": { "PORT": 0, "WEB_PORT": 1, "DB_PORT": 10 },
+  "containerNameEnv": "DB_CONTAINER_NAME",
+  "containerNameSuffix": "-postgres"
+}
+```
+
+`./worktree.js auth --ports 5200` copies `.env.local` into the new worktree, then sets `PORT=5200`,
+`WEB_PORT=5201`, `DB_PORT=5210` and `DB_CONTAINER_NAME=gw-auth-postgres` (`<worktree dir><suffix>`).
+
+- `portEnv` maps each env var to an **offset** from the base; the feature is off when it is empty
+- Only those variables change; every other line in the file (secrets included) is copied as-is, and
+  the source file is never modified
+- Any existing line for those variables is replaced, and duplicates are collapsed: dotenv lets the
+  **last** duplicate win, which would otherwise undo the override
+- The script exits **before** creating anything if the base is not a number, a derived port falls outside
+  1024-65535, or a derived port already has a listener (checked with `lsof`; skipped where unavailable)
+- It does not know about *other* worktrees' ports; pick bases that are far enough apart (e.g. 100 apart)
+- If the env file was not copied, nothing is written and the values are printed for you to set by hand
 
 ### How It Works
 
