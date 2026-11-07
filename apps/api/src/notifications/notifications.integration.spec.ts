@@ -7,8 +7,10 @@ import type {
 } from '@ai-academy/shared';
 import { type INestApplication, Logger } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { testDatabaseOptions, truncateAll } from '@test/helpers';
+import { RootConfigModule } from '../config/root-config';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { QueryTypes } from 'sequelize';
@@ -24,8 +26,9 @@ import { NotificationsService } from './notifications.service';
 
 /**
  * No mocks: real Postgres, a real Nest app listening on an ephemeral port, real
- * socket.io-client connections through the real gateway. The only seam is the
- * token verifier, which is the Phase 0 stub (`dev-token-<user-uuid>`).
+ * socket.io-client connections through the real gateway, and real JWTs signed by
+ * the real AuthModule's JwtService. (Task B first ran against the Phase 0
+ * `dev-token-<uuid>` stub; at integration those became real tokens.)
  *
  * The failing-notifier test is the single exception, and it replaces one method
  * on the real service for one call — see its comment.
@@ -51,6 +54,7 @@ describe('notifications over HTTP and Socket.io', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
+        RootConfigModule,
         SequelizeModule.forRoot(testDatabaseOptions()),
         LeadsModule,
         InteractionsModule,
@@ -314,8 +318,11 @@ describe('notifications over HTTP and Socket.io', () => {
 
   // -- helpers (plumbing, not specification) ---------------------------------
 
+  /** A validly signed token. The verifier checks signature + expiry, not the users table. */
   function tokenFor(userId: string): string {
-    return `dev-token-${userId}`;
+    return app
+      .get(JwtService)
+      .sign({ sub: userId, email: `${userId}@dev.local` });
   }
 
   function open(token: string | undefined): ClientSocket {
@@ -357,7 +364,11 @@ describe('notifications over HTTP and Socket.io', () => {
   async function postLead(
     body: CreateLeadRequest = LEAD,
   ): Promise<{ status: number; body: LeadResource }> {
-    const res = await request(http).post('/api/leads').send(body);
+    // Leads are behind the global guard now; any validly signed token will do.
+    const res = await request(http)
+      .post('/api/leads')
+      .set('Authorization', `Bearer ${tokenFor(ABSENT_ID)}`)
+      .send(body);
     return { status: res.status, body: res.body as LeadResource };
   }
 
