@@ -8,7 +8,9 @@
 services:
     postgres:
         image: postgres:16-alpine
-        container_name: ai-academy-postgres
+        # Parameterised so parallel worktrees can each run their own container.
+        # Falls back to the original name when DB_CONTAINER_NAME is unset.
+        container_name: ${DB_CONTAINER_NAME:-ai-academy-postgres}
         restart: unless-stopped
         environment:
             POSTGRES_USER: ${DB_USER}

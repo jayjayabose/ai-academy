@@ -1,7 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
+import { Public } from '../auth/auth.contract';
 import { HealthReport, HealthService } from './health.service';
 
 /** Mounted at /api/health — the global prefix is set in main.ts. */
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly health: HealthService) {}

@@ -10,6 +10,8 @@ import type { INestApplication } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Test } from '@nestjs/testing';
 import { testDatabaseOptions, truncateAll } from '@test/helpers';
+import { JwtAuthGuard } from '../auth/auth.contract';
+import { RootConfigModule } from '../config/root-config';
 import { Sequelize } from 'sequelize-typescript';
 import request from 'supertest';
 import type { App } from 'supertest/types';
@@ -62,11 +64,17 @@ describe('the leads endpoints', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
+        RootConfigModule,
         SequelizeModule.forRoot(testDatabaseOptions()),
         LeadsModule,
         InteractionsModule,
       ],
-    }).compile();
+    })
+      // Auth is covered by auth.integration.spec.ts (401 without a token, 200 with
+      // one). This spec is about leads behaviour, so the global guard is bypassed.
+      .overrideProvider(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     app = configureApp(moduleRef.createNestApplication());
     await app.init();

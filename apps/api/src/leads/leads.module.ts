@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { SummariesModule } from '../summaries/summaries.module';
 import { Lead } from './lead.model';
 import { LeadsController } from './leads.controller';
 import { LeadsService } from './leads.service';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Lead]), SummariesModule],
+  imports: [
+    SequelizeModule.forFeature([Lead]),
+    SummariesModule,
+    NotificationsModule,
+  ],
   controllers: [LeadsController],
   providers: [LeadsService],
   // InteractionsModule needs it: creating an interaction under a lead that does

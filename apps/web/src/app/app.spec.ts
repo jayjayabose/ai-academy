@@ -1,13 +1,24 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { App } from './app';
+import { AuthSession } from './core/auth/auth-session';
+import { AuthService } from './core/auth/auth.service';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        // The shell hosts the bell, which injects the AuthSession seam; mirror
+        // the binding app.config.ts makes for the real app.
+        { provide: AuthSession, useExisting: AuthService },
+      ],
     }).compileComponents();
   });
 

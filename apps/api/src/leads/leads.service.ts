@@ -3,11 +3,12 @@ import type {
   LeadDetail,
   LeadSummary,
 } from '@ai-academy/shared';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import type { Order } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { Interaction } from '../interactions/interaction.model';
+import { NotificationsService } from '../notifications/notifications.service';
 import { scoreLead } from '../scoring/activity-score';
 import { SummariesService } from '../summaries/summaries.service';
 import { CreateLeadDto } from './dto/create-lead.dto';
@@ -48,10 +49,13 @@ const LIST_ORDER: Order = [
 
 @Injectable()
 export class LeadsService {
+  private readonly logger = new Logger(LeadsService.name);
+
   constructor(
     @InjectModel(Lead) private readonly leads: typeof Lead,
     private readonly summaries: SummariesService,
     private readonly sequelize: Sequelize,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /**
@@ -81,7 +85,10 @@ export class LeadsService {
     // The DTO has already dropped unknown properties (whitelist) and normalised
     // email, so it is safe to hand over whole. Omitted optional fields stay
     // omitted, which is what lets the column DEFAULTs apply.
-    return toLead(await this.leads.create({ ...dto }));
+    const lead = await this.leads.create({ ...dto });
+    await this.notifyLeadCreated(lead);
+
+    return toLead(lead);
   }
 
   async update(id: string, dto: UpdateLeadDto): Promise<LeadResource> {
@@ -233,6 +240,29 @@ export class LeadsService {
     }
 
     return lead;
+  }
+
+  /**
+   * Runs AFTER the lead is committed, and a failure here is logged and swallowed:
+   * the salesperson's lead is saved either way, and a notification is a courtesy,
+   * not part of the lead's transaction. Awaited (not fire-and-forget) so the
+   * toast is on its way by the time the 201 returns, and so an unhandled
+   * rejection cannot escape.
+   */
+  private async notifyLeadCreated(lead: Lead): Promise<void> {
+    try {
+      await this.notifications.notifyAllUsers({
+        type: 'lead_created',
+        title: 'New lead',
+        message: `${lead.firstName} ${lead.lastName} was added`,
+        leadId: lead.id,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Could not notify users about new lead ${lead.id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 }
 

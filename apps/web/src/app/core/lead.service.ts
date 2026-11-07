@@ -15,7 +15,7 @@ import type {
 /**
  * The real API client. There is no second implementation and no base URL:
  * Decision 7 puts the dev server and the API on the same origin via
- * `proxy.conf.json`, so every path here is relative and CORS does not exist.
+ * `proxy.conf.js`, so every path here is relative and CORS does not exist.
  *
  * Every path is answered by apps/api. Until it existed a fixtureInterceptor
  * answered these exact requests in-process; removing it changed nothing here,

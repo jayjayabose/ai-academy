@@ -184,3 +184,12 @@ This intensive course teaches **systematic AI agent orchestration** through hand
 - Parallel agent coordination (build multiple features simultaneously)
 - Validation gates (TypeScript, ESLint, tests, browser/device testing)
 - Professional practices (A+ code quality, demo readiness)
+
+## Where am I:
+I have completed Day 3 authentication and notifications features
+
+### How to start the app
+- start database in docker `npm run db:up`
+- start the api and frontend apps `npm run dev`
+- check db health:  `http://localhost:4000/api/health/db`
+- hit the app: `http://localhost:4300/leads`
