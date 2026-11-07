@@ -1,4 +1,9 @@
 {
   "mainBranch": "course",
-  "remote": "fork"
+  "remote": "fork",
+  "copyFiles": [".env.local"],
+  "envFile": ".env.local",
+  "portEnv": { "PORT": 0, "WEB_PORT": 1, "DB_PORT": 10 },
+  "containerNameEnv": "DB_CONTAINER_NAME",
+  "containerNameSuffix": "-postgres"
 }
