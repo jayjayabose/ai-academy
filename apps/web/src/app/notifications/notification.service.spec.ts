@@ -65,14 +65,14 @@ describe('NotificationService', () => {
     expect(service.unreadCount()).toBe(1);
   });
 
-  it('sends the bearer token on its requests', async () => {
+  it('leaves the Authorization header to the auth interceptor', async () => {
     session.signIn('dev-token-xyz');
     TestBed.tick();
     socket.fire('connect');
     TestBed.tick();
 
     const req = http.expectOne('/api/notifications');
-    expect(req.request.headers.get('Authorization')).toBe('Bearer dev-token-xyz');
+    expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush([]);
     http.expectOne('/api/notifications/unread-count').flush({ count: 0 });
   });

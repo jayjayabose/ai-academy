@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { Observable, Subject, firstValueFrom } from 'rxjs';
 
@@ -11,9 +11,8 @@ import { NotificationSocketService } from './notification-socket.service';
  * Notification state for the UI: the history list, the unread count, and the
  * actions on them. REST is the source of truth on load; the socket keeps it live.
  *
- * Requests carry their own bearer header. The auth branch will add an interceptor
- * that does the same; sending it here too is duplicate-but-harmless, and keeps this
- * feature working (and testable) before that branch merges.
+ * Requests do not set an Authorization header: the auth interceptor adds the bearer
+ * token to every /api request, so this service stays unaware of how callers authenticate.
  */
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
@@ -58,14 +57,8 @@ export class NotificationService {
     if (!this.session.token()) return;
     try {
       const [list, count] = await Promise.all([
-        firstValueFrom(
-          this.http.get<AppNotification[]>('/api/notifications', { headers: this.headers() }),
-        ),
-        firstValueFrom(
-          this.http.get<UnreadCountResponse>('/api/notifications/unread-count', {
-            headers: this.headers(),
-          }),
-        ),
+        firstValueFrom(this.http.get<AppNotification[]>('/api/notifications')),
+        firstValueFrom(this.http.get<UnreadCountResponse>('/api/notifications/unread-count')),
       ]);
       this.notificationList.set(list);
       this.unread.set(count.count);
@@ -84,9 +77,7 @@ export class NotificationService {
 
   async markAllRead(): Promise<void> {
     const { count } = await firstValueFrom(
-      this.http.patch<UnreadCountResponse>('/api/notifications/read-all', null, {
-        headers: this.headers(),
-      }),
+      this.http.patch<UnreadCountResponse>('/api/notifications/read-all', null),
     );
     this.notificationList.update((list) => list.map((n) => ({ ...n, isRead: true })));
     this.unread.set(count);
@@ -94,11 +85,7 @@ export class NotificationService {
 
   async remove(id: string): Promise<void> {
     const existing = this.notificationList().find((n) => n.id === id);
-    await firstValueFrom(
-      this.http.delete<void>(`/api/notifications/${encodeURIComponent(id)}`, {
-        headers: this.headers(),
-      }),
-    );
+    await firstValueFrom(this.http.delete<void>(`/api/notifications/${encodeURIComponent(id)}`));
     this.notificationList.update((list) => list.filter((n) => n.id !== id));
     if (existing && !existing.isRead) this.adjustUnread(-1);
   }
@@ -109,7 +96,6 @@ export class NotificationService {
       this.http.patch<AppNotification>(
         `/api/notifications/${encodeURIComponent(id)}/${action}`,
         null,
-        { headers: this.headers() },
       ),
     );
     this.notificationList.update((list) => list.map((n) => (n.id === id ? updated : n)));
@@ -129,9 +115,5 @@ export class NotificationService {
   private reset(): void {
     this.notificationList.set([]);
     this.unread.set(0);
-  }
-
-  private headers(): HttpHeaders {
-    return new HttpHeaders({ Authorization: `Bearer ${this.session.token() ?? ''}` });
   }
 }
