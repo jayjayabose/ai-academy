@@ -193,3 +193,38 @@ I have completed Day 3 authentication and notifications features
 - start the api and frontend apps `npm run dev`
 - check db health:  `http://localhost:4000/api/health/db`
 - hit the app: `http://localhost:4300/leads`
+
+### Running more than one worktree at once
+Worktrees that run side by side collide on dev ports and on the Postgres container name. Give each its own
+block with `--ports`, from the repo root:
+
+```bash
+./course/guidebook/appendices/git-worktrees/scripts/worktree.js auth --ports 5200
+```
+
+This creates branch `gw-auth` in a sibling directory, copies `.env.local` into it and sets, in that copy only:
+`PORT=5200` (API), `WEB_PORT=5201`, `DB_PORT=5210` and `DB_CONTAINER_NAME=gw-auth-postgres`.
+It refuses to start if a derived port is already listening.
+
+Then, inside the new worktree: `npm install` (the script does this unless `--no-install`), `npm run db:up`,
+`npm run db:migrate`, `npm run db:seed`, `npm run dev`. Each worktree has its own database, so migrate it
+too, and again after every merge.
+
+- **Pick bases ~100 apart.** The script only checks what is listening *right now*, not other worktrees' ports.
+  In use so far: this checkout `4000`/`4300`/`5433`; `5100` (notifications) and `5200` (auth) in the Day 3 worktrees.
+- Avoid `5000`: macOS AirPlay Receiver listens on it.
+- Stop a worktree's servers by PID (`lsof -nP -iTCP:<port> -sTCP:LISTEN`), never `pkill -f`.
+- Remove one when done: `git worktree remove ../gw-auth`, then stop its container (`docker ps`).
+- Details and config: `course/guidebook/appendices/git-worktrees/scripts/worktree-script-doc.md`.
+
+### Gotchas
+- **Migrate after every pull or merge, in every checkout and worktree.** Each one has its own database. A missing
+  migration shows up as a server error, e.g. registering fails because the `users` table does not exist.
+  Check with `npm run db:migrate:status`; apply with `npm run db:migrate`.
+- **`JWT_SECRET` is required.** The API refuses to boot without it (at least 32 characters, e.g.
+  `openssl rand -base64 32`). `JWT_EXPIRES_IN` defaults to `24h`.
+- **In `.env.local`, the last duplicate key wins.** An empty placeholder appended below a real value silently
+  overrides it (this once pushed the web app back to the default port and Docker onto the default container name).
+- **`/leads` needs a login.** A fresh database redirects to `/login`; register an account first.
+- **Socket.io lives at `/api/socket.io`** (namespace `/notifications`), not the default `/socket.io`, so the
+  Angular dev proxy's single `/api` rule carries the WebSocket.
